@@ -1,0 +1,39 @@
+[project]
+name = "local-ocr"
+version = "0.1.0"
+description = "Read text out of images on your own machine — several OCR engines, macOS and Windows from one codebase"
+# Flet が .app / .exe に同梱する Python に合わせて固定する。開発環境だけ新しいと
+# 「開発機では通るが配布物では落ちる」(およびその逆) が起きる。
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # **`[all]` にしない。** `[all]` は flet-cli と flet-web を引き込み、その依存が
+    # 丸ごと配布物に入る。実行に要るのは desktop だけ。
+    "flet[desktop]==0.86.2",
+    # 読ませる前に画像を縮める。大きいまま渡すと文脈長を食い潰して途中で切れる。
+    "pillow>=11.0",
+    # Apple Vision(OS 標準の OCR)を呼ぶため。macOS でしか要らない。
+    "pyobjc-framework-Vision>=10.3; sys_platform == 'darwin'",
+    "pyobjc-framework-Quartz>=10.3; sys_platform == 'darwin'",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    # `uv run flet build` に要る。配布物に入れたくないので実行時依存にしない。
+    "flet-cli==0.86.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/local_ocr"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+filterwarnings = ["error"]
+
+[tool.ruff]
+line-length = 100
