@@ -345,17 +345,35 @@ Python 6,834 行、試験 114 本、`TODO` / `FIXME` の書き置きなし、`pr
 
 ### 3. Windows を配る
 
+**まず Windows 機で手で作る（2026-09-21 に方針を変えた）。**
+当初は「手元に Windows 機が無いので CI でしか作れない」としていたが、
+**Windows 機が使えることが分かった**ので、先に手で 1 本作って動かす。
+`.ps1` はまだ 1 度も走っていないので、**落ちるならそこ**。CI を先に書くと、
+スクリプトの当たりと workflow の当たりが混ざって切り分けにくい。
+
+- [x] **`scripts/build.ps1` を書いた（2026-09-21）。** `build.zsh` の Windows 側。
+      `fetch-binaries.ps1` → `flet build windows` → exe の隣の `bin\` に
+      llama.cpp を置く → `LICENSE` / `NOTICE` を入れる → 点検
+      - **`.venv` が入っていないか / `local_ocr` が入っているか / ライセンス全文が
+        残っているか**を毎回見る。macOS 側で踏んだ当たりと同じ形を見張る
+      - **バックティックの行継続を使っていない。** 引数は配列にまとめて渡す
+      - **まだ 1 度も走らせていない**（手元に pwsh が無い）。文法の確認もできていない
+      - 署名はしない。ストアに出せば Microsoft が署名し直す。手元で試すぶんには
+        SmartScreen の警告を「詳細情報」→「実行」で越える
+- [ ] **Windows 機で実際に作って、起動して画面が出るところまで確かめる**
 - [ ] **GitHub Actions のビルド workflow を書く**（いまは ci / audit /
       dependabot の 3 本だけ）。Windows ランナーで
-      `fetch-binaries.ps1` → `flet build windows` → MSIX
+      `build.ps1` → MSIX。**手で 1 本通してから**
       - **Actions は SHA で固定する**（可変タグは乗っ取られた瞬間に流れ込む）
 - [ ] **`packaging/windows/AppxManifest.xml.in`** と `Assets/` を持ってくる
 - [ ] **Microsoft ストアの規約を、申請前に読み直す。**
       llama-server を同梱にすれば大きな問題は無いはずだが、
       「アプリが外からコードを取ってきて動かすこと」の扱いは変わる。
       モデル (.gguf) の取得はデータなので別
-- [ ] Windows 機が無いので、**動作確認の手立てを決める**
-      （archival-packager は `scripts/screenshot-windows.ps1` を CI で使っている）
+- [ ] **CI での動作確認の手立てを決める**
+      （archival-packager は `scripts/screenshot-windows.ps1` を CI で使っている）。
+      手で作るあいだは要らないが、CI に移したら「署名は通るが起動しない」を
+      見つける手立てがこれしか無くなる
 
 ### 3.5. 公開するページ（GitHub Pages）
 
