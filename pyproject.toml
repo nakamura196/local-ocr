@@ -16,6 +16,10 @@ dependencies = [
     "pyobjc-framework-Quartz>=10.3; sys_platform == 'darwin'",
 ]
 
+# 端末から使う口。`uv run local-ocr ...` / 入れたあとは `local-ocr ...`。
+[project.scripts]
+local-ocr = "local_ocr.cli:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8.3.0",
