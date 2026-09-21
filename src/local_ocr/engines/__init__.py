@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from .apple_vision import AppleVisionEngine
 from .base import Engine, Line, Progress, Result, runs_here
+from .ndl import NdlKotenLiteEngine, NdlLiteEngine
 from .paddle_vl import PaddleVLEngine
 
 __all__ = [
@@ -23,6 +24,8 @@ __all__ = [
 # 並び順がそのまま画面の並び。取得の要らないものを上に置く。
 _ALL: list[type] = [
     AppleVisionEngine,
+    NdlKotenLiteEngine,
+    NdlLiteEngine,
     PaddleVLEngine,
 ]
 

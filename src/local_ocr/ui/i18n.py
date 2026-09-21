@@ -228,6 +228,19 @@ _STRINGS: dict[str, tuple[str, str]] = {
         "取得するものはありません。現代の活字・手書きに向きます。",
         "Nothing to download. Good for modern print and handwriting.",
     ),
+    "engine.ndl-koten-lite.label": (
+        "NDL古典籍OCR Lite（くずし字）",
+        "NDL Koten OCR Lite (kuzushiji)",
+    ),
+    "engine.ndl-koten-lite.note": (
+        "初回だけ 79MB ほど取得します。古典籍・くずし字に向きます。",
+        "Downloads about 79MB the first time. Good for pre-modern Japanese books.",
+    ),
+    "engine.ndl-lite.label": ("NDLOCR Lite（近代の活字）", "NDL OCR Lite (modern print)"),
+    "engine.ndl-lite.note": (
+        "初回だけ 150MB ほど取得します。近代資料の活字・手書きに向きます。",
+        "Downloads about 150MB the first time. Good for modern print and handwriting.",
+    ),
     "engine.paddle-vl.label": ("PaddleOCR-VL（漢籍・多言語）", "PaddleOCR-VL (multilingual)"),
     "engine.paddle-vl.note": (
         "初回だけ 1.8GB ほど取得します。版面ごと読み、縦書きにも向きます。",

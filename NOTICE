@@ -1,0 +1,39 @@
+Local OCR — 同梱・取得するものの表示
+Local OCR — attribution for bundled and downloaded components
+
+--------------------------------------------------------------------
+NDLOCR Lite / NDL古典籍OCR Lite  (National Diet Library, Japan)
+--------------------------------------------------------------------
+
+「読む道具」のうち NDLOCR Lite (ndl-lite) と NDL古典籍OCR Lite
+(ndl-koten-lite) は、国立国会図書館が公開しているものです。
+
+  NDLOCR Lite            https://github.com/ndl-lab/ndlocr-lite
+  NDL古典籍OCR Lite      https://github.com/ndl-lab/ndlkotenocr-lite
+
+  © National Diet Library, Japan
+  Licensed under CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+Local OCR は次の 2 つを使っています。
+
+  1. モデル (.onnx) と文字の一覧 — そのままの形で使っています。
+     モデルは初回に上記 repo から取得します。文字の一覧は
+     src/local_ocr/ndl/charset/ に写してあります。
+  2. 読み取りの手続き — src/local_ocr/ndl/ は、上記 repo の Python 実装を
+     もとにした改変物です。どこをどう変えたかは
+     src/local_ocr/ndl/__init__.py に書いてあります。
+
+CC BY 4.0 は、改変したうえで使うことを認めています。上の表示と、
+改変がある旨の明示が条件です。
+
+--------------------------------------------------------------------
+PaddleOCR-VL  (PaddlePaddle)
+--------------------------------------------------------------------
+
+「読む道具」のうち PaddleOCR-VL (paddle-vl) は、初回に次から取得します。
+
+  https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.6-GGUF
+
+動かすのに使う llama.cpp は MIT License です。
+
+  https://github.com/ggml-org/llama.cpp

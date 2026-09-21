@@ -1,0 +1,3 @@
+# モデルの文字の一覧。Windows で checkout しても改行を変えない
+# (1 行の生データで、末尾の改行の有無がそのまま意味を変える)。
+src/local_ocr/ndl/charset/*.txt -text

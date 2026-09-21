@@ -14,6 +14,12 @@ dependencies = [
     # Apple Vision(OS 標準の OCR)を呼ぶため。macOS でしか要らない。
     "pyobjc-framework-Vision>=10.3; sys_platform == 'darwin'",
     "pyobjc-framework-Quartz>=10.3; sys_platform == 'darwin'",
+    # NDL の 2 つ(ndl-lite / ndl-koten-lite)は ONNX のモデルを手元で動かす。
+    # **上流は OpenCV / lxml / PyYAML / networkx にも依存しているが、こちらは
+    # 引き込んでいない**(src/local_ocr/ndl/__init__.py に理由を書いてある)。
+    # 配布物に 1 つ増えるごとに .app と .msix が重くなるので、増やす前に要否を見る。
+    "onnxruntime>=1.22,<2",
+    "numpy>=2.0,<3",
 ]
 
 # 端末から使う口。`uv run local-ocr ...` / 入れたあとは `local-ocr ...`。
