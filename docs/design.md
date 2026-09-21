@@ -23,8 +23,8 @@
 |---|---|---|---|---|
 | `apple-vision` | Apple Vision | macOS | 不要 | 現代の活字・手書き。速い |
 | `windows-ocr` | Windows 標準 OCR | Windows | 不要 | 同上。`Windows.Media.Ocr` |
-| `ndl-lite` | NDLOCR Lite | 両方 | 約 160MB | 近代資料・活字 |
-| `ndl-koten-lite` | NDL古典籍OCR Lite | 両方 | 約 78MB | 古典籍・くずし字 |
+| `ndl-lite` | NDLOCR Lite | 両方 | 150MB | 近代資料・活字（済） |
+| `ndl-koten-lite` | NDL古典籍OCR Lite | 両方 | 79MB | 古典籍・くずし字（済） |
 | `paddle-vl` | PaddleOCR-VL | 両方 | 約 1.8GB | 漢籍・多言語・版面解析 |
 | `tibetan` | BDRC Yigdzin 1 | 両方 | 未定 | チベット語（**保留**） |
 
@@ -36,11 +36,25 @@
 - **Apple Vision**: pyobjc (`Vision` / `Quartz`)。`VNRecognizeTextRequest`。
   枠は左下原点の 0..1 で返るので、画素座標・左上原点に直す。**初回の呼び出しだけ約 15 秒**（以後 0.1 秒）
 - **Windows 標準 OCR**: `winrt-Windows.Media.Ocr` ほか。日本語は言語パックが要る
-- **NDL 2 種**: 上流は [ndl-lab/ndlocr-lite](https://github.com/ndl-lab/ndlocr-lite) と
-  [ndl-lab/ndlkotenocr-lite](https://github.com/ndl-lab/ndlkotenocr-lite)。**どちらも CC BY 4.0**（表示が要る → NOTICE）。
-  Python 実装があり、ONNX Runtime で動く。構成は レイアウト検出（DEIMv2 / RTMDet）→ 文字認識（PARSeq）→ 読み順
+- **NDL 2 種**（済）: 上流は [ndl-lab/ndlocr-lite](https://github.com/ndl-lab/ndlocr-lite) と
+  [ndl-lab/ndlkotenocr-lite](https://github.com/ndl-lab/ndlkotenocr-lite)。**どちらも CC BY 4.0**（表示が要る → `NOTICE`）。
+  ONNX Runtime で動く。構成は レイアウト検出（DEIMv2 / RTMDet）→ 文字認識（PARSeq）→ 読み順。
+  中身は `local_ocr/ndl/`、モデルの取得先は `core/ndl_assets.py`。**上流の repo の動かない番号（コミット）で
+  指している**ので、上流が差し替えても手元の結果は変わらない。上げるときは番号と、
+  組で使う文字の一覧（`ndl/charset/`）を一緒に取り直す。
+  - **依存を 4 つ増やさずに済ませた**（OpenCV / lxml / PyYAML / networkx）。理由は `ndl/__init__.py`。
+    足したのは `onnxruntime` と `numpy` だけ
+  - **上流と結果が変わるところが 2 つある。どちらも上流の書き落としで、こちらが正しい。**
+    直す前に `ndl/recognize.py` と `ndl/order.py` のその場のコメントを読むこと。
+    上流の試し画像 10 枚で突き合わせた結果も、そこに書いてある
+  - 速さの目安（M 系 Mac・2000px 前後の 1 枚）: 古典籍 0.2〜0.3 秒、近代資料 0.4〜0.7 秒。
+    モデルを開くのに初回だけ 3〜6 秒
 - **PaddleOCR-VL**: llama.cpp（`b10776`）の GGUF。常駐の `llama-server` を内側で立て、
-  OpenAI 互換の窓口に投げる。**サーバの存在は利用者に見せない**
+  OpenAI 互換の窓口に投げる。**サーバの存在は利用者に見せない**。
+  **版面まるごと渡すと、枠を返さないうえ、多段組（偈頌）では帯に割って順番が狂う**
+  （エディタ側 `tei-iiif-editor/apps/editor/lib/ocr/engines/paddle-local.ts` の冒頭に実測の記録がある。
+  単純な 1 ブロックの頁なら通るが、一般化してはいけない）。
+  枠のある校正の流れでは、枠ごとに切って渡すのが正しい
 - **チベット語**: BDRC「Yigdzin 1」（Apache-2.0）は **PaddleOCR-VL-1.6 の派生**なので同じ道に乗る見込み。
   ただし配布は safetensors のみで **GGUF が無い**。変換の実験が要るため v1 では見送る
 
@@ -72,6 +86,43 @@
 - 保存先は毎回ダイアログで選ぶ。**開く場所だけ前回の続き**にする（`save_dir`）。
   出力先を固定する設定は、フォルダの一括処理と IIIF を入れるときに考える
   （1 枚ずつ保存する今は、選ばせた方が迷わない）
+
+## ほかの道具から使わせる
+
+**この機械の「OCR 置き場」にする。** 特定の相手（TEI/IIIF エディタ）に合わせた作りにしない。
+繋ぎたい相手は今後も増えるので、合わせるのは相手ではなく**口の形**。
+
+出し方は 2 つ。境目は「ブラウザの中かどうか」。
+
+| 相手 | 使わせ方 |
+|---|---|
+| 手元の別のプログラム・スクリプト | **CLI**（済）。窓口は要らない |
+| ブラウザの中で動く頁 | **窓口（HTTP）**。ブラウザは外のコマンドを起動できない |
+
+### 窓口（未着手）
+
+```
+GET  http://127.0.0.1:<port>/v1/engines   → 読む道具の一覧（取得済みかどうかつき）
+POST http://127.0.0.1:<port>/v1/ocr       → {engine, image} → {text, lines:[{text, box}], seconds}
+```
+
+- 中身は `engines/base.py` の `recognize(画像) → Result` を**そのまま外に出すだけ**。
+  新しい形を作らない
+- **llama-server はこれまで通り内側に隠す。** いま外から使えるのは llama-server の窓口
+  （= PaddleOCR-VL 専用）だけで、Apple Vision も Windows 標準 OCR も NDL も外から使えない。
+  これは「エディタ専用の作り」であって、汎用ではない
+- **既定は閉じておく。** 設定画面で開ける。開けた時点で、その機械のどのプログラムからも
+  画像を投げられる状態になる。127.0.0.1 だけに限り、繋いでよい相手は利用者が足す一覧にする
+  （`*` は使わない）
+- https の頁から 127.0.0.1 を呼ぶと、Chrome の「ローカルネットワークへの接続を許可」が
+  最初の 1 回出る。これは消せない
+
+**TEI/IIIF エディタとの接続は、この窓口の最初の利用者という位置付け。**
+いま校正の方は起動スクリプトを手で叩いているが、それがアプリを開くだけになる。
+エディタ側は NDL と Tesseract をブラウザの中で持っているので、この窓口から増えるのは
+Paddle・Apple Vision・Windows 標準 OCR。
+
+**着手は NDL と Windows 標準 OCR のあと。** 出せる道具が 2 つしかないうちに開けても意味が薄い。
 
 ## 端末から使う（CLI）
 
@@ -182,11 +233,12 @@ local-ocr --list-engines                             # 読む道具と、取得�
 3. **出口: テキスト保存 / TEI/XML**（済）+ **端末から使う口**（済）
 4. 入口: フォルダ / IIIF マニフェスト ← ランディングのボタンは押せない状態で置いてある。
    画面側で複数ページを持つには、作業画面にページの行き来が要る（CLI は先に対応済み）
-5. Windows 標準 OCR
-6. NDL 2 種（ここが一番重い）
+5. **NDL 2 種**（済。`ndl-koten-lite` / `ndl-lite`）
+6. Windows 標準 OCR
 7. アイコン（多言語と明暗テーマは済）
 8. 配布（署名・公証・ストア申請）
-9. チベット語（GGUF 変換の実験から）
+9. ほかの道具から使わせる窓口（HTTP）← NDL と Windows 標準 OCR のあと
+10. チベット語（GGUF 変換の実験から）
 
 ## 踏んだ落とし穴（Flet 0.86）
 
