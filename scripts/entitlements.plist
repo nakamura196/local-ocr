@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Developer ID 配布・非サンドボックス・hardened runtime のみ。
+	  archival-packager（scripts/entitlements.plist）と同じ構成。
+
+	  App Sandbox は意図的に有効にしていない。有効だと、利用者が選んだ任意の
+	  フォルダを読むことと、同梱した llama-server を起動することが制限される。
+	  Mac App Store には出さないので（docs/release.md の「決めたこと」）、
+	  サンドボックスは要件ではない。
+
+	  ネットワークの項目（com.apple.security.network.client / .server）は
+	  **足していない。** 確かめた結論を書いておく:
+
+	    - このアプリは 127.0.0.1 に llama-server を立て、そこへ HTTP で問い合わせる。
+	      初回はモデル (.gguf) を Hugging Face から取ってくる
+	    - network.client / network.server は **App Sandbox の中でだけ意味を持つ**
+	      entitlement。非サンドボックスのアプリには効かず、付けても外しても
+	      通信の可否は変わらない
+	    - hardened runtime はネットワークを制限しない。制限するのは
+	      コード注入・ライブラリの読み込み・他プロセスへの介入
+	    - よって archival-packager と同じでよい。サンドボックスに入れる日が
+	      来たら、そのときに両方足す
+
+	  同梱した llama-server を起動することについて。hardened runtime のもとでも、
+	  同じ Team ID で署名された実行ファイルの起動と、その中での dylib の読み込みは
+	  通る（sign.zsh がバンドル内の Mach-O を全部署名する）。よって
+	  com.apple.security.cs.disable-library-validation は足さない。
+	  **まず何も足さずに署名し、実際に落ちたときだけ足す**（最小権限）。
+	-->
+
+	<!--
+	  ファイル選択ダイアログに要る。**サンドボックスの有無とは別に要る。**
+	  Flutter 側の file_picker が、この entitlement が署名に入っているかを
+	  自分で見ており、無いと ENTITLEMENT_NOT_FOUND を投げてダイアログを
+	  開かない（archival-packager 0.1.5 の macOS 版で踏んだ）。
+	  非サンドボックスなので、これがあってもアクセス範囲が広がるわけではない。
+
+	  このアプリでは、画像を選ぶ・フォルダを選ぶ・.txt / .xml を書き出す、の
+	  3 か所がこれに当たる。
+	-->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+</dict>
+</plist>

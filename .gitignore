@@ -9,3 +9,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
+
+# 公証の資格情報。1Password への op:// 参照だけを書くが、項目名も外に出さない。
+.env
+.env.*
+!.env.example

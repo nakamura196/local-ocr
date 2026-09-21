@@ -1,9 +1,11 @@
 # 配る — 作業手順の下書き
 
 **2026-09-21 時点で、どちらのストアにも出していません。**
-済んだのは「1. llama-server の同梱」「0. 下ごしらえ」と、
-「0.5. ソースを公開に切り替える前に」（**公開への切り替えまで含めて全部**）です。
+済んだのは「0. 下ごしらえ」「0.5. ソースを公開に切り替える前に」
+「1. llama-server の同梱」と、**「2. macOS を配る」のスクリプト 4 本**です。
 **ソースは 2026-09-21 に公開しました。**
+`.dmg` はまだ GitHub Release に出していません
+（`./scripts/release.zsh --publish` が最後の一手）。
 `packaging/windows/` にはアイコンの 5 枚だけが入っています
 （`AppxManifest.xml.in` などはまだ）。
 
@@ -199,36 +201,120 @@ Python 6,834 行、試験 114 本、`TODO` / `FIXME` の書き置きなし、`pr
 - 前の版で `~/PaddleOCR校正/llama-b10776/`（27MB）を取得済みの人は、それが
   そのまま残る。害は無いが消えもしない。消す処理を入れるかは未決
 
-### 2. macOS を配る
+### 2. macOS を配る — **済（2026-09-21）**
 
-- [ ] **`[tool.flet]` の設定を `pyproject.toml` に足す**（または build スクリプトの
-      引数で渡す）。`--product "Local OCR"` / `--bundle-id com.nakamura.localocr` /
-      `--org com.nakamura`
-- [ ] **`scripts/build.zsh`** — 持ってくる。`--exclude` に `.venv` `binaries`
-      `build` `tests` `scripts` `.git` `.github` を入れる
-      （入れないと `.venv` が丸ごとアプリに入る）
-      - **`--cleanup-packages` を付けないこと。** 付けると依存に同梱されている
-        ライセンス全文が消える（既定では付かない。0.5 で確かめた）
-      - **`NOTICE` と `LICENSE` をアプリの中に入れる。** 依存のうち 6 つは
-        自分ではライセンス全文を持っておらず、その分の文面は `NOTICE` にしかない
-      - **`flutter_assets/NOTICES` の現物をここで確認する。** Flutter 側
-        （BSD-3-Clause ほか）の表示が入っているはず。まだ見ていない
-- [ ] **`scripts/entitlements.plist`** — 持ってくる。
-      **常駐サーバを 127.0.0.1 に立てるので、ネットワーク関係の項目が
-      archival-packager と同じでよいか確かめる**
-- [ ] **`scripts/sign.zsh`** — 持ってくる。中の落とし穴がそのまま効く
-      - 同梱物は app.zip ではなく `Contents/Resources/bin/` に置く
-        （zip の中は署名できず、公証で弾かれる）
-      - 署名対象は `file(1)` の Mach-O 判定で選ぶ。**実行ビットで絞らない**
-        （dylib は実行ビットを持たないことがあり、取りこぼすと公証が Invalid）
-      - 深い階層から署名する。framework を先に署名すると封が破れる
-      - **バンドルの外を指す symlink を、署名の前に消す**
-        （`serious_python_darwin.framework` の中にビルド機の絶対パスが残る）
-- [ ] **`scripts/notarize.zsh`** — 持ってくる。`op run` で API キーを渡す
-- [ ] **`scripts/release.zsh`** — 持ってくる。`create-dmg` が要る
-      （`brew install create-dmg`）。`--publish` でタグ付けと GitHub Release まで
+`.app` を作り、Developer ID で署名し、Apple の公証を通して `.dmg` にするところまで、
+スクリプト 4 本で通しました。雛形は archival-packager。持ってきたうえで、
+このアプリで違うところ（pyobjc、同梱する llama.cpp、Flet 0.86.2 の変化）を直しています。
+
+- [x] **設定は build スクリプトの引数で渡す。** `pyproject.toml` に `[tool.flet]` は
+      置きませんでした（archival-packager と同じ形。設定が 2 か所に分かれない）
+      - `--product "Local OCR"` / `--bundle-id com.nakamura.localocr` / `--org com.nakamura`
+      - **`--product` は `CFBundleDisplayName` しか書き換えない。**
+        メニューバーに出るのは `CFBundleName` なので、
+        `--info-plist "CFBundleName=Local OCR"` も渡している
+      - **バンドルのファイル名は `local-ocr.app` のまま作られる。**
+        Finder と dmg に出るのはファイル名なので、build.zsh が
+        `Local OCR.app` に改名する
+- [x] **`scripts/build.zsh`** — `--exclude` は `.venv` `binaries` `build` `tests`
+      `scripts` `.git` `.github` に加えて `docs` `packaging` `.flet`
+      `.pytest_cache` `.ruff_cache`
+      - **`--cleanup-package-files '**/*.dSYM' '**/PyObjCTest'` を渡している。
+        これが無いと macOS のビルドが必ず失敗する**（下の「踏んだ当たり」を参照）
+      - `NOTICE` と `LICENSE` はアプリの中に入れた（実際に入れるのは sign.zsh）
+      - **`flutter_assets/NOTICES.Z` を確認した。** 120KB で入っている
+        （Flutter 側の表示。`.Z` は gzip 圧縮。Flet が自動で入れる）。
+        build.zsh が毎回有無を出すので、版が変わって入らなくなれば気づける
+- [x] **`scripts/entitlements.plist`** — archival-packager と**同じでよい**と確認した。
+      入れているのは `com.apple.security.files.user-selected.read-write` の 1 つだけ
+      - **ネットワークの項目は要らない。** `network.client` / `network.server` は
+        **App Sandbox の中でだけ意味を持つ** entitlement で、非サンドボックスの
+        アプリには効かない。hardened runtime はネットワークを制限しない
+        （制限するのはコード注入・ライブラリの読み込み・他プロセスへの介入）。
+        127.0.0.1 に llama-server を立てることも、Hugging Face からモデルを
+        取ってくることも、これで通る
+      - `disable-library-validation` も足していない。同じ Team ID で署名した
+        実行ファイルの起動と dylib の読み込みは通る（実際に通った）
+- [x] **`scripts/sign.zsh`** — 雛形の落とし穴はそのまま効く。加えて 2 つ足した
+      - 同梱物は `Contents/Resources/bin/` に置く（19 件、25MB）
+      - 署名対象は `file(1)` の Mach-O 判定で選ぶ。**実測 157 件**
+      - 深い階層から署名 → framework をバンドルとして再署名 → 本体を entitlements 付きで再シール
+      - バンドル外を指す symlink を署名の前に消す（今回は 0 件だった）
+      - **足した: `otool -L` で `@rpath` の参照を全部突き合わせる。**
+        開発機には前に取った llama.cpp が `~/PaddleOCR校正/llama-*/` に残っていて、
+        そちらで動いてしまうと取り込みの欠けに気づけない
+      - **足した: `LICENSE` / `NOTICE` がリポジトリに無ければ止める**
+- [x] **`scripts/notarize.zsh`** — `op run --env-file=.env --` で API キーを渡す。
+      `.env` は 1Password の `op://` 参照だけを書き、`.gitignore` 済み。
+      雛形は `.env.example`（項目名は placeholder のまま。0.5 の判断に合わせた）
+- [x] **`scripts/release.zsh`** — `create-dmg` で固め、dmg も署名・公証・staple。
+      マウントして `spctl` と同梱 llama-server の起動まで確かめる。
+      `--publish` を付けたときだけタグと GitHub Release を作る
+- [x] **`tests/test_packaging.py` を足した。** 配布物そのものは CI で作れないので、
+      「外した瞬間に壊れるがビルドしないと気づけない」約束をスクリプトの文面として見張る
+      （dSYM を落としているか、ライセンス全文を数えているか、署名を実行ビットで
+      絞っていないか、公証を確かめる前に dmg を作っていないか、など 22 本）
 - [ ] **別のマシンで開いて確かめる。** 署名・公証が通っても、Gatekeeper が
       symlink で弾くことがある。ビルドした機械では気づけない
+- [ ] **GitHub Release に出す**（`./scripts/release.zsh --publish`）。上の確認のあと
+
+**踏んだ当たり（4 つ）**
+
+1. **`.venv` が古くて `uv run flet` が動かなかった。**
+   リポジトリを `paddleocr-local` から改名する前に作った `.venv` が残っており、
+   `.venv/bin/` の中の起動用スクリプトに当時の絶対パスが焼き込まれていた。
+   `rm -rf .venv && uv sync --frozen` で作り直した。**改名したら `.venv` も作り直す。**
+   `.venv/bin/python` は symlink なので素の Python は動いてしまい、気づきにくい
+
+2. **Xcode 26 の `strip` が `.dSYM` を処理できず、ビルドが必ず落ちた。**
+
+       strip: fatal error: string table not at the end of the file
+              (can't be processed) in file: .../PyObjCTest/category_gp14...so.dSYM
+              (for architecture x86_64)
+
+   依存の `pyobjc-core` は、自分の試験用モジュール（`PyObjCTest`、280 個）を wheel に
+   同梱しており、それぞれに `.dSYM`（デバッグ情報）が付いている。その x86_64 の側で
+   strip が fatal error になり、Xcode は飛ばさないのでビルド全体が失敗する。
+   **archival-packager では起きない**（あちらは pyobjc を使わない）。
+   対処は `--cleanup-package-files '**/*.dSYM' '**/PyObjCTest'`。
+   どちらも実行には要らない（前者は人がクラッシュを読むための情報、後者は pyobjc 自身の試験）
+   - 最初は pub-cache の `.dSYM` を消して回ったが、**これは効かない。**
+     Flet はビルドごとに `build/site-packages` から作り直すので、消しても戻ってくる。
+     原因は共有のキャッシュではなくこちらの依存だった
+
+3. **`(( n++ ))` は値が 0 のとき終了状態 1 を返す。** `set -e` のスクリプトで、
+   何も出力せずに即死する。`n=$((n + 1))` に直した。
+   **archival-packager の `sign.zsh` にも同じ書き方が残っている**（`(( removed++ ))`）。
+   あちらはバンドル外を指す symlink が見つかったときに同じ形で落ちる
+
+4. **`--cleanup-packages` の理解が逆だった（0.5 の記載を訂正）。**
+   Flet 0.86.2 は **既定で有効にする**（`flet_cli` の `build_base.py` で
+   `cleanup.packages` の既定が `True`。止めるには pyproject の
+   `[tool.flet.cleanup] packages = false` が要る）。
+   **そして止めなくてよい。** 消される既定の一覧は serious_python の
+   `junkFilesDesktop`（`**.c` `**.h` `**.pyi` `**.a` `__pycache__` など）だけで、
+   `*.dist-info/LICENSE` は入っていない。**実測: 依存 28 個に対して
+   ライセンス全文 43 件が配布物に残った。** build.zsh が毎回数えて 0 件なら止まる
+
+**Flet 0.86.2 で変わっていたこと**
+
+- **`app.zip` を作らない。** 0.28 系までは Python 側を app.zip に固めていたが、
+  いまは `site-packages` がそのまま
+  `Contents/Resources/serious_python_darwin_serious_python_darwin.bundle/Contents/Resources/`
+  に並ぶ。**「zip の中は署名できない」という制約はここでは消えている**が、
+  同梱する実行ファイルを `Contents/Resources/bin/` に置く形は変えていない
+  （アプリ側の探し先が `core/bundled.py` に書いてあり、Windows と揃っている）
+
+**実測値（2026-09-21、M4 Max）**
+
+| | |
+|---|---|
+| `Local OCR.app` | 290MB |
+| うち同梱 llama.cpp | 25MB（19 件） |
+| 署名した Mach-O | 157 件 |
+| 依存のライセンス全文 | 43 件（依存 28 個） |
+| `flutter_assets/NOTICES.Z` | 120KB |
+| ビルド時間 | 約 3 分（Python の梱包 50 秒 + Xcode 25 秒） |
 
 ### 3. Windows を配る
 
@@ -285,9 +371,19 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
 
 ## 順番の目安
 
-~~1~~（済）→ ~~0~~（済）→ ~~0.5 の「必ず」~~（済）→ ~~公開に切り替える~~（済）→ 2 →
-（.dmg を出して使ってもらう）→ 3 → 3.5 → 4。
+~~1~~（済）→ ~~0~~（済）→ ~~0.5 の「必ず」~~（済）→ ~~公開に切り替える~~（済）→
+~~2 のスクリプト~~（済）→ **.dmg を出して使ってもらう** → 3 → 3.5 → 4。
 
-**次は 2.（macOS を配る）です。** 公開への切り替えは 2026-09-21 に済みました。
+**次は `.dmg` を出すことです。** 手順は
+
+    ./scripts/build.zsh
+    ./scripts/sign.zsh
+    op run --env-file=.env -- ./scripts/notarize.zsh
+    op run --env-file=.env -- ./scripts/release.zsh            # dmg を作るまで
+    op run --env-file=.env -- ./scripts/release.zsh --publish   # 別マシンで確かめた後
+
+**`op run` は 1Password の認証（Touch ID）を求めるので、人が居るところで走らせる。**
+サインインが切れていると `error initializing client: authorization timeout` で止まる
+（2026-09-21 に踏んだ）。先に `op signin` を通しておく。
 
 3.5（公開ページ）は Windows ストアに出すときだけ要ります。
