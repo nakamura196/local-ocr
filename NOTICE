@@ -30,10 +30,57 @@ CC BY 4.0 は、改変したうえで使うことを認めています。上の�
 PaddleOCR-VL  (PaddlePaddle)
 --------------------------------------------------------------------
 
-「読む道具」のうち PaddleOCR-VL (paddle-vl) は、初回に次から取得します。
+「読む道具」のうち PaddleOCR-VL (paddle-vl) のモデル (.gguf) は、初回に
+次から取得します。同梱はしていません。
 
   https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.6-GGUF
 
-動かすのに使う llama.cpp は MIT License です。
+--------------------------------------------------------------------
+llama.cpp  (The ggml authors)
+--------------------------------------------------------------------
+
+PaddleOCR-VL を動かす llama.cpp は、**Local OCR に同梱しています**
+（0.1.0 までは初回に取得する形でしたが、同梱に変えました）。同梱は再配布に
+あたるので、以下に MIT License の全文を載せます。
 
   https://github.com/ggml-org/llama.cpp
+
+同梱しているのは、公式の配布物から取り出した llama-server と、それが要る
+ライブラリです。手を加えていません。どの版をどう取り出しているかは
+scripts/fetch-binaries.zsh（macOS）と scripts/fetch-binaries.ps1（Windows）に
+書いてあります。
+
+MIT License
+
+Copyright (c) 2023-2026 The ggml authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------
+LLVM OpenMP Runtime  (Windows 版のみ)
+--------------------------------------------------------------------
+
+Windows 版に同梱する llama.cpp の配布物には libomp.dll（LLVM の OpenMP
+ランタイム）が入っています。Apache License 2.0 with LLVM Exceptions です。
+
+  https://github.com/llvm/llvm-project
+
+全文は配布物に入っている LICENSE-LLVM-OpenMP をそのまま同梱しています
+（binaries/windows/LICENSE-LLVM-OpenMP → アプリの中に一緒に入ります）。
+macOS 版には入りません。

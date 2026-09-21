@@ -9,7 +9,7 @@ import urllib.error
 import urllib.request
 from collections import deque
 
-from . import assets, bridge, fetch, prefs
+from . import assets, bridge, bundled, fetch, prefs
 from .fetch import Progress
 from .paths import data_dir, is_windows
 
@@ -62,7 +62,16 @@ class Runtime:
                 self._borrowed = True
                 return
             server = assets.server_path()
-            if not server.is_file():
+            if server is None:
+                # 配布物では必ず入っている。ここに来るのは開発中に
+                # scripts/fetch-binaries.zsh を走らせ忘れたときだけなので、
+                # 「取得してください」ではなく、何をすればよいかを出す。
+                raise RuntimeError(
+                    "OCR の本体（llama-server）が同梱されていません。"
+                    "開発中は ./scripts/fetch-binaries.zsh を実行してください"
+                )
+            bundled.ensure_executable(server)
+            if assets.missing():
                 raise RuntimeError("先に取得を済ませてください")
             d = data_dir()
             cmd = [

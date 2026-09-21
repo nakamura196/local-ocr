@@ -1,19 +1,28 @@
-"""取得するもの（llama.cpp 本体とモデル）の定義。
+"""PaddleOCR-VL が要るもの（llama.cpp 本体とモデル）の定義。
 
-版は固定する。上げるときはここだけ変える。
+**llama.cpp 本体は同梱する。ここには書かない。** 置き場所は `core/bundled.py`、
+取ってくるのは `scripts/fetch-binaries.zsh` / `.ps1`（ビルド時に走らせる）。
+初回起動時に取ってくる形はやめた。ストアの審査（審査が見たものと、実際に動く
+ものが別になる）と正面からぶつかるため。
+
+ここに残るのは初回に取得するモデル (.gguf) だけ。1.8GB あるが、中身はデータで
+あって実行ファイルではないので、同梱しなくてよい。
+
+版は固定する。上げるときはここだけ変える（取得スクリプトは LLAMA_BUILD を
+このファイルから読む）。
 """
 
 from __future__ import annotations
 
-import platform
 from dataclasses import dataclass
 from pathlib import Path
 
-from .paths import data_dir, is_windows
+from . import bundled
+from .paths import data_dir
 
-# llama.cpp の版。起動スクリプト版 (scripts/paddle/local/) と同じものに揃えている。
+# 同梱する llama.cpp の版。**取得スクリプトはこの行を sed / Select-String で
+# 読んでいる。** 書き方（`LLAMA_BUILD = "..."`）を変えるときは両方を直すこと。
 LLAMA_BUILD = "b10776"
-LLAMA_RELEASE = f"https://github.com/ggml-org/llama.cpp/releases/download/{LLAMA_BUILD}"
 HF = "https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.6-GGUF/resolve/main"
 
 
@@ -48,41 +57,15 @@ class Asset:
         return self.dest.stat().st_size if self.dest.is_file() else 0
 
 
-def llama_asset_name() -> str:
-    """この機械向けの llama.cpp 配布物の名前。"""
-    if is_windows():
-        # Vulkan 版を使う。CPU 版だと画像を見る部分が 1 行 93 秒かかる (実測)。
-        return f"llama-{LLAMA_BUILD}-bin-win-vulkan-x64.zip"
-    arch = platform.machine()
-    if arch == "arm64":
-        return f"llama-{LLAMA_BUILD}-bin-macos-arm64.tar.gz"
-    if arch == "x86_64":
-        return f"llama-{LLAMA_BUILD}-bin-macos-x64.tar.gz"
-    raise RuntimeError(f"対応していない CPU です: {arch}")
-
-
-def bin_dir() -> Path:
-    return data_dir() / f"llama-{LLAMA_BUILD}"
-
-
-def server_path() -> Path:
-    name = "llama-server.exe" if is_windows() else "llama-server"
-    return bin_dir() / name
+def server_path() -> Path | None:
+    """同梱した llama-server。見つからなければ None（開発時に取得し忘れたとき）。"""
+    return bundled.find("llama-server")
 
 
 def required() -> list[Asset]:
+    """初回に取得するもの。**llama.cpp 本体は入らない（同梱するため）。**"""
     d = data_dir()
-    name = llama_asset_name()
     return [
-        Asset(
-            key="llama",
-            label="OCR の本体",
-            url=f"{LLAMA_RELEASE}/{name}",
-            dest=d / name,
-            approx_bytes=120 * 1024 * 1024,
-            extract_to=bin_dir(),
-            installed_marker=server_path(),
-        ),
         Asset(
             key="model",
             label="文字を読む部分",

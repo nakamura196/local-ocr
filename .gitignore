@@ -1,3 +1,7 @@
+# ビルド時に取り込む llama.cpp（scripts/fetch-binaries.zsh / .ps1 が置く）。
+# 25MB(mac) / 90MB(win) あり、版を上げるたびに丸ごと入れ替わるので履歴に入れない。
+binaries/
+
 build/
 dist/
 .venv/

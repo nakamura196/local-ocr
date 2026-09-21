@@ -44,6 +44,12 @@ class PaddleVLEngine:
         return not paddle_assets.missing()
 
     def prepare(self, on_progress: Progress) -> None:
+        # **取得より先に見る。** 同梱漏れに 1.8GB 落とし終わってから気づくのは遅い。
+        if paddle_assets.server_path() is None:
+            raise RuntimeError(
+                "OCR の本体（llama-server）が同梱されていません。"
+                "開発中は ./scripts/fetch-binaries.zsh を実行してください"
+            )
         if paddle_assets.missing():
             self._rt.fetch_missing(on_progress)
         if not self._rt.ready:
