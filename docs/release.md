@@ -348,8 +348,8 @@ Python 6,834 行、試験 114 本、`TODO` / `FIXME` の書き置きなし、`pr
 **まず Windows 機で手で作る（2026-09-21 に方針を変えた）。**
 当初は「手元に Windows 機が無いので CI でしか作れない」としていたが、
 **Windows 機が使えることが分かった**ので、先に手で 1 本作って動かす。
-`.ps1` はまだ 1 度も走っていないので、**落ちるならそこ**。CI を先に書くと、
-スクリプトの当たりと workflow の当たりが混ざって切り分けにくい。
+CI を先に書くと、スクリプトの当たりと workflow の当たりが混ざって切り分けにくい。
+**そのとおりに `.ps1` が落ちた。** 直した 4 つはこの節の末尾に書いてある。
 
 - [x] **`scripts/build.ps1` を書いた（2026-09-21）。** `build.zsh` の Windows 側。
       `fetch-binaries.ps1` → `flet build windows` → exe の隣の `bin\` に
@@ -357,10 +357,14 @@ Python 6,834 行、試験 114 本、`TODO` / `FIXME` の書き置きなし、`pr
       - **`.venv` が入っていないか / `local_ocr` が入っているか / ライセンス全文が
         残っているか**を毎回見る。macOS 側で踏んだ当たりと同じ形を見張る
       - **バックティックの行継続を使っていない。** 引数は配列にまとめて渡す
-      - **まだ 1 度も走らせていない**（手元に pwsh が無い）。文法の確認もできていない
+      - **Windows 機で走らせて直した（2026-09-21）。** 踏んだ当たりは下の 4 つ
       - 署名はしない。ストアに出せば Microsoft が署名し直す。手元で試すぶんには
         SmartScreen の警告を「詳細情報」→「実行」で越える
+- [x] **`scripts/fetch-binaries.ps1` は Windows 機で通した（2026-09-21）。**
+      llama.cpp b10776 の win-vulkan-x64 を取得 → `binaries\windows\` に 32 件
+      （実行ファイル 1 / DLL 30 / そのほか 1、97MB）→ `--version` で起動確認まで
 - [ ] **Windows 機で実際に作って、起動して画面が出るところまで確かめる**
+      （`flet build windows` から先。Build Tools を入れているところ）
 - [ ] **GitHub Actions のビルド workflow を書く**（いまは ci / audit /
       dependabot の 3 本だけ）。Windows ランナーで
       `build.ps1` → MSIX。**手で 1 本通してから**
@@ -374,6 +378,32 @@ Python 6,834 行、試験 114 本、`TODO` / `FIXME` の書き置きなし、`pr
       （archival-packager は `scripts/screenshot-windows.ps1` を CI で使っている）。
       手で作るあいだは要らないが、CI に移したら「署名は通るが起動しない」を
       見つける手立てがこれしか無くなる
+
+**`.ps1` で踏んだ当たり（2026-09-21、Windows 11 + Windows PowerShell 5.1）**
+
+1. **`.ps1` は UTF-8 の BOM を付けて保存する。** BOM が無いと
+   `powershell.exe`（5.1）はファイルを ANSI（日本語環境では Shift-JIS）として
+   読む。コメントの日本語が化けた先に引用符が現れて、**文法エラーで落ちる**
+   （`Unexpected token 'LICENSE'` / `The string is missing the terminator`）。
+   中身は正しいのに文法が壊れて見えるので気づきにくい。
+   `pwsh`（7）は BOM 無しでも UTF-8 として読むため、7 でしか試さないと見つからない。
+   **`.zsh` 側には無い制約。`.ps1` を書き足すときは BOM を確かめる**
+2. **`pwsh` を前提にしない。** Windows に最初から入っているのは
+   `powershell.exe`（5.1）だけ。`build.ps1` が `fetch-binaries.ps1` を
+   `& pwsh -File` で呼んでいて、それでは動かなかった。
+   `& (Join-Path $PSScriptRoot "fetch-binaries.ps1")` に変えて、
+   いま動いている PowerShell でそのまま呼ぶ
+3. **実行ファイルの出力を `Select-Object -First 1` で受けない。**
+   パイプを途中で打ち切ると PowerShell が相手を強制終了させ、
+   **`$LASTEXITCODE` が起動の成否と無関係な値になる**。
+   `llama-server --version` は 0 で終わっているのに
+   「同梱した llama-server が起動しません」で止まった。
+   全部受け取ってから exit code を見て、そのあとで 1 行目を取る
+4. **`Set-StrictMode -Version Latest` のもとで、空になりうる結果に `.Count` を
+   直接書かない。** 5.1 では `$null.Count` が
+   `The property 'Count' cannot be found on this object` で落ちて、
+   意図した `throw`（ライセンス全文が 1 件も残っていない、など）に届かない。
+   `@(...)` で包む
 
 ### 3.5. 公開するページ（GitHub Pages）
 

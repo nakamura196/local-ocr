@@ -1,6 +1,7 @@
-# 同梱する llama.cpp を取得して binaries\windows\ に置く（Windows 用）。
+﻿# 同梱する llama.cpp を取得して binaries\windows\ に置く（Windows 用）。
 #
 # 使い方: pwsh -File scripts/fetch-binaries.ps1
+#         （PowerShell 7 が無ければ powershell -File でも動く）
 #
 # 版は src/local_ocr/core/assets.py の LLAMA_BUILD から読む。**ここに書かない。**
 # macOS 側は scripts/fetch-binaries.zsh。同じ版を使う。
@@ -79,9 +80,14 @@ try {
     # それを NativeCommandError に変えて投げ、正常な起動を失敗として扱う。
     $prev = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
-    $version = (& (Join-Path $Dest "llama-server.exe") --version 2>&1 | Select-Object -First 1)
+    # **Select-Object -First 1 をパイプで挟まない。** 途中で打ち切ると
+    # PowerShell が llama-server を強制終了させ、$LASTEXITCODE が起動の
+    # 成否と無関係な値になる（0 で終わるのに失敗と判定した。5.1 で実測）。
+    # 全部受け取ってから exit code を見て、そのあとで 1 行目を取る。
+    $output = & (Join-Path $Dest "llama-server.exe") --version 2>&1
     $code = $LASTEXITCODE
     $ErrorActionPreference = $prev
+    $version = @($output)[0]
     if ($code -ne 0) { throw "同梱した llama-server が起動しません: $version" }
     Write-Host "  $version"
 

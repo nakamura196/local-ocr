@@ -1,6 +1,7 @@
-# 配布用の Windows 版を作る。scripts/build.zsh の Windows 側。
+﻿# 配布用の Windows 版を作る。scripts/build.zsh の Windows 側。
 #
 # 使い方: pwsh -File scripts/build.ps1
+#         （PowerShell 7 が無ければ powershell -File scripts/build.ps1 でも動く）
 #
 # **Windows 上でしか動かない。** Flet はクロスビルドできないので、macOS から
 # Windows 版を作ることはできない。
@@ -34,8 +35,10 @@ foreach ($tool in @("uv")) {
 # llama.cpp を先に取る。取り忘れたまま作ると、出来たものが動かない。
 if (-not (Test-Path "binaries\windows\llama-server.exe")) {
     Write-Host "[0/4] llama.cpp を取得"
-    & pwsh -File scripts/fetch-binaries.ps1
-    if ($LASTEXITCODE -ne 0) { throw "scripts/fetch-binaries.ps1 が失敗しました" }
+    # **pwsh ではなく、今動いている PowerShell で呼ぶ。** Windows に最初から
+    # 入っているのは powershell.exe (5.1) だけで、pwsh を前提にすると
+    # 「pwsh が見つかりません」で止まる。失敗は throw で上がってくる。
+    & (Join-Path $PSScriptRoot "fetch-binaries.ps1")
 }
 
 # ------------------------------------------------------------------ ビルド
@@ -81,7 +84,7 @@ $BinDir = Join-Path $Exe.Directory.FullName "bin"
 if (Test-Path $BinDir) { Remove-Item -Recurse -Force $BinDir }
 New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
 Copy-Item "binaries\windows\*" -Destination $BinDir -Recurse -Force
-$n = (Get-ChildItem -File -Path $BinDir).Count
+$n = @(Get-ChildItem -File -Path $BinDir).Count
 Write-Host "  $BinDir（$n 件）"
 
 # ライセンス表示。6 つの依存はライセンス全文を wheel のどこにも持っておらず、
@@ -111,7 +114,7 @@ if (-not $src) { throw "配布物に local_ocr が入っていません" }
 Write-Host "  local_ocr: 入っている"
 
 # 依存が同梱しているライセンス全文が残っているか。
-$licences = (Get-ChildItem -Recurse -File -Path $BuildDir -Include "LICENSE*", "LICENCE*", "COPYING*", "NOTICE*" -ErrorAction SilentlyContinue).Count
+$licences = @(Get-ChildItem -Recurse -File -Path $BuildDir -Include "LICENSE*", "LICENCE*", "COPYING*", "NOTICE*" -ErrorAction SilentlyContinue).Count
 Write-Host "  同梱された依存のライセンス全文: $licences 件"
 if ($licences -eq 0) { throw "1 件も残っていません。cleanup の対象が広がっていませんか" }
 
