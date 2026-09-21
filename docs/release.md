@@ -1,8 +1,8 @@
 # 配る — 作業手順の下書き
 
-**2026-09-21 時点で、どちらのストアにも出していません。** 配るための道具も
-まだ 1 つもありません（`scripts/` と `packaging/windows/` は空）。
-後日ここから進めるための下書きです。
+**2026-09-21 時点で、どちらのストアにも出していません。**
+済んだのは「1. llama-server の同梱」だけです（`scripts/fetch-binaries.zsh` /
+`.ps1`）。`packaging/windows/` はまだ空です。
 
 雛形は `~/git/kim/archival-packager`。**同じ Flet 0.86.2 の構成で、Apple の公証と
 Microsoft ストアの審査を両方通した実績があります。** 書き写せば済むところが多いので、
@@ -46,24 +46,51 @@ Microsoft ストアの審査を両方通した実績があります。** 書き�
       `APP_DIR_NAME = "PaddleOCR Local"`）。アプリ名は Local OCR になっている。
       変えると、既に 1.8GB を取得済みの人が取り直しになる。**変えるなら移行処理も要る**
 
-### 1. llama-server の同梱（ここが一番大きい）
+### 1. llama-server の同梱 — **済（2026-09-21）**
 
-- [ ] **ビルド時に取ってくるスクリプトを書く。** 版を固定する
-      - 持ってくる: `archival-packager/scripts/fetch-binaries.zsh`（macOS）と
-        `fetch-binaries.ps1`（Windows / CI から呼ぶ）
-      - 置き場所は `binaries/macos/` `binaries/windows/`。**リポジトリには入れない**
-      - 版は `src/local_ocr/core/assets.py` の `LLAMA_BUILD` と揃える
-- [ ] **`core/assets.py` を直す。** llama-server を「取得するもの」から外す
-      - `.gguf` 2 つ（本体と mmproj）は取得したまま残す
-- [ ] **同梱先を見に行くようにする。** `core/paths.py` に「同梱した実行ファイルの
-      置き場所」を返す関数を足し、`core/runtime.py` がそこを起動する
-      - macOS: `<アプリ>/Contents/Resources/bin/llama-server`
-      - Windows: exe と同じ並び
-      - **開発中（`uv run`）は同梱物が無いので、`binaries/<os>/` を見に行く道も残す**
-- [ ] **macOS の Metal シェーダを忘れない。** llama.cpp の macOS ビルドは
-      `ggml-metal.metal` / `*.metallib` を横に置く形のことがある。
-      取ってきた中身をそのまま入れる（個別に列挙すると取りこぼす）
-- [ ] 同梱した状態で通しで動かし、**モデル取得 → 読み取り**までを確認する
+- [x] **ビルド時に取ってくるスクリプトを書く。** `scripts/fetch-binaries.zsh`（macOS）と
+      `scripts/fetch-binaries.ps1`（Windows / CI から呼ぶ）
+      - 版は**書かない**。両方とも `src/local_ocr/core/assets.py` の `LLAMA_BUILD` を
+        読む（zsh は `sed`、ps1 は `Select-String`）。2 か所に書くと、片方だけ上げた
+        ときにずれる。ずれても開発機では前に取ったものが残っていて動いてしまう。
+        `tests/test_bundled.py` が、スクリプトに版が直書きされていないか見張る
+      - 置き場所は `binaries/macos/` `binaries/windows/`。`.gitignore` 済み
+      - どちらも最後に `llama-server --version` を実際に走らせて確かめる
+- [x] **`core/assets.py` を直す。** 取得するのは `.gguf` 2 つだけになった
+- [x] **同梱先を見に行くようにする。** `core/bundled.py` を足した。
+      `core/runtime.py` はそこが返した道を起動する
+      - macOS: `<アプリ>/Contents/Resources/bin/`、Windows: exe と同じ並びの `bin/`
+      - 開発中は `binaries/<os>/` を見る。無いときは
+        「`./scripts/fetch-binaries.zsh` を実行してください」と出す
+        （1.8GB 落とし終わってから気づかないよう、**取得より先に**見る）
+- [x] **macOS の Metal シェーダ。** **b10776 には外に出ていない**
+      （`libggml-metal.dylib` の中）。ただし版によって外に出る形があるので、
+      取り込みの規則を「**実行ファイルは llama-server だけ。それ以外はそのまま入れる**」
+      にしてある。個別に列挙していない
+- [x] 同梱した状態で通しで確認（2026-09-21、M4 Max）。
+      `binaries/macos/llama-server` が起動し、取得済みのモデルで
+      NDL の試し画像を 1.4 秒で読んだ。起動 1.0 秒
+- [x] **`NOTICE` に llama.cpp を書き足した。** 同梱は再配布なので MIT 全文を入れた。
+      Windows 版だけ `libomp.dll` が入るので LLVM OpenMP の分も書いた
+
+**取り込みで気をつけたところ（macOS）**
+
+- dylib は実体だけを **install id が示す名前（soname）** で置き、symlink は張らない。
+  バンドル内の symlink は Gatekeeper の
+  「invalid destination for symbolic link in bundle」を招きやすい。
+  `llama-server` の rpath は `@loader_path` なので、同じ階層に soname で並べば解決する
+- 除外の型を `llama-*` だけにすると、**傘の `llama` 1 本が漏れる**（実際に漏れた）。
+  `llama|llama-*|ggml-*` にしてある
+- 取り込んだあと `otool -L` で `@rpath` の参照を全部突き合わせ、欠けがないか見ている。
+  開発機には `~/PaddleOCR校正/llama-*/` に前に取ったものが残っていることがあり、
+  そちらで動いてしまうと欠けに気づけない
+
+**残っている小さな宿題**
+
+- `.ps1` は**まだ 1 度も走らせていない**（手元に Windows も pwsh も無い）。
+  初めて走るのは 3. の CI。落ちるならそこ
+- 前の版で `~/PaddleOCR校正/llama-b10776/`（27MB）を取得済みの人は、それが
+  そのまま残る。害は無いが消えもしない。消す処理を入れるかは未決
 
 ### 2. macOS を配る
 
@@ -104,12 +131,38 @@ Microsoft ストアの審査を両方通した実績があります。** 書き�
 - [ ] Windows 機が無いので、**動作確認の手立てを決める**
       （archival-packager は `scripts/screenshot-windows.ps1` を CI で使っている）
 
+### 3.5. 公開するページ（GitHub Pages）
+
+**要るのは Windows ストアに出すときだけです。** Microsoft の申請フォームに
+「プライバシーポリシーの URL」の欄があり、**ページが実在しないと審査で止まります**
+（archival-packager は 0.1.6 のとき、切れた URL で実際に差し戻された。
+`archival-packager/docs/_config.yml` に記録がある）。
+macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
+
+- [ ] **GitHub にリポジトリを作る。** いま remote がありません。ここが先
+- [ ] **`docs/` を GitHub Pages として配信する。** 置くのは `docs/_config.yml` 1 枚
+      （テーマは `jekyll-theme-minimal`）。URL は
+      `https://nakamura196.github.io/<repo 名>/privacy-policy.html` の形になる
+      - **リポジトリ名を変えるとリダイレクトされない。** 掲載情報と審査がこの URL を
+        見るので、改名するなら URL の差し替えも同時に行う
+- [ ] **`docs/privacy-policy.md`** — これだけは必須。書くこと:
+      「画像は手元だけで処理し、外に送らない」。ただし**モデルの初回取得で
+      Hugging Face と GitHub に繋ぐ**ので、そこは正直に書く
+- [ ] **`docs/index.md`** — 何をする道具か、どこで手に入るか（ストアと Releases の表）
+- [ ] **`docs/usage.md`**（マニュアル）— 必須ではない。掲載文から誘導先があると親切
+
+**archival-packager の真似をしないところが 1 つあります。**
+あちらは同じ文面を `docs/privacy-policy.md`（公開ページ）と
+`store/privacy-policy.txt`（申請用）の 2 か所に持っていて、中身がほぼ同じです
+（130 行と 128 行）。ずれる元なので、こちらは **`docs/` を正本にして、
+`store/` 側は URL だけ持つ**（または `docs/` から生成する）形にします。
+
 ### 4. 掲載するもの
 
 - [ ] `store/listing-ja.md` / `listing-en.md` — 説明文。**貼り忘れが起きるので
       ファイルに置いて、申請はスクリプトから行う**（0.1.0 で開発者名が抜けた前例）
-- [ ] `store/privacy-policy.txt` — 「画像は手元だけで処理し、外に送らない」ことを書く。
-      ただし**モデルの初回取得で Hugging Face と GitHub に繋ぐ**ので、そこは正直に書く
+- [ ] プライバシーポリシーは **3.5 の `docs/privacy-policy.md` が正本**。
+      ここには URL だけ書く（archival-packager のように .txt を別に持たない）
 - [ ] `store/screenshots/{ja,en}/` — 日英それぞれ
 - [ ] `scripts/store_submit.py` — 申請 API。持ってくる
       - **`--check` を申請の直前に挟まない**（1 回目が通って 2 回目が 403 になる）
@@ -119,7 +172,10 @@ Microsoft ストアの審査を両方通した実績があります。** 書き�
 
 ## 順番の目安
 
-1 →（0 と並行）→ 2 →（.dmg を出して使ってもらう）→ 3 → 4。
+~~1~~（済）→ 0 → 2 →（.dmg を出して使ってもらう）→ 3 → 3.5 → 4。
 
-**1 を先にやるのが大事です。** llama-server の扱いを決めずに 2 を進めると、
-署名と公証をやり直すことになります。
+**次は 0 です。** アイコンと `LICENSE` が無いと 2 の署名の手順が止まります。
+
+3.5（公開ページ）は Windows ストアに出すときだけ要ります。ただし
+**GitHub にリポジトリを作るのは 2 より前でも構いません**（`.dmg` を
+Releases に置くのにも要るため）。
