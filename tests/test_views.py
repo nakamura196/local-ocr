@@ -14,6 +14,7 @@ from local_ocr.core import prefs
 from local_ocr.engines import Result
 from local_ocr.ui import work
 from local_ocr.ui.landing import LandingView
+from local_ocr.ui.settings import SettingsView
 from local_ocr.ui.state import AppState, Doc, Job, Run
 from local_ocr.ui.work import WorkView
 
@@ -48,6 +49,12 @@ class FakeCtx:
     def go(self, name: str) -> None:
         pass
 
+    def go_back(self) -> None:
+        pass
+
+    def notify(self, message: str) -> None:
+        pass
+
 
 @pytest.fixture
 def ctx(monkeypatch) -> FakeCtx:
@@ -58,6 +65,19 @@ def ctx(monkeypatch) -> FakeCtx:
 
 def test_the_landing_screen_builds(ctx: FakeCtx):
     assert isinstance(LandingView(ctx).build(), ft.Control)
+
+
+def test_the_settings_screen_builds(ctx: FakeCtx):
+    """読む道具・ほかの道具に開く窓口・IIIF の置き場が、1 つの画面に同居する。
+
+    **この 3 つは別々に足されたので、ここで一度に組んでおく。** 組み立てで
+    落ちるかどうかは、窓を開けるまで分からない。
+    """
+    view = SettingsView(ctx)
+    # 窓口の節は、常駐のサーバを持つ道具があるときだけ出る (PaddleOCR-VL)。
+    # 出ない側だけを組んで通してしまわないように、出ていることを見ておく。
+    assert view.bridge_card is not None
+    assert isinstance(view.build(), ft.Control)
 
 
 def test_the_work_screen_builds_for_one_page(ctx: FakeCtx):
