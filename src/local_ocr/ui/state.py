@@ -285,7 +285,7 @@ class AppState:
         for e in self.engines:
             try:
                 e.shutdown()
-            except Exception:  # noqa: BLE001 - 終了処理なので握りつぶす
+            except Exception:  # noqa: BLE001, S110 - 終了処理なので握りつぶす
                 pass
 
     # --- 書き出し ---------------------------------------------------------

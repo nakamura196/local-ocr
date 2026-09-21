@@ -36,7 +36,7 @@ MARK = (232, 93, 58)         # 朱。読み取り枠
 
 
 def _lerp(a: int, b: int, t: float) -> int:
-    return int(round(a + (b - a) * t))
+    return round(a + (b - a) * t)
 
 
 def _vertical_gradient(size: int, top: tuple, bottom: tuple) -> Image.Image:

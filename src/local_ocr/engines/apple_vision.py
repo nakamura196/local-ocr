@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import io
 import sys
+from typing import ClassVar
 
 from PIL import Image
 
@@ -23,7 +24,7 @@ class AppleVisionEngine:
     label = "Apple Vision（macOS 標準）"
     note = "取得するものはありません。現代の活字・手書きに向きます。"
     platforms = frozenset({"darwin"})
-    assets: list[Asset] = []
+    assets: ClassVar[list[Asset]] = []
 
     def available(self) -> bool:
         if sys.platform != "darwin":

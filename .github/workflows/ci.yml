@@ -26,5 +26,8 @@ jobs:
       # --locked: uv.lock と pyproject.toml がずれていたら、直さずに落とす。
       - run: uv sync --locked
       - run: uv run pytest -q
+      # 版を止める。ruff は版が上がると既定の規則が増えるので、止めないと
+      # こちらが何も触っていないのに CI が赤くなる。上げるのは手で。
+      - run: uv run --with ruff==0.16.8 ruff check .
       # 自分自身 (editable で入る local-ocr) は PyPI に無いので飛ばす。
       - run: uv run --with pip-audit pip-audit --skip-editable

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import ClassVar
 from xml.etree import ElementTree as ET
 
 import pytest
@@ -22,7 +23,7 @@ class FakeEngine:
     label = "Fake"
     note = ""
     platforms = frozenset({sys.platform})
-    assets: list = []
+    assets: ClassVar[list] = []
 
     def __init__(self) -> None:
         self.prepared = 0

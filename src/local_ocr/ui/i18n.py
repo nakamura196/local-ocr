@@ -290,8 +290,10 @@ _STRINGS: dict[str, tuple[str, str]] = {
     "iiif.url": ("マニフェストの URL", "Manifest URL"),
     "iiif.note": (
         "マニフェストと版面は、その配信元から取り寄せます。読むのはこのパソコンの中だけです。",
-        "The manifest and its page images come from their server."
-        " The reading itself stays on this computer.",
+        (
+            "The manifest and its page images come from their server."
+            " The reading itself stays on this computer."
+        ),
     ),
     "iiif.loading": ("マニフェストを読んでいます…", "Reading the manifest…"),
     "iiif.opened": ("{label}（{count} ページ）", "{label} ({count} pages)"),

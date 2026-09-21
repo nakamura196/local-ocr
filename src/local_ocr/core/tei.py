@@ -44,7 +44,8 @@ class Meta:
     # どこから読んだか(ファイル名など)。分かるときだけ入れる。
     source: str = ""
     language: str = "ja"
-    date: str = field(default_factory=lambda: date.today().isoformat())
+    # 手元の暦の日付でよい（刊記は読んだ人の地域時刻で書く）。
+    date: str = field(default_factory=lambda: date.today().isoformat())  # noqa: DTZ011
 
 
 def build(pages: Sequence[Page], meta: Meta) -> str:
