@@ -9,13 +9,12 @@ import urllib.error
 import urllib.request
 from collections import deque
 
-from . import assets, fetch, prefs
+from . import assets, bridge, fetch, prefs
 from .fetch import Progress
 from .paths import data_dir, is_windows
 
 DEFAULT_PORT = 8080
-# 起動スクリプト版と同じ既定。校正の画面からしか呼べないようにしている。
-DEFAULT_ORIGIN = "https://tei-iiif-editor.vercel.app"
+
 
 class Runtime:
     """取得済みかを見て、llama-server を起動・停止する。"""
@@ -33,10 +32,6 @@ class Runtime:
     @property
     def port(self) -> int:
         return int(prefs.get("port", DEFAULT_PORT))
-
-    @property
-    def origin(self) -> str:
-        return str(prefs.get("origin", DEFAULT_ORIGIN))
 
     @property
     def endpoint(self) -> str:
@@ -78,7 +73,10 @@ class Runtime:
                 "--port", str(self.port),
                 "-c", "8192",
                 "-ngl", "99",
-                "--cors-origins", self.origin,
+                # **省いてはいけない。** 既定は `*` で、その機械で開いている
+                # どの頁からでも投げられる状態になる。閉じている間は誰も
+                # 名乗れない相手が入る (core/bridge.py)。
+                "--cors-origins", bridge.cors_value(),
             ]
             # Windows でコンソールの黒い窓が一瞬出るのを抑える。
             flags = subprocess.CREATE_NO_WINDOW if is_windows() else 0  # type: ignore[attr-defined]

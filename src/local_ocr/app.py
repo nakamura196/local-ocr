@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import sys
 import traceback
 from pathlib import Path
@@ -56,6 +57,22 @@ class App:
         self.body = ft.Container(expand=True)
         page.add(self.body)
         self.go("landing")
+
+        # ほかの道具に開いたままにしてあるなら、起動のときに開け直す。
+        # 前回の終了でサーバは止まっているので、ここで立てないと
+        # 「設定では開いているのに繋がらない」になる。
+        bridge = self.state.bridge
+        if bridge is not None and bridge.enabled:
+            page.run_task(self._open_bridge)
+
+    async def _open_bridge(self) -> None:
+        """窓口を開け直す。**待つのは糸(スレッド)の中。** ここで待つと、
+        重みを読んでいる 1 分ほど、画面が固まったまま出てこない。"""
+        try:
+            await asyncio.to_thread(self.state.bridge.turn_on)  # type: ignore[union-attr]
+        except Exception:  # noqa: BLE001 - 開けなくても、アプリは使える
+            # 設定を開けば「開いていません」と、次にすることが出る。
+            traceback.print_exc()
 
     # --- 画面の行き来 -----------------------------------------------------
     def go(self, name: str) -> None:
@@ -149,7 +166,8 @@ class App:
         if e.type == ft.WindowEventType.CLOSE:
             # 常駐しているエンジンも止めてから閉じる。
             self.state.shutdown()
-            self.page.window.destroy()
+            # destroy() はコルーチン。そのまま呼ぶと窓が閉じない (docs/design.md)。
+            self.page.run_task(self.page.window.destroy)
 
 
 def main(page: ft.Page) -> None:

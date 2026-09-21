@@ -155,6 +155,78 @@ _STRINGS: dict[str, tuple[str, str]] = {
         "ほかのアプリがファイルを使っていないか確かめてください。",
         "Check that no other app is using these files.",
     ),
+    # --- ほかの道具から使えるようにする ---
+    "settings.share": ("ほかの道具から使えるようにする", "Let other tools use this"),
+    "settings.share.note": (
+        "このパソコンの中の別の道具（校正の画面など）から、この OCR を呼べるようにします。",
+        "Let another tool on this computer (a proofreading page, say) call this OCR.",
+    ),
+    "share.switch": ("窓口を開ける", "Open it"),
+    "share.endpoint": ("接続先", "Address"),
+    "share.endpoint.copy": ("接続先をコピー", "Copy the address"),
+    "share.endpoint.copied": ("接続先をコピーしました", "Copied the address"),
+    "share.privacy": (
+        "開いている間も、画像はこのパソコンから出ません。",
+        "Even while this is open, images never leave this computer.",
+    ),
+    "share.engines": (
+        "いま外から使えるのは PaddleOCR-VL だけです。",
+        "For now PaddleOCR-VL is the only engine offered here.",
+    ),
+    "share.origins": ("許可する相手", "Pages allowed to connect"),
+    "share.origins.note": (
+        "ここに書いた頁からしか繋げません。",
+        "Only the pages listed here can connect.",
+    ),
+    "share.origins.browser": (
+        "はじめて繋ぐとき、ブラウザが「ローカルネットワークへの接続を許可しますか」と一度だけ聞きます。",
+        "The first time, the browser asks once whether to allow a local network connection.",
+    ),
+    "share.origins.empty": (
+        "まだ誰も許可していないので、どの頁からも繋げません。",
+        "Nobody is allowed yet, so no page can connect.",
+    ),
+    "share.origin.hint": ("https://…", "https://…"),
+    "share.origin.add": ("追加", "Add"),
+    "share.origin.remove": ("この相手を外す", "Remove this one"),
+    "share.origin.bad.empty": (
+        "相手の住所を入れてください。",
+        "Type the address of the page.",
+    ),
+    "share.origin.bad.wildcard": (
+        "* は使えません。繋いでよい相手を 1 つずつ足してください。",
+        "* is not allowed. Add each page you trust, one at a time.",
+    ),
+    "share.origin.bad.scheme": (
+        "https://example.com の形で入れてください。",
+        "Enter it like https://example.com.",
+    ),
+    "share.origin.bad.path": (
+        "頁までではなく、その手前まで（例: https://example.com）を入れてください。",
+        "Leave off the path — just https://example.com.",
+    ),
+    "share.state.opening": (
+        "開いています。初めて開くときは 1 分ほどかかります。",
+        "Opening. The first time takes about a minute.",
+    ),
+    "share.state.reopening": (
+        "許可する相手が変わったので、開き直しています。",
+        "Reopening with the new list.",
+    ),
+    "share.state.closing": ("閉じています。", "Closing."),
+    "share.state.open": (
+        "開いています。ほかの道具から使えます。",
+        "Open. Other tools can use it now.",
+    ),
+    "share.state.down": ("開いていません", "It is not open"),
+    "share.state.down.detail": (
+        "いちど切ってから、もう一度入れ直してください。",
+        "Switch it off and on again.",
+    ),
+    "share.state.other": (
+        "閉じましたが、ほかのプログラムが同じポート（{port}）を使っています。",
+        "Closed, but another program is using port {port}.",
+    ),
     # --- 入口 ---
     "pick.dialog": ("読みたい画像を選びます", "Choose an image to read"),
     "pick.failed": ("画像を開けませんでした: {error}", "Could not open the image: {error}"),

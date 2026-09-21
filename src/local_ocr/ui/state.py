@@ -12,6 +12,7 @@ from pathlib import Path
 from PIL import Image
 
 from ..core import prefs, tei
+from ..core.bridge import Bridge
 from ..core.ocr import IMAGE_SUFFIXES
 from ..engines import Engine, Line, Result, all_engines, runs_here
 from .i18n import current, engine_label, t
@@ -130,6 +131,7 @@ class AppState:
     compare_ids: set[str] = field(default_factory=set)
 
     def __post_init__(self) -> None:
+        self._bridge: Bridge | None = None
         self._engine_id = str(prefs.get("engine") or "")
         if self._engine_id not in {e.id for e in self.usable}:
             self._engine_id = self._default_engine_id()
@@ -161,6 +163,25 @@ class AppState:
         """既定は取得の要らないもの。何も準備せずに 1 回目が成功するように。"""
         ready = [e for e in self.usable if not e.assets]
         return (ready or self.usable)[0].id
+
+    # --- ほかの道具に開く窓口 -------------------------------------------
+    @property
+    def bridge(self) -> Bridge | None:
+        """設定の「ほかの道具から使えるようにする」が使う窓口。
+
+        **読む道具が持っているサーバをそのまま渡す。** ここで新しく作ると、
+        同じポートに二重に立てようとして重みを二度読む。常駐のサーバを持つ
+        道具が 1 つも無ければ None(窓口の節ごと出さない)。
+        """
+        if self._bridge is None:
+            runtime = next(
+                (rt for e in self.engines if (rt := getattr(e, "runtime", None)) is not None),
+                None,
+            )
+            if runtime is None:
+                return None
+            self._bridge = Bridge(runtime)
+        return self._bridge
 
     def shutdown(self) -> None:
         for e in self.engines:

@@ -2,7 +2,9 @@
 
 画像と版面をまとめて読む視覚言語モデル。漢籍・多言語に強い。
 常駐の llama-server を内側で立ち上げ、OpenAI 互換の窓口に投げる。
-利用者にサーバの存在は見せない（起動・停止はこのエンジンが持つ）。
+**利用者にサーバの存在は見せない**（起動・停止はこのエンジンが持つ）。
+例外は設定の「ほかの道具から使えるようにする」で、そこだけは接続先を表に出す
+（`core/bridge.py`。開けている間は、このサーバを立てたままにする）。
 """
 
 from __future__ import annotations
@@ -24,6 +26,15 @@ class PaddleVLEngine:
 
     def __init__(self) -> None:
         self._rt = Runtime()
+
+    @property
+    def runtime(self) -> Runtime:
+        """ほかの道具に開く窓口が見る(`core/bridge.py`)。
+
+        **窓口にも同じサーバを使わせるため。** 別に立てると、同じポートを取り合い、
+        重みを二度読むことになる。常駐のサーバを持つ道具はいまこれだけ。
+        """
+        return self._rt
 
     @property
     def assets(self) -> list[Asset]:
