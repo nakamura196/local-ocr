@@ -164,6 +164,61 @@ _STRINGS: dict[str, tuple[str, str]] = {
     ),
     "source.pasted": ("貼り付けた画像", "Pasted image"),
     "source.last": ("前回の画像", "Last image"),
+    # --- 端末から使う(CLI) ---
+    "cli.description": (
+        "画像の文字を、このパソコンの中で読みます。",
+        "Read text out of images, entirely on this computer.",
+    ),
+    "cli.help.paths": (
+        "読む画像。フォルダを渡すと、その中の画像をすべて読みます。",
+        "Images to read. Give a folder to read every image in it.",
+    ),
+    "cli.help.engine": (
+        "読む道具の id（--list-engines で一覧が出ます）",
+        "Which engine to use (--list-engines lists them)",
+    ),
+    "cli.help.format": ("出し方。text か tei。", "Output format: text or tei."),
+    "cli.help.out": (
+        "書き出し先。省くと標準出力に出します。",
+        "Where to write. Prints to standard output when omitted.",
+    ),
+    "cli.help.title": (
+        "TEI の題。省くとファイル名から作ります。",
+        "Title for the TEI. Taken from the file name when omitted.",
+    ),
+    "cli.help.fetch": (
+        "読む道具がまだ手元に無ければ取得します。",
+        "Download the engine first if it is not here yet.",
+    ),
+    "cli.help.quiet": ("進みぐあいを出しません。", "Do not print progress."),
+    "cli.help.list": ("読む道具の一覧を出して終わります。", "List the engines and stop."),
+    "cli.no_images": ("読む画像がありません。", "No images to read."),
+    "cli.not_found": ("見つかりません", "not found"),
+    "cli.unknown_engine": (
+        "{engine} という読む道具はありません。--list-engines で一覧が出ます。",
+        "There is no engine called {engine}. Use --list-engines to see them.",
+    ),
+    "cli.unsupported": (
+        "{engine} はこの機械では使えません。",
+        "{engine} does not run on this machine.",
+    ),
+    "cli.not_fetched": (
+        "{engine} は、はじめに {size} の取得が必要です。--fetch を付けると取得します。",
+        "{engine} needs a {size} download first. Add --fetch to download it.",
+    ),
+    "cli.read": (
+        "{name}: {count} 行 / {chars} 文字 / {seconds} 秒",
+        "{name}: {count} lines / {chars} chars / {seconds}s",
+    ),
+    "cli.wrote": (
+        "{name} に書きました（{pages} ページ）",
+        "Wrote {name} ({pages} pages)",
+    ),
+    "cli.failed": (
+        "{name} を読めませんでした: {error}",
+        "Could not read {name}: {error}",
+    ),
+    "cli.source.many": ("{count} 枚の画像", "{count} images"),
     # --- 時間 ---
     "timing.plain": ("{seconds} 秒", "{seconds}s"),
     "timing.with_prepare": ("{seconds} 秒（準備 {prepare} 秒）", "{seconds}s (setup {prepare}s)"),

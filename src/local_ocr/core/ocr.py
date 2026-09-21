@@ -13,6 +13,9 @@ from pathlib import Path
 
 from PIL import Image, ImageGrab
 
+# 受け付ける画像の拡張子。入口(選ぶ・フォルダ・端末)で共通に使う。
+IMAGE_SUFFIXES = ("png", "jpg", "jpeg", "tif", "tiff", "bmp", "webp")
+
 # 長辺の上限。大きいまま渡すと視覚トークンが文脈長を食い潰し、
 # 読みの途中で切れる。1600 は A4 相当の版面で本文が潰れない下限あたり(実測)。
 MAX_SIDE = 1600

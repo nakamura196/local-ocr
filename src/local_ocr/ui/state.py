@@ -12,11 +12,11 @@ from pathlib import Path
 from PIL import Image
 
 from ..core import prefs, tei
+from ..core.ocr import IMAGE_SUFFIXES
 from ..engines import Engine, Line, Result, all_engines, runs_here
 from .i18n import current, engine_label, t
 
-# 受け付ける画像の拡張子。入口(選ぶ・フォルダ)で共通に使う。
-IMAGE_SUFFIXES = ("png", "jpg", "jpeg", "tif", "tiff", "bmp", "webp")
+__all__ = ["IMAGE_SUFFIXES", "AppState", "Job", "Run"]
 
 
 @dataclass
@@ -85,9 +85,19 @@ class Job:
     runs: dict[str, Run] = field(default_factory=dict)
     primary: str = ""
 
-    def record(self, run: Run) -> None:
+    def record(self, run: Run, prefer: bool = False) -> None:
+        """読み終えた結果をしまう。
+
+        `prefer` は「これを版面に出す」。**1 つで読んだときは必ず立てる。**
+        立てないと、道具を変えて読み直しても前の道具の結果が版面に出たままになり、
+        「新しい道具が読めていない」ようにしか見えない。
+        くらべるときは立てない(先に読み終えたものを出したまま、あとから
+        勝手に入れ替わらないようにする)。
+        """
         self.runs[run.engine_id] = run
-        if run.result is not None and (not self.primary or self.primary not in self.runs):
+        if run.result is None:
+            return
+        if prefer or not self.primary or self.primary not in self.runs:
             self.primary = run.engine_id
 
     @property

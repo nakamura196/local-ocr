@@ -28,6 +28,30 @@ def test_lines_fall_back_to_splitting_text():
     assert all(ln.box is None for ln in run.lines)
 
 
+def test_reading_again_with_another_engine_replaces_what_is_shown():
+    """道具を変えて読み直したのに、前の道具の結果が出たままにならないこと。"""
+    job = Job(source="x")
+    job.record(Run("apple-vision", Result(text="定規の数字", lines=[])), prefer=True)
+    job.record(Run("paddle-vl", Result(text="阿毗達磨", lines=[])), prefer=True)
+    assert job.primary == "paddle-vl"
+    assert job.text == "阿毗達磨"
+
+
+def test_comparing_does_not_swap_the_page_under_the_user():
+    """くらべるときは、先に読み終えたものを出したままにする。"""
+    job = Job(source="x")
+    job.record(Run("apple-vision", Result(text="あ", lines=[])))
+    job.record(Run("paddle-vl", Result(text="い", lines=[])))
+    assert job.primary == "apple-vision"
+
+
+def test_a_failed_run_does_not_take_over_the_page():
+    job = Job(source="x")
+    job.record(Run("apple-vision", Result(text="あ", lines=[])), prefer=True)
+    job.record(Run("paddle-vl", error="起動できませんでした"), prefer=True)
+    assert job.primary == "apple-vision"
+
+
 def test_editing_the_whole_text_carries_the_boxes_along():
     """「まとめて」で直した文字が、行の一覧にも TEI にも効く。"""
     run = Run(

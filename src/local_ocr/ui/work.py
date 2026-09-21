@@ -40,6 +40,8 @@ class WorkView:
         self.selected = -1
         self._png: bytes | None = None
         self._boxes: list[ft.Container] = []
+        # 版面をどれだけ縮めて(拡げて)出しているか。枠の線の太さに使う。
+        self._scale = 1.0
         self._rows: list[ft.Container] = []
 
         self.strip = status.Strip()
@@ -273,6 +275,7 @@ class WorkView:
         img = job.image
         bw, bh = self._budget()
         scale = min(bw / img.width, bh / img.height, MAX_ZOOM)
+        self._scale = scale
         sw, sh = max(1, round(img.width * scale)), max(1, round(img.height * scale))
 
         if self._png is None:
@@ -350,12 +353,23 @@ class WorkView:
     def _row_color(self, index: int) -> str | None:
         return ft.Colors.with_opacity(0.14, ft.Colors.PRIMARY) if index == self.selected else None
 
+    def _stroke(self) -> float:
+        """枠の線の太さ。
+
+        **線の太さは画面の点で決まるので、元画像の画素数では変わらない。**
+        細く見えるのは、版面を縮めて出しているぶん枠が小さく詰まるため。
+        大きく引き伸ばしているとき(小さな切り抜き)は、逆に線が頼りなくなるので、
+        縮尺に合わせて少しだけ太くする。
+        """
+        return min(3.0, max(2.0, self._scale * 2.0))
+
     def _paint_boxes(self) -> None:
+        stroke = self._stroke()
         for box in self._boxes:
             on = box.data == self.selected
             box.border = ft.Border.all(
-                2 if on else 1,
-                ft.Colors.PRIMARY if on else ft.Colors.with_opacity(0.55, ft.Colors.PRIMARY),
+                stroke + 1.5 if on else stroke,
+                ft.Colors.PRIMARY if on else ft.Colors.with_opacity(0.75, ft.Colors.PRIMARY),
             )
             box.bgcolor = ft.Colors.with_opacity(0.22 if on else 0.06, ft.Colors.PRIMARY)
 
@@ -625,7 +639,9 @@ class WorkView:
                 result=result,
                 seconds=time.monotonic() - prepared,
                 prepare_seconds=prepared - started,
-            )
+            ),
+            # 1 つで読んだときは、いま読んだ道具の結果を版面に出す。
+            prefer=not many,
         )
         if col:
             col.sync()  # 結果が入れば、その列の状態表示は sync が引っ込める
