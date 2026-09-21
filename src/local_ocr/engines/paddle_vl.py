@@ -35,14 +35,14 @@ class PaddleVLEngine:
     def prepare(self, on_progress: Progress) -> None:
         if paddle_assets.missing():
             self._rt.fetch_missing(on_progress)
-        if not self._rt.running:
-            on_progress("OCR を起動しています", None)
+        if not self._rt.ready:
+            on_progress("OCR を起動しています（初回は少し待ちます）", None)
             self._rt.start()
             if not self._rt.wait_ready():
                 raise RuntimeError("OCR を起動できませんでした")
 
     def recognize(self, img: Image.Image) -> Result:
-        if not self._rt.running:
+        if not self._rt.ready:
             raise RuntimeError("先に準備を済ませてください")
         text = ocr_call.recognize(self._rt.endpoint, img)
         return Result(text=text, raw=None)

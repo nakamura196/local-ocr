@@ -29,6 +29,23 @@ class Asset:
     approx_bytes: int
     # tar.gz / zip なら、展開先。None ならそのまま置く。
     extract_to: Path | None = None
+    # 「取得済み」と見なす目印。書庫を展開するものは、展開後の実行ファイルを指す
+    # (書庫そのものは展開後に消すので、dest の有無では判定できない)。
+    installed_marker: Path | None = None
+
+    @property
+    def marker(self) -> Path:
+        return self.installed_marker or self.dest
+
+    def fetched(self) -> bool:
+        p = self.marker
+        return p.is_file() and p.stat().st_size > 0
+
+    def size_on_disk(self) -> int:
+        """今ディスクにある大きさ。展開するものは展開先のフォルダ全体を数える。"""
+        if self.extract_to is not None and self.extract_to.is_dir():
+            return sum(f.stat().st_size for f in self.extract_to.rglob("*") if f.is_file())
+        return self.dest.stat().st_size if self.dest.is_file() else 0
 
 
 def llama_asset_name() -> str:
@@ -64,6 +81,7 @@ def required() -> list[Asset]:
             dest=d / name,
             approx_bytes=120 * 1024 * 1024,
             extract_to=bin_dir(),
+            installed_marker=server_path(),
         ),
         Asset(
             key="model",
@@ -83,12 +101,5 @@ def required() -> list[Asset]:
 
 
 def missing() -> list[Asset]:
-    """まだ取得していないもの。llama.cpp は展開後の実行ファイルの有無で見る。"""
-    out = []
-    for a in required():
-        if a.key == "llama":
-            if not server_path().is_file():
-                out.append(a)
-        elif not a.dest.is_file() or a.dest.stat().st_size == 0:
-            out.append(a)
-    return out
+    """まだ取得していないもの。"""
+    return [a for a in required() if not a.fetched()]

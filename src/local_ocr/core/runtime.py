@@ -2,109 +2,41 @@
 
 from __future__ import annotations
 
-import json
-import os
-import shutil
 import subprocess
-import sys
-import tarfile
 import threading
 import time
 import urllib.error
 import urllib.request
-import zipfile
 from collections import deque
-from collections.abc import Callable
-from pathlib import Path
 
-from . import assets
-from .paths import data_dir, is_windows, settings_file
+from . import assets, fetch, prefs
+from .fetch import Progress
+from .paths import data_dir, is_windows
 
 DEFAULT_PORT = 8080
 # 起動スクリプト版と同じ既定。校正の画面からしか呼べないようにしている。
 DEFAULT_ORIGIN = "https://tei-iiif-editor.vercel.app"
-
-Progress = Callable[[str, float | None], None]
-
-
-def _download(url: str, dest: Path, approx: int, on_progress: Progress, label: str) -> None:
-    """途中で落ちても部分ファイルを残さないよう、.part に書いてから差し替える。"""
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    part = dest.with_suffix(dest.suffix + ".part")
-    req = urllib.request.Request(url, headers={"User-Agent": "PaddleOCR-Local"})
-    with urllib.request.urlopen(req) as res, open(part, "wb") as f:
-        total = int(res.headers.get("Content-Length") or 0) or approx
-        got = 0
-        while chunk := res.read(1024 * 256):
-            f.write(chunk)
-            got += len(chunk)
-            on_progress(label, min(got / total, 1.0) if total else None)
-    part.replace(dest)
-
-
-def _extract(archive: Path, into: Path) -> None:
-    """llama.cpp の配布物を展開する。
-
-    配布物によって、中身が 1 階層のフォルダに入っている版と、そのまま並んでいる
-    版がある。展開後に llama-server を探し直して、どちらでも動くようにする。
-    """
-    into.mkdir(parents=True, exist_ok=True)
-    if archive.suffix == ".zip":
-        with zipfile.ZipFile(archive) as z:
-            z.extractall(into)
-    else:
-        with tarfile.open(archive) as t:
-            t.extractall(into)
-
-    want = assets.server_path().name
-    if not (into / want).is_file():
-        found = next((p for p in into.rglob(want) if p.is_file()), None)
-        if found is None:
-            raise RuntimeError(f"展開しましたが {want} が見つかりません")
-        # 実行ファイルと同じ階層の中身をまとめて 1 つ上へ移す(dylib を置き去りにしない)。
-        for item in found.parent.iterdir():
-            target = into / item.name
-            if target.exists():
-                continue
-            shutil.move(str(item), str(target))
-
-    if not is_windows():
-        # ネットから取ったファイルに macOS が付ける印を外す。これが無いと起動できない。
-        subprocess.run(["xattr", "-dr", "com.apple.quarantine", str(into)], check=False)
-        for p in into.glob("llama-*"):
-            if p.is_file():
-                p.chmod(0o755)
-    archive.unlink(missing_ok=True)
-
 
 class Runtime:
     """取得済みかを見て、llama-server を起動・停止する。"""
 
     def __init__(self) -> None:
         self._proc: subprocess.Popen[str] | None = None
+        # 同じポートで既に動いているものを借りているか。前の版のアプリや、
+        # もう 1 つ開いたこのアプリが立てたサーバがこれにあたる。
+        self._borrowed = False
         # 画面の下に出す用。全部ためると長時間動かしたとき際限なく増える。
         self.log: deque[str] = deque(maxlen=400)
         self._lock = threading.Lock()
 
     # --- 設定 -------------------------------------------------------------
-    def load_settings(self) -> dict:
-        try:
-            return json.loads(settings_file().read_text("utf-8"))
-        except (OSError, ValueError):
-            return {}
-
-    def save_settings(self, **kv) -> None:
-        s = self.load_settings() | kv
-        settings_file().parent.mkdir(parents=True, exist_ok=True)
-        settings_file().write_text(json.dumps(s, ensure_ascii=False, indent=2), "utf-8")
-
     @property
     def port(self) -> int:
-        return int(self.load_settings().get("port", DEFAULT_PORT))
+        return int(prefs.get("port", DEFAULT_PORT))
 
     @property
     def origin(self) -> str:
-        return str(self.load_settings().get("origin", DEFAULT_ORIGIN))
+        return str(prefs.get("origin", DEFAULT_ORIGIN))
 
     @property
     def endpoint(self) -> str:
@@ -112,20 +44,27 @@ class Runtime:
 
     # --- 取得 -------------------------------------------------------------
     def fetch_missing(self, on_progress: Progress) -> None:
-        for a in assets.missing():
-            _download(a.url, a.dest, a.approx_bytes, on_progress, a.label)
-            if a.extract_to is not None:
-                on_progress(f"{a.label}を展開しています", None)
-                _extract(a.dest, a.extract_to)
+        fetch.download_all(assets.missing(), on_progress)
 
     # --- サーバ -----------------------------------------------------------
     @property
     def running(self) -> bool:
         return self._proc is not None and self._proc.poll() is None
 
+    @property
+    def ready(self) -> bool:
+        """読ませられる状態か。自分で立てたものでも、借りているものでもよい。"""
+        return self.running or self._borrowed
+
     def start(self) -> None:
         with self._lock:
-            if self.running:
+            if self.ready:
+                return
+            # **同じポートで既に動いていたら、立ち上げ直さない。**
+            # 立てても bind に失敗して静かに死に、こちらは相手のサーバに
+            # 投げ続けることになる(重みの二重読み込みで 2GB 無駄にもなる)。
+            if self.health() != "down":
+                self._borrowed = True
                 return
             server = assets.server_path()
             if not server.is_file():
@@ -163,6 +102,8 @@ class Runtime:
 
     def stop(self) -> None:
         with self._lock:
+            # 借りているだけのサーバは、こちらの都合で止めない。
+            self._borrowed = False
             proc, self._proc = self._proc, None
         if proc is None or proc.poll() is not None:
             return
@@ -191,7 +132,7 @@ class Runtime:
         while time.monotonic() < deadline:
             if self.health() == "ready":
                 return True
-            if not self.running:
+            if not self.ready:
                 return False
             time.sleep(1.0)
         return False
