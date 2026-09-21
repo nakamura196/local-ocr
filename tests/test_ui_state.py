@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from local_ocr.engines import Line, Result
 from local_ocr.ui import i18n
-from local_ocr.ui.state import Job, Run
+from local_ocr.ui.state import Doc, Job, Run
 
 
 def test_job_keeps_one_result_per_engine():
@@ -93,3 +93,59 @@ def test_placeholders_match_between_languages():
 
     for key, (ja, en) in i18n._STRINGS.items():
         assert set(re.findall(r"{(\w+)}", ja)) == set(re.findall(r"{(\w+)}", en)), key
+
+
+# --- ページの束(フォルダ・IIIF) -----------------------------------------
+
+
+def test_a_single_image_is_a_bundle_of_one():
+    """画面の作りが「1 枚か、たくさんか」で割れないこと。"""
+    doc = Doc(title="a.png", jobs=[Job(source="a.png")])
+    assert doc.many is False
+    assert doc.current is doc.jobs[0]
+    assert doc.total == 1
+
+
+def test_moving_between_pages_stays_inside_the_bundle():
+    doc = Doc(title="束", jobs=[Job(source=str(i)) for i in range(3)])
+    doc.go(5)
+    assert doc.index == 2
+    doc.go(-1)
+    assert doc.index == 0
+    assert doc.many is True
+
+
+def test_only_the_pages_that_were_read_get_written_out():
+    doc = Doc(title="束", jobs=[Job(source="1"), Job(source="2"), Job(source="3")])
+    doc.jobs[0].record(Run("fake", Result(text="あ")), prefer=True)
+    doc.jobs[2].record(Run("fake", error="読めませんでした"))
+    assert [job.source for job in doc.read()] == ["1"]
+
+
+def test_letting_go_of_a_page_keeps_what_is_needed_to_write_it(tmp_path):
+    """版面を手放しても、読んだ文字と版面の寸法は残る(TEI に要る)。"""
+    from PIL import Image as PILImage
+
+    path = tmp_path / "a.png"
+    PILImage.new("RGB", (40, 30), "white").save(path)
+    job = Job(source="a.png", path=path)
+    with job.load() as image:
+        assert image.size == (40, 30)
+    job.record(Run("fake", Result(text="あ")), prefer=True)
+
+    job.release()
+    assert job.image is None
+    assert (job.width, job.height) == (40, 30)
+    assert job.text == "あ"
+    # 開く当てがあるので、もう一度出せる。
+    assert job.load().size == (40, 30)
+    job.image.close()
+
+
+def test_a_pasted_page_is_never_let_go_of():
+    """貼り付けた画像は、手放すと二度と戻らない。"""
+    from PIL import Image as PILImage
+
+    job = Job(source="貼り付けた画像", image=PILImage.new("RGB", (4, 4)))
+    job.release()
+    assert job.image is not None

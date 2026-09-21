@@ -16,11 +16,13 @@ import flet as ft
 from PIL import Image
 
 from .core import ocr as ocr_call
+from .core import source
 from .ui import theme
 from .ui.i18n import engine_label, t
+from .ui.iiif_input import IIIFDialog
 from .ui.landing import LandingView
 from .ui.settings import SettingsView
-from .ui.state import IMAGE_SUFFIXES, AppState, Job
+from .ui.state import IMAGE_SUFFIXES, AppState, Doc, Job
 from .ui.work import WorkView
 
 TITLE = "Local OCR"
@@ -138,11 +140,50 @@ class App:
             return
         self.start_job(image, t("source.pasted"))
 
-    def start_job(self, image: Image.Image, source: str, path=None) -> None:
+    def pick_folder(self) -> None:
+        self.page.run_task(self._pick_folder_async)
+
+    async def _pick_folder_async(self) -> None:
+        """フォルダの中の画像を、ページの束として開く。中のフォルダまでは潜らない。"""
+        chosen = await self.picker.get_directory_path(dialog_title=t("pick.folder.dialog"))
+        if not chosen:
+            return
+        try:
+            bundle = await asyncio.to_thread(source.expand, chosen)
+        except OSError as exc:
+            self.notify(t("pick.failed", error=exc))
+            return
+        if not bundle.items:
+            self.notify(t("pick.folder.empty"))
+            return
+        self.open_bundle(bundle)
+
+    def open_iiif(self) -> None:
+        """IIIF マニフェストの URL を聞く窓を出す。"""
+        IIIFDialog(self).open()
+
+    def open_bundle(self, bundle: source.Bundle) -> None:
+        """入口が開いたページの並びを、作業画面の束にする。"""
+        self.open_doc(Doc.of(bundle.items, title=bundle.title, origin=bundle.origin))
+
+    def start_job(self, image: Image.Image, label: str, path=None) -> None:
         """画像を受け取ったら作業画面へ移り、そのまま読み始める。"""
-        self.state.job = Job(source=source, image=image, path=path)
+        self.state.open_job(Job(source=label, image=image, path=path))
         self.go("work")
         self.view.start()  # type: ignore[union-attr]
+
+    def open_doc(self, doc: Doc) -> None:
+        """ページの束(フォルダ・IIIF)を開く。
+
+        **1 枚のときだけ、そのまま読み始める。** 何十・何百ページを黙って
+        読み始めると、取り寄せも読みも止められないまま走り出す。
+        """
+        self.state.open(doc)
+        self.go("work")
+        if doc.many:
+            self.view.opened()  # type: ignore[union-attr]
+        else:
+            self.view.start()  # type: ignore[union-attr]
 
     # --- 知らせ -----------------------------------------------------------
     def notify(self, message: str) -> None:

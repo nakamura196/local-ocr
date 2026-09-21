@@ -11,13 +11,13 @@ from pathlib import Path
 
 from PIL import Image
 
-from ..core import prefs, tei
+from ..core import prefs, source, tei
 from ..core.bridge import Bridge
 from ..core.ocr import IMAGE_SUFFIXES
 from ..engines import Engine, Line, Result, all_engines, runs_here
 from .i18n import current, engine_label, t
 
-__all__ = ["IMAGE_SUFFIXES", "AppState", "Job", "Run"]
+__all__ = ["IMAGE_SUFFIXES", "AppState", "Doc", "Job", "Run"]
 
 
 @dataclass
@@ -83,8 +83,42 @@ class Job:
     source: str
     image: Image.Image | None = None
     path: Path | None = None
+    # 取り寄せ先(IIIF)。手元のファイルではないページはこちらを持つ。
+    url: str = ""
     runs: dict[str, Run] = field(default_factory=dict)
     primary: str = ""
+    # 版面の寸法。**版面を手放したあとも残す。** TEI は行の枠を版面の座標で
+    # 書くので、画像そのものが無くても寸法だけは要る。
+    width: int = 0
+    height: int = 0
+
+    def __post_init__(self) -> None:
+        if self.image is not None:
+            self.width, self.height = self.image.size
+
+    @classmethod
+    def of(cls, item: source.Item) -> Job:
+        return cls(source=item.label, path=item.path, url=item.url)
+
+    # --- 版面 -------------------------------------------------------------
+    def load(self) -> Image.Image:
+        """版面を手元に用意する。**糸(スレッド)の中から呼ぶ**(取り寄せがある)。"""
+        if self.image is None:
+            self.attach(source.open_image(source.Item(self.source, self.path, self.url)))
+        return self.image  # type: ignore[return-value]
+
+    def attach(self, image: Image.Image) -> None:
+        self.image = image
+        self.width, self.height = image.size
+
+    def release(self) -> None:
+        """版面を手放す。何百ページもの束を開いたとき、全部を抱えたままにしない。
+
+        **もう一度開ける当て(ファイルか URL)があるときだけ**手放す。
+        貼り付けた画像は、手放すと二度と戻らない。
+        """
+        if self.path is not None or self.url:
+            self.image = None
 
     def record(self, run: Run, prefer: bool = False) -> None:
         """読み終えた結果をしまう。
@@ -122,9 +156,60 @@ class Job:
 
 
 @dataclass
+class Doc:
+    """読ませるページの束。**1 枚だけのときも、長さ 1 の束として扱う。**
+
+    こうしておくと、画面の作りが「1 枚か、たくさんか」で割れない。
+    ページを行き来する帯だけを、2 ページ以上のときに出す。
+    """
+
+    title: str
+    jobs: list[Job]
+    index: int = 0
+    # どこから開いたか。フォルダの名前か、マニフェストの URL。TEI の出どころに書く。
+    # **絶対の道は入れない**(利用者の名前がファイルに残る)。
+    origin: str = ""
+
+    @property
+    def current(self) -> Job | None:
+        if not self.jobs:
+            return None
+        return self.jobs[min(max(self.index, 0), len(self.jobs) - 1)]
+
+    @property
+    def many(self) -> bool:
+        return len(self.jobs) > 1
+
+    @property
+    def total(self) -> int:
+        return len(self.jobs)
+
+    def go(self, index: int) -> None:
+        self.index = min(max(index, 0), max(0, len(self.jobs) - 1))
+
+    def read(self) -> list[Job]:
+        """読み終えているページだけ。保存の対象はこれ(空のページを書き出さない)。"""
+        return [job for job in self.jobs if job.result is not None]
+
+    def keep_only(self, index: int) -> None:
+        """いま見ているページ以外の版面を手放す。
+
+        200 ページのフォルダを開いて全部を抱えると、それだけで何 GB にもなる。
+        読んだ文字と枠は残るので、戻ったときは版面を開き直すだけで済む。
+        """
+        for i, job in enumerate(self.jobs):
+            if i != index:
+                job.release()
+
+    @classmethod
+    def of(cls, items: list[source.Item], title: str, origin: str = "") -> Doc:
+        return cls(title=title, jobs=[Job.of(item) for item in items], origin=origin)
+
+
+@dataclass
 class AppState:
     engines: list[Engine] = field(default_factory=all_engines)
-    job: Job | None = None
+    doc: Doc | None = None
     busy: bool = False
     # くらべる表示かどうかと、くらべる相手。作業画面を作り直しても残す。
     compare: bool = False
@@ -140,6 +225,19 @@ class AppState:
             self.compare_ids = {
                 e.id for e in self.usable if not e.assets or e.available()
             }
+
+    # --- いま読んでいるもの -----------------------------------------------
+    @property
+    def job(self) -> Job | None:
+        """いま画面に出ているページ。画面側はこれまでどおり 1 枚だけを見る。"""
+        return self.doc.current if self.doc else None
+
+    def open(self, doc: Doc) -> None:
+        self.doc = doc
+
+    def open_job(self, job: Job) -> None:
+        """1 枚を開く(選ぶ・貼り付け・前回の続き)。長さ 1 の束にする。"""
+        self.doc = Doc(title=job.source, jobs=[job])
 
     # --- エンジン ---------------------------------------------------------
     @property
@@ -191,29 +289,32 @@ class AppState:
                 pass
 
     # --- 書き出し ---------------------------------------------------------
-    def tei(self, job: Job, image_url: str) -> str:
-        """いま版面に出ている結果を TEI/XML にする。
+    def tei(self, pages: list[tuple[Job, str]], title: str = "", origin: str = "") -> str:
+        """いま版面に出ている結果を TEI/XML にする。1 ページでも N ページでも同じ口。
 
-        `image_url` は、TEI を置く場所から見た版面の道。書き出す側(`ui/work.py`)が
-        保存先を決めてから渡す。
+        渡すのは (ページ, 版面の道) の並び。**道を決めるのは書き出す側**
+        (`ui/work.py`)で、保存先が決まってからでないと相対の道が作れない。
         """
-        if job.image is None:
-            raise ValueError("版面がありません")
-        engine = next((e for e in self.engines if e.id == job.primary), None)
+        if not pages:
+            raise ValueError("書き出せるページがありません")
+        first = pages[0][0]
+        engine = next((e for e in self.engines if e.id == first.primary), None)
         return tei.build(
             [
                 tei.Page(
                     lines=job.lines,
-                    width=job.image.width,
-                    height=job.image.height,
-                    image_url=image_url,
+                    width=job.width,
+                    height=job.height,
+                    image_url=url,
                 )
+                for job, url in pages
             ],
             tei.Meta(
-                title=job.path.stem if job.path else job.source,
+                title=title or (first.path.stem if first.path else first.source),
                 engine=engine_label(engine) if engine is not None else "",
                 # 絶対の道は書かない(利用者の名前がファイルに残る)。
-                source=job.source,
+                # 束で開いたときは、どこから開いたか(フォルダ名・マニフェストの URL)。
+                source=origin or first.source,
                 language=current(),
             ),
         )
@@ -228,6 +329,7 @@ class AppState:
             last={
                 "source": job.source,
                 "path": str(job.path) if job.path else None,
+                "url": job.url or None,
                 "engine": job.primary,
                 "text": result.text,
                 "lines": [[ln.text, *(ln.box or ())] for ln in result.lines],
@@ -261,6 +363,9 @@ class AppState:
             source=str(saved.get("source") or t("source.last")),
             image=image,
             path=path if image is not None else None,
+            # 取り寄せたページ(IIIF)。版面は手元に残っているので、
+            # 開き直すのは作業画面に任せる(ここで取り寄せに行かない)。
+            url=str(saved.get("url") or ""),
         )
         job.record(Run(engine_id=engine_id, result=Result(text=str(saved["text"]), lines=lines)))
         job.primary = engine_id

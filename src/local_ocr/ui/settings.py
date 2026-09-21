@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 import flet as ft
 
 from ..core import bridge as bridge_core
-from ..core import fetch
+from ..core import fetch, iiif
 from ..core.bridge import Bridge
 from ..core.paths import data_dir
 from ..engines import Engine, runs_here
@@ -40,6 +40,20 @@ class SettingsView:
         self.bridge = ctx.state.bridge
         self.bridge_card = BridgeCard(self, self.bridge) if self.bridge else None
         self.disk = theme.muted("")
+        # IIIF で取り寄せた版面。黙って増えるものなので、大きさを見せて消せるようにする。
+        self.iiif_note = theme.muted("")
+        self.iiif_row = ft.Row(
+            [
+                self.iiif_note,
+                ft.TextButton(
+                    t("common.delete"),
+                    icon=ft.Icons.DELETE_OUTLINE,
+                    on_click=lambda _: self._clear_iiif(),
+                ),
+            ],
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=8,
+        )
 
     def build(self) -> ft.Control:
         self._sync_disk()
@@ -72,6 +86,7 @@ class SettingsView:
                                             str(data_dir()), size=12, selectable=True
                                         ),
                                         self.disk,
+                                        self.iiif_row,
                                     ],
                                     spacing=4,
                                 ),
@@ -147,6 +162,14 @@ class SettingsView:
             if used
             else t("settings.storage.empty")
         )
+        cached = iiif.cache_bytes()
+        self.iiif_note.value = t("settings.storage.iiif", size=fetch.human(cached))
+        # 取り寄せていないうちは、行ごと出さない(使っていない人に見せる意味がない)。
+        self.iiif_row.visible = bool(cached)
+
+    def _clear_iiif(self) -> None:
+        iiif.clear_cache()
+        self.refresh()
 
     def refresh(self) -> None:
         self._sync_disk()

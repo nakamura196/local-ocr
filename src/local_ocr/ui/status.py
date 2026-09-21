@@ -12,6 +12,7 @@ from enum import Enum
 
 import flet as ft
 
+from ..core.iiif import ManifestError
 from . import theme
 from .i18n import t
 
@@ -64,6 +65,9 @@ def failed(message: str, detail: str) -> Report:
 
 def explain(exc: Exception) -> Report:
     """例外を、利用者に意味の分かる文面と次の一手に翻訳する。"""
+    if isinstance(exc, ManifestError):
+        # IIIF 側は鍵だけを投げてくる(core は画面の言語を知らない)。
+        return failed(t(exc.key, **exc.kw), t("iiif.error.detail"))
     text = str(exc)
     if "起動できませんでした" in text:
         # 取り直しても直らないときは、たいてい他のアプリが同じポートを使っている。

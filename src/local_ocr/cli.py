@@ -6,6 +6,7 @@
 
     local-ocr 画像.jpg
     local-ocr フォルダ --format tei --out out.xml
+    local-ocr https://…/manifest.json --format tei --out out.xml
     local-ocr --list-engines
 """
 
@@ -16,10 +17,7 @@ import sys
 import time
 from pathlib import Path
 
-from PIL import Image
-
-from .core import export, fetch, tei
-from .core.ocr import IMAGE_SUFFIXES
+from .core import export, fetch, iiif, source, tei
 from .engines import Engine, Line, all_engines, runs_here
 from .ui.i18n import current, engine_label, t
 
@@ -32,8 +30,8 @@ def main(argv: list[str] | None = None) -> int:
         _list_engines()
         return 0
 
-    paths = _expand(args.paths)
-    if not paths:
+    bundle = _expand(args.paths, quiet=args.quiet)
+    if not bundle.items:
         return _fail(t("cli.no_images"))
 
     try:
@@ -47,14 +45,14 @@ def main(argv: list[str] | None = None) -> int:
 
     out = Path(args.out) if args.out else None
     try:
-        pages, texts = _read(engine, paths, out, quiet=args.quiet)
+        pages, texts = _read(engine, bundle.items, out, quiet=args.quiet)
     finally:
         engine.shutdown()
     if not pages:
         return 1
 
     if args.format == "tei":
-        body = tei.build(pages, _meta(args, paths, engine))
+        body = tei.build(pages, _meta(args, bundle, engine))
     else:
         body = "\n\n".join(texts).rstrip("\n") + "\n"
 
@@ -70,9 +68,9 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _read(
-    engine: Engine, paths: list[Path], out: Path | None, quiet: bool
+    engine: Engine, items: list[source.Item], out: Path | None, quiet: bool
 ) -> tuple[list[tei.Page], list[str]]:
-    """1 枚ずつ読む。1 枚こけても残りは読む(戻り値には入れない)。"""
+    """1 ページずつ読む。1 ページこけても残りは読む(戻り値には入れない)。"""
 
     def on_progress(label: str, ratio: float | None) -> None:
         pct = f" {ratio * 100:.0f}%" if ratio is not None else ""
@@ -83,14 +81,17 @@ def _read(
 
     pages: list[tei.Page] = []
     texts: list[str] = []
-    for path in paths:
+    for item in items:
         try:
-            with Image.open(path) as img:
+            img = source.open_image(item)
+            try:
                 started = time.monotonic()
                 result = engine.recognize(img)
                 width, height = img.size
-        except Exception as exc:  # noqa: BLE001 - 1 枚こけても残りは読む
-            _fail(t("cli.failed", name=path.name, error=exc))
+            finally:
+                img.close()
+        except Exception as exc:  # noqa: BLE001 - 1 ページこけても残りは読む
+            _fail(t("cli.failed", name=item.label, error=_reason(exc)))
             continue
         lines = result.lines or [Line(text=s) for s in result.text.splitlines() if s.strip()]
         pages.append(
@@ -98,14 +99,14 @@ def _read(
                 lines=lines,
                 width=width,
                 height=height,
-                image_url=_graphic_url(out, path),
+                image_url=_graphic_url(out, item),
             )
         )
         texts.append(result.text)
         _say(
             t(
                 "cli.read",
-                name=path.name,
+                name=item.label,
                 count=len(lines),
                 chars=len(result.text),
                 seconds=f"{time.monotonic() - started:.1f}",
@@ -115,14 +116,17 @@ def _read(
     return pages, texts
 
 
-def _graphic_url(out: Path | None, image: Path) -> str:
+def _graphic_url(out: Path | None, item: source.Item) -> str:
     """`<graphic url="…">`。書き出し先から見た相対の道にする。
 
     端末から使うときは、画像を勝手に写さない(画面側は隣に置くが、こちらは
     渡された場所を触らない方が驚きが無い)。相対にできないときだけ絶対の道になる。
+    **取り寄せたページ(IIIF)は、その URL をそのまま指す。**
     """
+    if item.path is None:
+        return item.url
     dest = out or Path.cwd() / "_"
-    return export.graphic_url(dest, image) or image.resolve().as_posix()
+    return export.graphic_url(dest, item.path) or item.path.resolve().as_posix()
 
 
 # --- 引数 -----------------------------------------------------------------
@@ -141,21 +145,28 @@ def _parser() -> argparse.ArgumentParser:
     return p
 
 
-def _expand(paths: list[str]) -> list[Path]:
-    """フォルダは、その中の画像に開く(中のフォルダまでは潜らない)。"""
-    out: list[Path] = []
+def _expand(paths: list[str], quiet: bool = False) -> source.Bundle:
+    """渡されたものを、読むページの並びに開く。
+
+    フォルダはその中の画像に、IIIF マニフェストの URL はカンバスに開く
+    (どちらの開き方も `core/source.py`。画面側と同じものを使う)。
+    いくつも渡されたときは、**最初のものの題**を束の題にする。
+    """
+    out = source.Bundle(title="", items=[])
     for raw in paths:
-        path = Path(raw).expanduser()
-        if path.is_dir():
-            out += sorted(
-                child
-                for child in path.iterdir()
-                if child.is_file() and child.suffix.lower().lstrip(".") in IMAGE_SUFFIXES
-            )
-        elif path.is_file():
-            out.append(path)
-        else:
+        try:
+            bundle = source.expand(raw, lang=current())
+        except FileNotFoundError:
             _fail(t("cli.failed", name=raw, error=t("cli.not_found")))
+            continue
+        except iiif.ManifestError as exc:
+            _fail(t(exc.key, **exc.kw))
+            continue
+        if source.is_url(raw):
+            _say(t("cli.manifest", label=bundle.title, count=len(bundle.items)), quiet)
+        if not out.items:
+            out.title, out.origin = bundle.title, bundle.origin
+        out.items += bundle.items
     return out
 
 
@@ -173,15 +184,13 @@ def _engine(engine_id: str) -> Engine:
     raise LookupError(t("cli.unknown_engine", engine=engine_id))
 
 
-def _meta(args, paths: list[Path], engine: Engine) -> tei.Meta:
-    if args.title:
-        title = args.title
-    elif len(paths) == 1:
-        title = paths[0].stem
-    else:
-        title = paths[0].parent.name or paths[0].stem
-    source = paths[0].name if len(paths) == 1 else t("cli.source.many", count=len(paths))
-    return tei.Meta(title=title, engine=engine_label(engine), source=source, language=current())
+def _meta(args, bundle: source.Bundle, engine: Engine) -> tei.Meta:
+    """TEI の見出し。題は `--title` > 束の題(フォルダ名・マニフェストの題)の順。"""
+    items = bundle.items
+    title = args.title or bundle.title or items[0].label
+    # 出どころは、フォルダ名かマニフェストの URL。分からないときだけ枚数で代える。
+    origin = bundle.origin or t("cli.source.many", count=len(items))
+    return tei.Meta(title=title, engine=engine_label(engine), source=origin, language=current())
 
 
 def _list_engines() -> None:
@@ -201,6 +210,17 @@ def _list_engines() -> None:
 #
 # 読んだ中身は標準出力、それ以外は標準エラーに出す。混ぜると、
 # パイプで次の道具に渡したときに中身が汚れる。
+
+
+def _reason(exc: Exception) -> str:
+    """失敗の理由を、人が読める文字にする。
+
+    IIIF 側は文面ではなく鍵を投げてくる(core は画面の言語を知らない)ので、
+    ここで開く。開かずに出すと `iiif.error.image` とだけ出て、何も分からない。
+    """
+    if isinstance(exc, iiif.ManifestError):
+        return t(exc.key, **exc.kw)
+    return str(exc)
 
 
 def _say(message: str, quiet: bool, end: str = "\n") -> None:

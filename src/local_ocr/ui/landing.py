@@ -57,14 +57,12 @@ class LandingView:
                             ft.OutlinedButton(
                                 t("landing.folder"),
                                 icon=ft.Icons.FOLDER_OPEN_OUTLINED,
-                                disabled=True,
-                                tooltip=t("landing.soon"),
+                                on_click=lambda _: self.ctx.pick_folder(),
                             ),
                             ft.OutlinedButton(
                                 t("landing.iiif"),
                                 icon=ft.Icons.LINK,
-                                disabled=True,
-                                tooltip=t("landing.soon"),
+                                on_click=lambda _: self.ctx.open_iiif(),
                             ),
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,
@@ -172,7 +170,7 @@ class LandingView:
         last = self.state.last()
         if last is None:
             return
-        self.state.job = last
+        self.state.open_job(last)
         self.ctx.go("work")
 
     def _forget(self) -> None:

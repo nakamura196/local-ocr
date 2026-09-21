@@ -48,6 +48,25 @@ def download_all(assets: Iterable[Asset], on_progress: Progress) -> None:
             download(a, on_progress)
 
 
+def to_file(
+    url: str,
+    dest: Path,
+    on_progress: Progress | None = None,
+    label: str = "",
+    timeout: float | None = None,
+) -> None:
+    """URL を 1 つのファイルに落とすだけ(展開もしない)。IIIF の版面がこれを使う。
+
+    **取得の書き方を 2 か所に書かない。** 途中で落ちたときに部分ファイルを
+    残さない作法も、ここを通せば同じになる。
+    """
+    _download(url, dest, 0, on_progress or _quiet, label, timeout)
+
+
+def _quiet(_label: str, _ratio: float | None) -> None:
+    pass
+
+
 def remove(asset: Asset) -> None:
     """取得したものを消す。取り直せるので、確認は呼ぶ側の責任。"""
     asset.dest.unlink(missing_ok=True)
@@ -57,12 +76,19 @@ def remove(asset: Asset) -> None:
         shutil.rmtree(asset.extract_to, ignore_errors=True)
 
 
-def _download(url: str, dest: Path, approx: int, on_progress: Progress, label: str) -> None:
+def _download(
+    url: str,
+    dest: Path,
+    approx: int,
+    on_progress: Progress,
+    label: str,
+    timeout: float | None = None,
+) -> None:
     """途中で落ちても部分ファイルを残さないよう、.part に書いてから差し替える。"""
     dest.parent.mkdir(parents=True, exist_ok=True)
     part = dest.with_suffix(dest.suffix + ".part")
     req = urllib.request.Request(url, headers={"User-Agent": "Local-OCR"})
-    with urllib.request.urlopen(req) as res, open(part, "wb") as f:
+    with urllib.request.urlopen(req, timeout=timeout) as res, open(part, "wb") as f:
         total = int(res.headers.get("Content-Length") or 0) or approx
         got = 0
         while chunk := res.read(1024 * 256):

@@ -31,10 +31,6 @@ _STRINGS: dict[str, tuple[str, str]] = {
     "landing.paste": ("貼り付け", "Paste"),
     "landing.folder": ("フォルダ", "Folder"),
     "landing.iiif": ("IIIF マニフェスト", "IIIF manifest"),
-    "landing.soon": (
-        "フォルダの一括処理と IIIF マニフェストは次の版で対応します",
-        "Folders and IIIF manifests are coming in the next version",
-    ),
     "landing.privacy": ("画像はこのパソコンから出ません", "Images never leave this computer"),
     "landing.resume": ("前回の続き: {source}", "Last time: {source}"),
     "landing.resume.forget": ("この記録を消す", "Forget this"),
@@ -48,8 +44,20 @@ _STRINGS: dict[str, tuple[str, str]] = {
     "work.save": ("保存", "Save"),
     "work.save.text": ("テキスト（.txt）", "Text (.txt)"),
     "work.save.tei": ("TEI/XML（.xml）", "TEI/XML (.xml)"),
+    "work.save.text.page": ("テキスト（このページ）", "Text — this page"),
+    "work.save.text.all": ("テキスト（すべてのページ）", "Text — all pages"),
+    "work.save.tei.page": ("TEI/XML（このページ）", "TEI/XML — this page"),
+    "work.save.tei.all": ("TEI/XML（すべてのページ）", "TEI/XML — all pages"),
     "work.save.empty": ("保存できる文字がまだありません", "There is no text to save yet"),
+    "work.save.none_read": (
+        "まだ読み終えたページがありません。「すべて読む」を押してください。",
+        "No pages have been read yet. Press Read all.",
+    ),
     "work.save.done": ("保存しました: {name}", "Saved: {name}"),
+    "work.save.done.pages": (
+        "保存しました: {name}（{pages} ページ）",
+        "Saved: {name} ({pages} pages)",
+    ),
     "work.save.done.with_image": (
         "保存しました: {name}（版面を {image} として隣に置きました）",
         "Saved: {name} (the page image went next to it as {image})",
@@ -111,6 +119,35 @@ _STRINGS: dict[str, tuple[str, str]] = {
         "It downloads once. You can remove it anytime in Settings.",
     ),
     "work.consent.action": ("{size} を取得して読む", "Download {size} and read"),
+    # --- ページの束(フォルダ・IIIF) ---
+    "work.page": ("{index} / {total} ページ", "Page {index} of {total}"),
+    "work.page.prev": ("前のページ", "Previous page"),
+    "work.page.next": ("次のページ", "Next page"),
+    "work.loading.page": ("版面を読み込んでいます…", "Opening the page image…"),
+    "work.opened": (
+        "{count} ページを開きました。「読む」でこのページ、「すべて読む」で全部を読みます。",
+        "Opened {count} pages. Read does this page; Read all does every page.",
+    ),
+    "work.read.all": ("すべて読む", "Read all"),
+    "work.read.stop": ("中止", "Stop"),
+    "work.read.stopping": (
+        "いま読んでいるページまでで止めます",
+        "Stopping after the page being read",
+    ),
+    "work.read.done.count": ("読み終わり {done} / {total}", "{done} of {total} read"),
+    "work.read.progress": (
+        "{index} / {total} ページ目を読んでいます…（{name}）",
+        "Reading page {index} of {total} ({name})…",
+    ),
+    "work.read.all.done": ("{count} ページを読み終わりました", "Read {count} pages"),
+    "work.read.all.done.failed": (
+        "{count} ページを読み終わりました（{failed} ページは読めませんでした）",
+        "Read {count} pages ({failed} could not be read)",
+    ),
+    "work.read.all.stopped": (
+        "{count} ページまで読んで止めました",
+        "Stopped after {count} pages",
+    ),
     # --- くらべる ---
     "compare.pick": ("くらべる道具を 1 つ以上選んでください", "Choose at least one engine to compare"),
     "compare.showing": ("版面に表示中", "Shown on the page"),
@@ -136,6 +173,14 @@ _STRINGS: dict[str, tuple[str, str]] = {
     "settings.storage": ("置き場所", "Where files go"),
     "settings.storage.note": ("取得したものはここに入ります。", "Downloads are kept here."),
     "settings.storage.used": ("いま使っている大きさ: {size}", "Currently using {size}"),
+    "settings.storage.iiif": (
+        "IIIF で取り寄せた版面: {size}",
+        "Page images fetched over IIIF: {size}",
+    ),
+    "settings.storage.iiif.removed": (
+        "取り寄せた版面を削除しました",
+        "Removed the fetched page images",
+    ),
     "settings.storage.empty": ("まだ何も取得していません", "Nothing downloaded yet"),
     "settings.fetch": ("取得", "Download"),
     "settings.state.none_needed": ("取得はいりません", "Nothing to download"),
@@ -235,6 +280,45 @@ _STRINGS: dict[str, tuple[str, str]] = {
     # --- 入口 ---
     "pick.dialog": ("読みたい画像を選びます", "Choose an image to read"),
     "pick.failed": ("画像を開けませんでした: {error}", "Could not open the image: {error}"),
+    "pick.folder.dialog": ("読みたい画像の入ったフォルダを選びます", "Choose a folder of images"),
+    "pick.folder.empty": (
+        "このフォルダに画像がありません（中のフォルダまでは見ません）",
+        "No images in that folder (sub-folders are not searched)",
+    ),
+    # --- IIIF マニフェスト ---
+    "iiif.title": ("IIIF マニフェストから開く", "Open a IIIF manifest"),
+    "iiif.url": ("マニフェストの URL", "Manifest URL"),
+    "iiif.note": (
+        "マニフェストと版面は、その配信元から取り寄せます。読むのはこのパソコンの中だけです。",
+        "The manifest and its page images come from their server."
+        " The reading itself stays on this computer.",
+    ),
+    "iiif.loading": ("マニフェストを読んでいます…", "Reading the manifest…"),
+    "iiif.opened": ("{label}（{count} ページ）", "{label} ({count} pages)"),
+    "iiif.error.detail": (
+        "URL がマニフェスト（JSON）のものか、開ける状態かを確かめてください。",
+        "Check that the URL points at a manifest (JSON) and that it is reachable.",
+    ),
+    "iiif.error.fetch": (
+        "マニフェストを取り寄せられませんでした: {error}",
+        "Could not fetch the manifest: {error}",
+    ),
+    "iiif.error.parse": (
+        "マニフェストとして読めませんでした（JSON ではありません）",
+        "That is not a manifest (it is not JSON)",
+    ),
+    "iiif.error.collection": (
+        "これはコレクションです。中のマニフェストの URL を渡してください。",
+        "That is a collection. Give the URL of one of its manifests.",
+    ),
+    "iiif.error.empty": (
+        "このマニフェストには版面が 1 枚もありませんでした",
+        "That manifest has no page images",
+    ),
+    "iiif.error.image": (
+        "版面を取り寄せられませんでした: {error}",
+        "Could not fetch the page image: {error}",
+    ),
     "paste.empty": (
         "クリップボードに画像がありません。画像をコピーしてからお試しください。",
         "There is no image on the clipboard. Copy an image first.",
@@ -247,8 +331,8 @@ _STRINGS: dict[str, tuple[str, str]] = {
         "Read text out of images, entirely on this computer.",
     ),
     "cli.help.paths": (
-        "読む画像。フォルダを渡すと、その中の画像をすべて読みます。",
-        "Images to read. Give a folder to read every image in it.",
+        "読む画像。フォルダなら中の画像すべて、IIIF マニフェストの URL なら全カンバスを読みます。",
+        "Images to read. A folder reads every image in it; a IIIF manifest URL reads every canvas.",
     ),
     "cli.help.engine": (
         "読む道具の id（--list-engines で一覧が出ます）",
@@ -296,6 +380,10 @@ _STRINGS: dict[str, tuple[str, str]] = {
         "Could not read {name}: {error}",
     ),
     "cli.source.many": ("{count} 枚の画像", "{count} images"),
+    "cli.manifest": (
+        "マニフェストを読みました: {label}（{count} ページ）",
+        "Read the manifest: {label} ({count} pages)",
+    ),
     # --- 時間 ---
     "timing.plain": ("{seconds} 秒", "{seconds}s"),
     "timing.with_prepare": ("{seconds} 秒（準備 {prepare} 秒）", "{seconds}s (setup {prepare}s)"),

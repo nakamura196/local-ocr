@@ -94,3 +94,65 @@ def test_list_engines_does_not_start_anything(engine, capsys):
     assert cli.main(["--list-engines"]) == 0
     assert "fake" in capsys.readouterr().out
     assert engine.prepared == 0
+
+
+# --- IIIF マニフェスト ----------------------------------------------------
+
+
+@pytest.fixture
+def manifest(monkeypatch):
+    """取り寄せには行かせない。渡し方と、TEI がどこを指すかだけを見る。"""
+    from local_ocr.core import iiif
+
+    fetched: list[str] = []
+
+    def fake_load(url: str, lang: str = "", **_kw):
+        return iiif.Manifest(
+            label="酉蓮社本",
+            canvases=[
+                iiif.Canvas(label="1 オ", image_url="https://example.org/iiif/1/full/800,/0/default.jpg"),
+                iiif.Canvas(label="1 ウ", image_url="https://example.org/iiif/2/full/800,/0/default.jpg"),
+            ],
+        )
+
+    def fake_image(url: str, **_kw):
+        fetched.append(url)
+        return Image.new("RGB", (8, 8), "white")
+
+    monkeypatch.setattr(iiif, "load", fake_load)
+    monkeypatch.setattr(iiif, "image", fake_image)
+    return fetched
+
+
+def test_a_manifest_url_becomes_every_canvas(engine, manifest, tmp_path: Path):
+    out = tmp_path / "o.xml"
+    assert (
+        cli.main(
+            ["https://example.org/manifest.json", "-q", "--format", "tei", "--out", str(out)]
+        )
+        == 0
+    )
+    root = ET.parse(out).getroot()
+    # **TEI は IIIF の URL をそのまま指す。** どのパソコンでも開ける道になる。
+    assert [g.get("url") for g in root.findall(".//t:graphic", NS)] == [
+        "https://example.org/iiif/1/full/800,/0/default.jpg",
+        "https://example.org/iiif/2/full/800,/0/default.jpg",
+    ]
+    assert len(root.findall("./t:text/t:body/t:p/t:pb", NS)) == 2
+    # 取り寄せるのは、読むページのぶんだけ。
+    assert len(manifest) == 2
+
+
+def test_a_manifest_that_cannot_be_read_stops_before_the_engine(engine, monkeypatch, capsys):
+    from local_ocr.core import iiif
+
+    def fake_load(url: str, lang: str = "", **_kw):
+        raise iiif.ManifestError("iiif.error.collection")
+
+    monkeypatch.setattr(iiif, "load", fake_load)
+    from local_ocr.ui.i18n import t
+
+    assert cli.main(["https://example.org/collection.json", "-q"]) == 1
+    assert engine.prepared == 0
+    # 鍵のまま出さず、意味の分かる文面にして出す。
+    assert t("iiif.error.collection") in capsys.readouterr().err
