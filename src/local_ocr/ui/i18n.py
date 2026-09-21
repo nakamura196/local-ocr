@@ -93,6 +93,11 @@ _STRINGS: dict[str, tuple[str, str]] = {
     ),
     "work.copy.empty": ("コピーできる文字がまだありません", "There is no text to copy yet"),
     "work.copy.done": ("{chars} 文字をコピーしました", "Copied {chars} characters"),
+    "work.copy.line": ("この行をコピー", "Copy this line"),
+    "work.copy.line.done": (
+        "この行をコピーしました（{chars} 文字）",
+        "Copied this line ({chars} characters)",
+    ),
     "work.engine.changed": (
         "読む道具を {engine} にしました。「読む」を押してください。",
         "Engine set to {engine}. Press Read.",

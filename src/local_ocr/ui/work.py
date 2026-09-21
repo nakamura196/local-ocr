@@ -351,6 +351,16 @@ class WorkView:
                         width=26,
                     ),
                     ft.Text(text, size=13, expand=True, selectable=True),
+                    # **1 行だけ持ち出せるようにする。** 校正は 1 行ずつ直すので、
+                    # 全文をコピーして要る所を探す手間をここで省く。
+                    ft.IconButton(
+                        ft.Icons.CONTENT_COPY,
+                        icon_size=14,
+                        icon_color=ft.Colors.ON_SURFACE_VARIANT,
+                        tooltip=t("work.copy.line"),
+                        padding=ft.Padding.all(4),
+                        on_click=self._copy_line_handler(text),
+                    ),
                 ],
                 vertical_alignment=ft.CrossAxisAlignment.START,
             ),
@@ -450,6 +460,17 @@ class WorkView:
             self.page.update()
             return
         self.page.run_task(self._copy_async, text)
+
+    def _copy_line_handler(self, text: str):
+        def handler(_event=None) -> None:
+            self.page.run_task(self._copy_line, text)
+
+        return handler
+
+    async def _copy_line(self, text: str) -> None:
+        await self.page.clipboard.set(text)
+        self.strip.plain(t("work.copy.line.done", chars=len(text)))
+        self.page.update()
 
     async def _copy_async(self, text: str) -> None:
         await self.page.clipboard.set(text)
