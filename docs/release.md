@@ -369,9 +369,15 @@ CI を先に書くと、スクリプトの当たりと workflow の当たりが�
       `build\windows\`（280MB）、`local-ocr.exe` が立ち上がり、画面は全部出た。
       点検も通った（`.venv` なし / `local_ocr` あり / ライセンス全文 47 件 /
       `bin\` に 32 件）
-      - **まだ実際に文字を読ませていない。** 同梱した llama-server が
-        アプリの中から起動するかは、モデル (.gguf) を取って 1 枚読ませるまで
-        分からない。macOS 側は「梱包は通るが中身が動かない」を実際に踏んでいる
+      - **NDL古典籍 OCR Lite で 1 枚読ませて、通った（2026-09-21）。** 設定から
+        79MB を取得 → 縦書き 3 行の画像を読ませて 3 行 29 文字、0.7 秒（準備 5 秒）。
+        行の切り出しも並び順も合っていた。設定画面の機種判定も効いている
+        （Apple Vision が「この機械では使えません（macOS 用）」になる）
+      - **同梱した llama-server はまだ動かしていない。** NDL の経路は
+        onnxruntime で、llama-server を通るのは PaddleOCR-VL だけ。
+        `bundled.py` は `sys.executable` の隣の `bin\` を見るので、
+        **梱包した形でその解決が効くかは 1.7GB を取って 1 枚読ませるまで分からない**。
+        macOS 側は「梱包は通るが中身が動かない」を実際に踏んでいる。**ここが残りの本丸**
       - 梱包（MSIX）はこれから。下の 3 つが残り
 - [ ] **GitHub Actions のビルド workflow を書く**（いまは ci / audit /
       dependabot の 3 本だけ）。Windows ランナーで
