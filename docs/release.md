@@ -32,19 +32,23 @@ Microsoft ストアの審査を両方通した実績があります。** 書き�
 
 ### 0. 下ごしらえ
 
-- [ ] **アイコンを作る。** 配布物・Dock・ストア掲載のすべてで要る。
-      元になる 1 枚（1024×1024 程度）を用意し、`build_icons.py` に各サイズを吐かせる
-      - 持ってくる: `archival-packager/scripts/build_icons.py`
-      - Windows 側は `packaging/windows/Assets/` に 5 枚
-        （`Square44x44Logo` / `Square150x150Logo` / `Square310x310Logo` /
-        `Wide310x150Logo` / `StoreLogo`）
-- [ ] **`LICENSE` を置く。** いま `local-ocr` に LICENSE がない。
-      署名の手順で `LICENSE` と `NOTICE` をアプリの中に入れるので、無いと止まる
-- [ ] **`NOTICE` に llama.cpp の同梱を書き足す。** いまは「動かすのに使う」と
-      書いてあるだけ。同梱すると再配布になるので、MIT の全文を入れる
-- [ ] **データの置き場所の名前を見直すか決める**（`core/paths.py` の
-      `APP_DIR_NAME = "PaddleOCR Local"`）。アプリ名は Local OCR になっている。
-      変えると、既に 1.8GB を取得済みの人が取り直しになる。**変えるなら移行処理も要る**
+- [x] **アイコンを作った（2026-09-21）。** `scripts/build_icons.py` が Pillow だけで
+      描いて書き出す。元絵の画像ファイルは持たない（いつ走らせても同じものが出る）
+      - 絵柄は藍色の地に縦書きの頁、四隅に朱色の読み取り枠。
+        archival-packager（青緑＋箱）と色も形も重ならないようにしてある
+      - 出るもの: `assets/icon.png`（1024px、Flet 用）と
+        `packaging/windows/Assets/` の 5 枚（`Square44x44Logo` /
+        `Square150x150Logo` / `Square310x310Logo` / `Wide310x150Logo` / `StoreLogo`）
+      - 32px まで読める（16px では枠が消えて白い頁だけになる）。
+        直したら `uv run python scripts/build_icons.py` で全部作り直す
+- [x] **`LICENSE` を置いた（2026-09-21）。** MIT。tei-scanner と archival-packager に揃えた
+- [x] **`NOTICE` に llama.cpp の同梱を書き足した。** 1. の中で済ませた
+- [x] **データの置き場所の名前をアプリ名に揃えた（2026-09-21）。**
+      `core/paths.py` の `APP_DIR_NAME` が `"Local OCR"` になった。
+      前の名前（`"PaddleOCR Local"`）のフォルダがあれば、`data_dir()` が中身ごと
+      名前を変える。1.8GB を取り直させないため。移せなかったときは前の名前のまま使う。
+      東洋文庫へ配った起動スクリプト版（`~/PaddleOCR校正`）の扱いは今までどおり優先。
+      `tests/test_paths.py` が見張る
 
 ### 1. llama-server の同梱 — **済（2026-09-21）**
 
