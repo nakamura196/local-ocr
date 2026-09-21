@@ -36,24 +36,12 @@ class Asset:
     dest: Path
     # 進捗バーのため。サーバが Content-Length を返さないときの目安にも使う。
     approx_bytes: int
-    # tar.gz / zip なら、展開先。None ならそのまま置く。
-    extract_to: Path | None = None
-    # 「取得済み」と見なす目印。書庫を展開するものは、展開後の実行ファイルを指す
-    # (書庫そのものは展開後に消すので、dest の有無では判定できない)。
-    installed_marker: Path | None = None
-
-    @property
-    def marker(self) -> Path:
-        return self.installed_marker or self.dest
 
     def fetched(self) -> bool:
-        p = self.marker
-        return p.is_file() and p.stat().st_size > 0
+        return self.dest.is_file() and self.dest.stat().st_size > 0
 
     def size_on_disk(self) -> int:
-        """今ディスクにある大きさ。展開するものは展開先のフォルダ全体を数える。"""
-        if self.extract_to is not None and self.extract_to.is_dir():
-            return sum(f.stat().st_size for f in self.extract_to.rglob("*") if f.is_file())
+        """今ディスクにある大きさ。"""
         return self.dest.stat().st_size if self.dest.is_file() else 0
 
 

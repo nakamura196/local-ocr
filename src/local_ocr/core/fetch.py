@@ -6,16 +6,11 @@
 
 from __future__ import annotations
 
-import shutil
-import subprocess
-import tarfile
 import urllib.request
-import zipfile
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
 from .assets import Asset
-from .paths import is_windows
 
 # (今なにをしているか, 0..1 または None)
 Progress = Callable[[str, float | None], None]
@@ -35,11 +30,13 @@ def total_bytes(assets: Iterable[Asset]) -> int:
 
 
 def download(asset: Asset, on_progress: Progress) -> None:
-    """1 件取得する。書庫なら展開まで済ませる。"""
+    """1 件取得する。
+
+    取得するのはモデル (.onnx / .gguf) だけで、どれも 1 ファイルそのまま。
+    **書庫を展開する道は持たない。** 唯一の使い手だった llama.cpp が同梱に
+    変わったので落とした (core/bundled.py)。必要になったら戻す。
+    """
     _download(asset.url, asset.dest, asset.approx_bytes, on_progress, asset.label)
-    if asset.extract_to is not None:
-        on_progress(f"{asset.label}を展開しています", None)
-        _extract(asset.dest, asset.extract_to, asset.marker.name)
 
 
 def download_all(assets: Iterable[Asset], on_progress: Progress) -> None:
@@ -70,10 +67,7 @@ def _quiet(_label: str, _ratio: float | None) -> None:
 def remove(asset: Asset) -> None:
     """取得したものを消す。取り直せるので、確認は呼ぶ側の責任。"""
     asset.dest.unlink(missing_ok=True)
-    part = asset.dest.with_suffix(asset.dest.suffix + ".part")
-    part.unlink(missing_ok=True)
-    if asset.extract_to is not None and asset.extract_to.is_dir():
-        shutil.rmtree(asset.extract_to, ignore_errors=True)
+    asset.dest.with_suffix(asset.dest.suffix + ".part").unlink(missing_ok=True)
 
 
 def _download(
@@ -96,37 +90,3 @@ def _download(
             got += len(chunk)
             on_progress(label, min(got / total, 1.0) if total else None)
     part.replace(dest)
-
-
-def _extract(archive: Path, into: Path, want: str) -> None:
-    """書庫を展開する。`want` は展開後に必ず在るはずのファイル名。
-
-    配布物によって、中身が 1 階層のフォルダに入っている版と、そのまま並んでいる
-    版がある。展開後に `want` を探し直して、どちらでも動くようにする。
-    """
-    into.mkdir(parents=True, exist_ok=True)
-    if archive.suffix == ".zip":
-        with zipfile.ZipFile(archive) as z:
-            z.extractall(into)
-    else:
-        with tarfile.open(archive) as t:
-            t.extractall(into)
-
-    if not (into / want).is_file():
-        found = next((p for p in into.rglob(want) if p.is_file()), None)
-        if found is None:
-            raise RuntimeError(f"展開しましたが {want} が見つかりません")
-        # 実行ファイルと同じ階層の中身をまとめて 1 つ上へ移す(dylib を置き去りにしない)。
-        for item in found.parent.iterdir():
-            target = into / item.name
-            if target.exists():
-                continue
-            shutil.move(str(item), str(target))
-
-    if not is_windows():
-        # ネットから取ったファイルに macOS が付ける印を外す。これが無いと起動できない。
-        subprocess.run(["xattr", "-dr", "com.apple.quarantine", str(into)], check=False)
-        for p in into.glob("llama-*"):
-            if p.is_file():
-                p.chmod(0o755)
-    archive.unlink(missing_ok=True)
