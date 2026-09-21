@@ -5,11 +5,14 @@
 #   op run --env-file=.env -- ./scripts/release.zsh              # dmg を作るだけ
 #   op run --env-file=.env -- ./scripts/release.zsh --publish    # タグ付け + GitHub Release
 #
+#   ./scripts/release.zsh --publish     # 公証済みの dmg がもう在るなら op は要らない
+#
 # 前提:
 #   - ./scripts/build.zsh → sign.zsh → notarize.zsh まで完了していること
 #     （このスクリプトは .app が署名・公証・staple 済みであることを検証してから始める）
-#   - create-dmg（brew install create-dmg）
-#   - APP_STORE_API_KEY / APP_STORE_API_ISSUER（1Password 参照を op run で注入）
+#   - dmg を作るときだけ create-dmg（brew install create-dmg）と
+#     APP_STORE_API_KEY / APP_STORE_API_ISSUER（1Password 参照を op run で注入）が要る。
+#     **既に公証済みの dmg が在れば、作り直さないので資格情報も要らない**
 #
 # なぜ .app を配らず .dmg にするか
 # --------------------------------
@@ -37,12 +40,6 @@ IDENTITY="Developer ID Application: Satoru Nakamura (Q6S8JS6GWV)"
 VOLNAME="Local OCR"
 
 [[ -d "$APP" ]] || { print -u2 "アプリが見つかりません。./scripts/build.zsh を先に実行してください"; exit 1 }
-command -v create-dmg >/dev/null || { print -u2 "create-dmg がありません（brew install create-dmg）"; exit 1 }
-: "${APP_STORE_API_KEY:?APP_STORE_API_KEY が未設定です。op run --env-file=.env -- 経由で実行してください}"
-: "${APP_STORE_API_ISSUER:?APP_STORE_API_ISSUER が未設定です}"
-
-KEY_PATH="$HOME/.private_keys/AuthKey_${APP_STORE_API_KEY}.p8"
-[[ -f "$KEY_PATH" ]] || { print -u2 "API キーが見つかりません: $KEY_PATH"; exit 1 }
 
 VERSION=$(grep -m1 -E '^version *= *"' pyproject.toml | sed -E 's/.*"([^"]+)".*/\1/')
 [[ -n "$VERSION" ]] || { print -u2 "pyproject.toml から version を読めません"; exit 1 }
@@ -50,6 +47,29 @@ TAG="v${VERSION}"
 DMG="build/local-ocr-${VERSION}.dmg"
 
 print "リリース ${TAG}"
+
+# 公証済みの dmg がもう在るなら、作り直さない。
+#
+# **作り直すと、同じ中身をもう一度 Apple に送ることになる。** そのために
+# 1Password の認証がまた要り、公開がそこで止まる（2026-09-21 に 2 回止まった）。
+# dmg の署名と公証チケットの両方が有効なら、そのまま配って差し支えない。
+# 作り直したいときは先に消す（`rm build/local-ocr-*.dmg`）。
+REUSE=""
+if [[ -f "$DMG" ]] \
+  && codesign --verify --strict "$DMG" 2>/dev/null \
+  && xcrun stapler validate "$DMG" >/dev/null 2>&1; then
+  REUSE=1
+  print "  既にある公証済みの dmg を使う: $DMG ($(du -h "$DMG" | cut -f1))"
+fi
+
+# 公証に出すときだけ資格情報が要る。
+if [[ -z "$REUSE" ]]; then
+  command -v create-dmg >/dev/null || { print -u2 "create-dmg がありません（brew install create-dmg）"; exit 1 }
+  : "${APP_STORE_API_KEY:?APP_STORE_API_KEY が未設定です。op run --env-file=.env -- 経由で実行してください}"
+  : "${APP_STORE_API_ISSUER:?APP_STORE_API_ISSUER が未設定です}"
+  KEY_PATH="$HOME/.private_keys/AuthKey_${APP_STORE_API_KEY}.p8"
+  [[ -f "$KEY_PATH" ]] || { print -u2 "API キーが見つかりません: $KEY_PATH"; exit 1 }
+fi
 
 # --------------------------------------------------------------------------
 print "[1/5] .app の状態を確認"
@@ -77,6 +97,9 @@ if [[ -n "$PUBLISH" ]]; then
 fi
 
 # --------------------------------------------------------------------------
+if [[ -n "$REUSE" ]]; then
+  print "[2-4/5] dmg の作成・署名・公証は済んでいるので飛ばす"
+else
 print "[2/5] .dmg を作成"
 rm -f "$DMG"
 CREATE_DMG_ARGS=(
@@ -110,6 +133,7 @@ xcrun notarytool submit "$DMG" \
 
 xcrun stapler staple "$DMG"
 xcrun stapler validate "$DMG"
+fi
 
 # --------------------------------------------------------------------------
 print "[5/5] 配布前の最終確認"
