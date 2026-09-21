@@ -1,0 +1,36 @@
+# 依存の更新を自動で起票させる。
+#
+# **cooldown は外さない。** 乗っ取られた maintainer が悪意ある版を出す攻撃
+# (chalk/debug 2025-09、eslint-config-prettier 2025-07、ua-parser-js 2021) は、
+# どれも数時間〜数日で見つかって取り下げられている。公開直後の版を取らないだけで、
+# その窓をやり過ごせる。security advisory の付いた更新は cooldown を無視して
+# すぐ来るので、緊急の穴が塞がらなくなることはない。
+version: 2
+updates:
+  # uv.lock と pyproject.toml。
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      # minor と patch は 1 本にまとめる。PR が洪水になると誰も読まなくなる。
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+    cooldown:
+      default-days: 5
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 3
+
+  # workflow の `uses:`。SHA で固定してあるが、更新は Dependabot が
+  # SHA とコメントの両方を書き換えてくれる。
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 5
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 3

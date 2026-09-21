@@ -1,0 +1,30 @@
+# PR の関所。ここが通らないと merge できないようにしておく
+# (Dependabot の自動 merge も、これを通ってから入る)。
+#
+# **`uses:` は必ず SHA で固定する。** 可変タグ (`@v7`) のままだと、そのアクションの
+# 持ち主が乗っ取られた瞬間に、ここの workflow へ悪意あるコードが流れ込む
+# (tj-actions/changed-files 2025-03 は実際これで世界中の repo から secret が漏れた)。
+# 末尾のコメントは人間用で、Dependabot もここを読んで SHA と一緒に書き換える。
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+        with:
+          enable-cache: true
+      # --locked: uv.lock と pyproject.toml がずれていたら、直さずに落とす。
+      - run: uv sync --locked
+      - run: uv run pytest -q
+      # 自分自身 (editable で入る local-ocr) は PyPI に無いので飛ばす。
+      - run: uv run --with pip-audit pip-audit --skip-editable
