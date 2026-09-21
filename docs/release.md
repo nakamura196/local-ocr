@@ -2,7 +2,8 @@
 
 **2026-09-21 時点で、どちらのストアにも出していません。**
 済んだのは「1. llama-server の同梱」「0. 下ごしらえ」と、
-「0.5. ソースを公開に切り替える前に」の**「必ず」6 項目**です。
+「0.5. ソースを公開に切り替える前に」（**公開への切り替えまで含めて全部**）です。
+**ソースは 2026-09-21 に公開しました。**
 `packaging/windows/` にはアイコンの 5 枚だけが入っています
 （`AppxManifest.xml.in` などはまだ）。
 
@@ -130,11 +131,27 @@ Python 6,834 行、試験 114 本、`TODO` / `FIXME` の書き置きなし、`pr
 - [ ] コメントと `docs/` は日本語、README とコミットは英語、という今の形でよいか決める
       （tei-scanner・archival-packager と同じ形ではある）
 
-**切り替えるときの操作**
+**切り替えるときの操作 — 済（2026-09-21）**
 
-- [ ] Settings → Danger Zone → visibility を public
-- [ ] **Secret scanning と Push protection を ON。** 公開にすれば無料で使える
-- [ ] 画面の写真を README に 1 枚（ストア掲載の 4 と同じものでよい）
+- [x] **visibility を public にした。** https://github.com/nakamura196/local-ocr
+      - 切り替える前に `gitleaks detect` を履歴全体（24 コミット）にかけて 0 件。
+        手元の絶対パス・メールアドレスの直書きも無し
+- [x] **Secret scanning と Push protection を ON。** 公開にすれば無料で使える
+      - `gh api -X PATCH repos/nakamura196/local-ocr
+        -f 'security_and_analysis[secret_scanning][status]=enabled'
+        -f 'security_and_analysis[secret_scanning_push_protection][status]=enabled'`
+      - **まだ入れていない**もの（どちらも公開 repo では無料）:
+        `secret_scanning_non_provider_patterns`（提供元の分からない形のものも拾う）と
+        `secret_scanning_validity_checks`（見つけた鍵がまだ生きているか確かめる）
+- [x] **画面の写真を README に入れた。** 日英 1 枚ずつ（`docs/images/screenshot-{ja,en}.png`）。
+      『竹取物語』のページを NDL古典籍OCR Lite で読んだところ。出どころは `NOTICE` の A 節に追記
+      - 撮り方: アプリを起動して画像を 1 枚読ませた状態にし、
+        `screencapture -l <窓 id> -o` で窓だけを撮る。窓の id は Quartz の
+        `CGWindowListCopyWindowInfo` を、アプリの Flet プロセスの PID で絞って得る。
+        そのあと長辺 1600px に縮めて `pngquant` で約 360KB
+      - **見つかった小さな当たり: 英語のとき、エンジンの選択肢の文字が切れる**
+        （「NDL Koten OCR Lite (kuzushij」で途切れる）。`app.py` の
+        `engine_dropdown` の `width=240` が日本語の長さに合わせてある。急がない
 
 ### 1. llama-server の同梱 — **済（2026-09-21）**
 
@@ -268,10 +285,9 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
 
 ## 順番の目安
 
-~~1~~（済）→ ~~0~~（済）→ ~~0.5 の「必ず」~~（済）→ **公開に切り替える** → 2 →
+~~1~~（済）→ ~~0~~（済）→ ~~0.5 の「必ず」~~（済）→ ~~公開に切り替える~~（済）→ 2 →
 （.dmg を出して使ってもらう）→ 3 → 3.5 → 4。
 
-**次は公開への切り替えです**（0.5 の「切り替えるときの操作」）。権利と表示の
-確認は 2026-09-21 に済んでいます。切り替えたら 2.（macOS を配る）へ進みます。
+**次は 2.（macOS を配る）です。** 公開への切り替えは 2026-09-21 に済みました。
 
 3.5（公開ページ）は Windows ストアに出すときだけ要ります。

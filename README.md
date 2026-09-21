@@ -14,6 +14,13 @@ By Satoru Nakamura (The University of Tokyo).
 
 ## English
 
+![Local OCR reading a page of the Taketori monogatari: line boxes over the
+scanned scroll on the left, the recognised lines on the right](docs/images/screenshot-en.png)
+
+<sub>Sample page: *Taketori monogatari*, 3 scrolls, early Edo period —
+National Diet Library Digital Collections,
+<https://dl.ndl.go.jp/pid/1287221/1/2> (see [`NOTICE`](NOTICE)).</sub>
+
 ### Status
 
 **Not released yet.** No signed build is published; run it from source for now
@@ -81,6 +88,12 @@ attributions required by them are in [`NOTICE`](NOTICE). The two NDL models are
 CC BY 4.0, and llama.cpp is MIT.
 
 ## 日本語
+
+![『竹取物語』の 1 ページを読んだところ。左に枠を重ねた版面、右に読んだ行が
+並ぶ](docs/images/screenshot-ja.png)
+
+<sub>写っている資料: 『竹取物語』3軸, 江戸前期 — 国立国会図書館デジタルコレクション
+<https://dl.ndl.go.jp/pid/1287221/1/2> （[`NOTICE`](NOTICE) 参照）。</sub>
 
 ### いまの状態
 

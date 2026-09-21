@@ -41,6 +41,11 @@ Local OCR は次の 3 つを使っています。
      画像そのものは同梱していません。
        tests/data/ndl_lite_layout.xml — 検出された版面（枠の座標）
        tests/data/ndl_lite_order.txt  — それを並べ直した結果（期待値）
+  4. README の画面写真 — docs/images/screenshot-ja.png と screenshot-en.png
+     には、上記 repo の試し画像 `resource/1287221_0002.jpg` が写っています。
+     もとは国立国会図書館デジタルコレクションの次の資料です。
+       『竹取物語』3軸, 江戸前期
+       https://dl.ndl.go.jp/pid/1287221/1/2
 
 CC BY 4.0 は、改変したうえで使うことを認めています。上の表示と、
 改変がある旨の明示が条件です。
