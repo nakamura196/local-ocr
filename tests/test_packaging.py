@@ -20,7 +20,10 @@ Flutter SDK と署名鍵と公証の資格情報が要り、CI や他人の機�
 
 from __future__ import annotations
 
+import json
 import plistlib
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -168,3 +171,51 @@ def test_secrets_are_injected_from_1password_not_stored():
     assert not (REPO / ".env").is_file() or ".env" in (REPO / ".gitignore").read_text(
         encoding="utf-8"
     ), ".env が .gitignore に入っていません"
+
+
+# --- 配布物で起動できること ---------------------------------------------------
+
+def test_main_puts_the_source_on_the_path_without_help():
+    """`main.py` だけで `local_ocr` が import できること。
+
+    **これは見た目の問題ではない。** 開発中は editable install が src/ を通すので、
+    この処理が無くても動いてしまう。配布物には editable install が無く、
+    パッケージ後のソースは `.../Resources/app/src/local_ocr/` に置かれるだけで、
+    sys.path に載るのは `.../Resources/app/` だけ。だから
+
+        ModuleNotFoundError: No module named 'local_ocr'
+
+    で起動できない。**署名も公証も通り、.dmg が出来てから初めて分かる**
+    （2026-09-21 に実際に踏んだ）。
+
+    ここで import が通るかを見てはいけない。**手元の `.venv` には editable
+    install が入っており、その `.pth` が src/ を sys.path に足してしまう。**
+    だから main.py が何もしなくても import は通り、sys.path にも src/ が載る
+    （それで一度この試験を取り逃がした）。`-S` を付けて site-packages の
+    処理そのものを止め、**main.py だけで src/ が載るか**を見る。
+    配布物には editable install が無いので、そこが唯一の入口になる。
+    """
+    text = (REPO / "main.py").read_text(encoding="utf-8")
+    marker = "from local_ocr"
+    assert marker in text, "main.py が local_ocr を import していません"
+    prelude = text[: text.index(marker)]
+
+    # `python -c` には __file__ が無いので、main.py の場所を与えてから実行する
+    # （main.py はその場所を起点に src/ を探す）。
+    code = f"__file__ = {str(REPO / 'main.py')!r}\n{prelude}\nimport json, sys\nprint(json.dumps(sys.path))"
+
+    result = subprocess.run(
+        [sys.executable, "-S", "-c", code],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 0, f"main.py の冒頭が実行できません:\n{result.stderr}"
+    paths = {str(Path(entry).resolve()) for entry in json.loads(result.stdout) if entry}
+    assert str(REPO / "src") in paths, (
+        "main.py が src/ を sys.path に載せていません。"
+        "配布物では ModuleNotFoundError: No module named 'local_ocr' で起動できません。"
+        f"\n載っていたのは: {sorted(paths)}"
+    )

@@ -254,11 +254,14 @@ Python 6,834 行、試験 114 本、`TODO` / `FIXME` の書き置きなし、`pr
       「外した瞬間に壊れるがビルドしないと気づけない」約束をスクリプトの文面として見張る
       （dSYM を落としているか、ライセンス全文を数えているか、署名を実行ビットで
       絞っていないか、公証を確かめる前に dmg を作っていないか、など 22 本）
+- [x] **`.dmg` を開いて実際に起動するところまで確かめた（2026-09-21）。**
+      **1 回目は起動に失敗した**（上の当たり 4）。**署名と公証が通っても、
+      中身が動くかは分からない。必ず開いて起動させる**
 - [ ] **別のマシンで開いて確かめる。** 署名・公証が通っても、Gatekeeper が
       symlink で弾くことがある。ビルドした機械では気づけない
 - [ ] **GitHub Release に出す**（`./scripts/release.zsh --publish`）。上の確認のあと
 
-**踏んだ当たり（4 つ）**
+**踏んだ当たり（5 つ）**
 
 1. **`.venv` が古くて `uv run flet` が動かなかった。**
    リポジトリを `paddleocr-local` から改名する前に作った `.venv` が残っており、
@@ -287,7 +290,31 @@ Python 6,834 行、試験 114 本、`TODO` / `FIXME` の書き置きなし、`pr
    **archival-packager の `sign.zsh` にも同じ書き方が残っている**（`(( removed++ ))`）。
    あちらはバンドル外を指す symlink が見つかったときに同じ形で落ちる
 
-4. **`--cleanup-packages` の理解が逆だった（0.5 の記載を訂正）。**
+4. **`src/` レイアウトのパッケージが、配布物では import できなかった。**
+   `.dmg` を開いて起動したところ、これで落ちた。
+
+       ModuleNotFoundError: No module named 'local_ocr'
+
+   **配布物には editable install が無い。** パッケージ後のソースは
+   `.../Resources/app/src/local_ocr/` に置かれるが、`sys.path` に載るのは
+   `.../Resources/app/` だけなので、`src/` の下は見えない。
+   対処は `main.py` の冒頭で `src/` を `sys.path` に入れること。
+   **archival-packager の `main.py` は最初からこれをやっている**
+   （「パッケージ後は sys.path にソースが載らないため、ここで通す」というコメント付き）。
+   持ってくるファイルをスクリプト 4 本だと思い込み、`main.py` を見比べなかったのが漏れの原因
+
+   **なぜ最後まで気づけないのか。** 開発中は `uv sync` の editable install が
+   `src/` を通すので、この 3 行が無くても動く。**署名も公証も通る**
+   （中身が動くかは見ていない）。`.dmg` を開いた人が最初の発見者になる。
+
+   **同じ形を見張る試験を足した**
+   （`tests/test_packaging.py::test_main_puts_the_source_on_the_path_without_help`）。
+   **試験の書き方にも当たりがあった**: 「`local_ocr` が import できるか」を見ると、
+   手元の editable install の `.pth` が `src/` を `sys.path` に足すので**常に通ってしまう**。
+   `python -S`（site-packages の処理を止める）で走らせ、
+   **`main.py` だけで `src/` が `sys.path` に載るか**を見る形にしてある
+
+5. **`--cleanup-packages` の理解が逆だった（0.5 の記載を訂正）。**
    Flet 0.86.2 は **既定で有効にする**（`flet_cli` の `build_base.py` で
    `cleanup.packages` の既定が `True`。止めるには pyproject の
    `[tool.flet.cleanup] packages = false` が要る）。
