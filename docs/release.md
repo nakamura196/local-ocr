@@ -3,6 +3,8 @@
 **2026-09-21 時点で、どちらのストアにも出していません。**
 済んだのは「0. 下ごしらえ」「0.5. ソースを公開に切り替える前に」
 「1. llama-server の同梱」と、**「2. macOS を配る」のスクリプト 4 本**です。
+**Windows 版は 2026-09-21 に手元の Windows 機で 1 本作り、起動して画面が出るところまで
+確かめました**（`build\windows\`、280MB。梱包はまだ）。
 **ソースは 2026-09-21 に公開しました。**
 `.dmg` はまだ GitHub Release に出していません
 （`./scripts/release.zsh --publish` が最後の一手）。
@@ -363,8 +365,14 @@ CI を先に書くと、スクリプトの当たりと workflow の当たりが�
 - [x] **`scripts/fetch-binaries.ps1` は Windows 機で通した（2026-09-21）。**
       llama.cpp b10776 の win-vulkan-x64 を取得 → `binaries\windows\` に 32 件
       （実行ファイル 1 / DLL 30 / そのほか 1、97MB）→ `--version` で起動確認まで
-- [ ] **Windows 機で実際に作って、起動して画面が出るところまで確かめる**
-      （`flet build windows` から先。Build Tools を入れているところ）
+- [x] **Windows 機で作って、起動して画面が出るところまで確かめた（2026-09-21）。**
+      `build\windows\`（280MB）、`local-ocr.exe` が立ち上がり、画面は全部出た。
+      点検も通った（`.venv` なし / `local_ocr` あり / ライセンス全文 47 件 /
+      `bin\` に 32 件）
+      - **まだ実際に文字を読ませていない。** 同梱した llama-server が
+        アプリの中から起動するかは、モデル (.gguf) を取って 1 枚読ませるまで
+        分からない。macOS 側は「梱包は通るが中身が動かない」を実際に踏んでいる
+      - 梱包（MSIX）はこれから。下の 3 つが残り
 - [ ] **GitHub Actions のビルド workflow を書く**（いまは ci / audit /
       dependabot の 3 本だけ）。Windows ランナーで
       `build.ps1` → MSIX。**手で 1 本通してから**
@@ -404,6 +412,21 @@ CI を先に書くと、スクリプトの当たりと workflow の当たりが�
    `The property 'Count' cannot be found on this object` で落ちて、
    意図した `throw`（ライセンス全文が 1 件も残っていない、など）に届かない。
    `@(...)` で包む
+
+**ビルド機に要るもの（`.ps1` の外。2026-09-21 に手元の Windows 11 で踏んだ）**
+
+- **Visual Studio Build Tools の C++ ワークロード。** `winget install
+  Microsoft.VisualStudio.2022.BuildTools --override "--add
+  Microsoft.VisualStudio.Workload.VCTools --includeRecommended --quiet --wait"`。
+  Flutter SDK は `flet build` が自分で入れる
+- **Windows の「開発者モード」をオンにする。** Flutter のプラグインビルドが
+  symlink を使うため。オフだと `pub get` まで通ってから
+  `Building with plugins requires symlink support. Please enable Developer Mode`
+  で止まる。設定 → システム → 開発者向け、または
+  `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock` の
+  `AllowDevelopmentWithoutDevLicense`（DWORD）を 1 にする（管理者権限）。
+  **CI に移すときはランナー側も確かめる**（GitHub の windows ランナーは
+  既定でオンだが、前提として書いておく）
 
 ### 3.5. 公開するページ（GitHub Pages）
 
