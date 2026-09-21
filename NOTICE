@@ -1,6 +1,16 @@
 Local OCR — 同梱・取得するものの表示
 Local OCR — attribution for bundled and downloaded components
 
+このファイルは 3 つに分かれています。
+
+  A. 読む道具（モデル）— NDL 2 種、PaddleOCR-VL
+  B. 同梱する実行ファイル — llama.cpp、LLVM OpenMP
+  C. 配布物（.app / .msix）に入る Python の依存
+
+====================================================================
+A. 読む道具（モデル）
+====================================================================
+
 --------------------------------------------------------------------
 NDLOCR Lite / NDL古典籍OCR Lite  (National Diet Library, Japan)
 --------------------------------------------------------------------
@@ -14,7 +24,10 @@ NDLOCR Lite / NDL古典籍OCR Lite  (National Diet Library, Japan)
   © National Diet Library, Japan
   Licensed under CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
 
-Local OCR は次の 2 つを使っています。
+どちらの repo も、ライセンスは CC BY 4.0 です（repo 直下の `LICENCE`。
+GitHub の API が返す SPDX の値も `CC-BY-4.0`。2026-09-21 に確認）。
+
+Local OCR は次の 3 つを使っています。
 
   1. モデル (.onnx) と文字の一覧 — そのままの形で使っています。
      モデルは初回に上記 repo から取得します。文字の一覧は
@@ -22,6 +35,12 @@ Local OCR は次の 2 つを使っています。
   2. 読み取りの手続き — src/local_ocr/ndl/ は、上記 repo の Python 実装を
      もとにした改変物です。どこをどう変えたかは
      src/local_ocr/ndl/__init__.py に書いてあります。
+  3. 試験に使う版面のデータ — tests/data/ の 2 つは、上記 repo の試し画像
+     `resource/digidepo_3048008_0025.jpg`（表のあるページ）を、上記 repo
+     由来の版面検出にかけて出た座標です。CC BY 4.0 の派生物にあたります。
+     画像そのものは同梱していません。
+       tests/data/ndl_lite_layout.xml — 検出された版面（枠の座標）
+       tests/data/ndl_lite_order.txt  — それを並べ直した結果（期待値）
 
 CC BY 4.0 は、改変したうえで使うことを認めています。上の表示と、
 改変がある旨の明示が条件です。
@@ -31,9 +50,39 @@ PaddleOCR-VL  (PaddlePaddle)
 --------------------------------------------------------------------
 
 「読む道具」のうち PaddleOCR-VL (paddle-vl) のモデル (.gguf) は、初回に
-次から取得します。同梱はしていません。
+次から取得します。**同梱はしていません。**
 
   https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.6-GGUF
+
+  Copyright (c) 2025 PaddlePaddle Authors. All Rights Reserved.
+  Licensed under the Apache License, Version 2.0
+  https://www.apache.org/licenses/LICENSE-2.0
+
+2026-09-21 に、配っている当人の記載で確かめたことを残しておきます。
+
+  - モデルカードの冒頭に `license: apache-2.0` と書いてあります。
+    Hugging Face の API が返す値も同じです（`cardData.license`）。
+    取得に同意や申請は要りません（`gated: false`）。
+  - **GGUF に変換したものを配っているのは PaddlePaddle 自身です。**
+    repo の持ち主が `PaddlePaddle`（元のモデルと同じ）なので、
+    「変換した第三者が別の条件を付けている」という形にはなっていません。
+  - **GGUF の repo には LICENSE ファイルが置かれていません。**
+    モデルカードのバッジが `./LICENSE` を指していますが、その先は空
+    （Entry not found）です。条件の拠りどころは、上に書いたモデルカードの
+    `license: apache-2.0` の記載になります。
+  - 全文は、同じ組織が出している元のモデルの側にあります。
+    https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.6/blob/main/LICENSE
+    素の Apache-2.0 で、追加の条件は付いていません（末尾の著作権表示が
+    "Copyright (c) 2025 PaddlePaddle Authors"）。
+  - PaddleOCR-VL-1.6 は PaddleOCR-VL-1.5 を育てたものです。1.5 と
+    1.5-GGUF も、同じ PaddlePaddle が Apache-2.0 で出しています。
+
+取得するだけなので、Local OCR が配るものの中にモデルは入りません。
+それでも上の表示を残します。
+
+====================================================================
+B. 同梱する実行ファイル
+====================================================================
 
 --------------------------------------------------------------------
 llama.cpp  (The ggml authors)
@@ -84,3 +133,104 @@ Windows 版に同梱する llama.cpp の配布物には libomp.dll（LLVM の Op
 全文は配布物に入っている LICENSE-LLVM-OpenMP をそのまま同梱しています
 （binaries/windows/LICENSE-LLVM-OpenMP → アプリの中に一緒に入ります）。
 macOS 版には入りません。
+
+====================================================================
+C. 配布物（.app / .msix）に入る Python の依存
+====================================================================
+
+`.app` と `.msix` には、アプリが動くのに要る Python の部品が丸ごと入ります。
+**入れた時点で再配布になる**ので、何が入るのかを以下に書き出しておきます。
+
+**何が入るかは `pyproject.toml` の `[project] dependencies` だけで決まります。**
+`flet build` は、そこに書いてある行をそのまま pip に渡します
+（flet-cli の `commands/build_base.py` の `package_python_app`）。
+`[dependency-groups] dev` の側（pytest、flet-cli とその依存）は**入りません**。
+
+  → 依存を `flet[desktop]` にしてあるのは、このためです。**`flet[all]` に
+    すると flet-cli が実行時の依存になり、その下にいる chardet（LGPL-2.1+）と
+    text-unidecode（Artistic/GPL）まで配ることになります。**
+    2026-09-21 に `uv tree --no-dev` で確かめた結果、どちらも入っていません。
+
+下の一覧は 2026-09-21 に数えたものです（28 個）。ライセンスの値は、各
+パッケージが自分で申告しているもの（wheel の `METADATA` の
+`License-Expression` / `License` / Classifier）をそのまま写しました。
+
+  MIT
+    anyio / h11 / markdown-it-py / mdurl / onnxruntime / repath / rich / six
+    pyobjc-core / pyobjc-framework-cocoa / pyobjc-framework-coreml /
+    pyobjc-framework-quartz / pyobjc-framework-vision  （pyobjc は macOS のみ）
+
+  MIT-CMU
+    pillow
+
+  BSD-3-Clause
+    httpcore / httpx / idna / oauthlib / protobuf
+
+  BSD-2-Clause
+    pygments
+
+  Apache-2.0
+    flet / flet-desktop / msgpack / flatbuffers
+
+  Apache-2.0 OR BSD-2-Clause
+    packaging
+
+  PSF-2.0
+    typing-extensions
+
+  BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0
+    numpy（いくつかの部分を取り込んでいるため、申告がこの形になっています）
+
+  MPL-2.0
+    certifi
+
+**表示の実物は、多くがそれぞれの中に入ったまま一緒に配られます。**
+wheel の `*.dist-info/licenses/` にライセンス全文が入っており、`flet build`
+はそれを消しません（消すのは `--cleanup-packages` を付けたときだけで、
+既定では付きません）。**この引数を足すと表示が消えるので、足さないこと。**
+
+**ただし 6 つは、ライセンスの全文をどこにも持っていません。**
+`METADATA` に名前が書いてあるだけです（2026-09-21 に中を探して確認）。
+MIT も Apache-2.0 も、配るときに文面を渡すことを求めるので、この 6 つの分は
+こちらで持つ必要があります。
+
+  Apache-2.0
+    flet / flet-desktop   © Appveyor Systems Inc.  https://github.com/flet-dev/flet
+    flatbuffers           © Google                 https://github.com/google/flatbuffers
+    → 全文 https://www.apache.org/licenses/LICENSE-2.0
+
+  MIT
+    pyobjc-core / pyobjc-framework-CoreML / pyobjc-framework-Vision
+    © Ronald Oussoren ほか  https://github.com/ronaldoussoren/pyobjc
+    → 同じ PyObjC の文面が、兄弟にあたる pyobjc-framework-Cocoa と
+      pyobjc-framework-Quartz の `LICENSE.txt` に入っています（プロジェクト
+      全体を覆う 1 つの文面なので、それで足ります）
+
+中に別のものを抱えている 3 つは、それぞれ自前の表示を持っています。
+
+  - onnxruntime — `onnxruntime/ThirdPartyNotices.txt`（6,369 行）。
+    protobuf、zlib、pybind11、ONNX、Eigen ほかの分が入っています
+  - pillow — `pillow-*.dist-info/licenses/LICENSE`（1,574 行）に、
+    同梱している 18 個のライブラリ（libjpeg / libpng / libtiff / FreeType /
+    HarfBuzz / libwebp / libavif / OpenJPEG / Little-CMS / Brotli / zlib /
+    xz / libxcb ほか）の全文が入っています
+  - numpy — `numpy-*.dist-info/licenses/` に同様のものが入っています
+
+**certifi だけ弱いコピーレフト（MPL-2.0）なので、1 つ条件が増えます。**
+MPL-2.0 は、そのソースを受け取れるようにしておくことを求めます。手を加えずに
+そのまま配っているので、次を示せば足ります。
+
+  https://github.com/certifi/python-certifi
+
+certifi は httpx（flet が使う HTTP の部品）が要求するもので、通信相手の
+証明書を確かめるための一覧です。Local OCR が画像を外に送ることはありません。
+
+**画面を組み立てている Flutter の分は、ここには含みません。**
+`flet build macos` / `flet build windows` は Flutter でアプリを組み立てるので、
+Flutter 側（BSD-3-Clause ほか）の表示はアプリの中の
+`flutter_assets/NOTICES` に入ります。**現物の確認は、最初にビルドしたとき
+（docs/release.md の 2.）に行います。**
+
+一覧を取り直すには:
+
+  uv tree --no-dev --frozen

@@ -1,11 +1,13 @@
 # 配る — 作業手順の下書き
 
 **2026-09-21 時点で、どちらのストアにも出していません。**
-済んだのは「1. llama-server の同梱」と「0. 下ごしらえ」です。
+済んだのは「1. llama-server の同梱」「0. 下ごしらえ」と、
+「0.5. ソースを公開に切り替える前に」の**「必ず」6 項目**です。
 `packaging/windows/` にはアイコンの 5 枚だけが入っています
 （`AppxManifest.xml.in` などはまだ）。
 
-雛形は `~/git/kim/archival-packager`。**同じ Flet 0.86.2 の構成で、Apple の公証と
+雛形は **archival-packager**（https://github.com/nakamura196/archival-packager ）。
+**同じ Flet 0.86.2 の構成で、Apple の公証と
 Microsoft ストアの審査を両方通した実績があります。** 書き写せば済むところが多いので、
 下の TODO では「どのファイルを持ってくるか」を毎回書いています。
 
@@ -21,9 +23,9 @@ Microsoft ストアの審査を両方通した実績があります。** 書き�
 ## 手元にあるもの（確認済み）
 
 - 署名鍵 `Developer ID Application: Satoru Nakamura (Q6S8JS6GWV)`
-- 公証用の App Store Connect API キー `~/.private_keys/AuthKey_<KEY_ID>.p8`
-  （1Password の `app-store-connect-notarization`。`APP_STORE_API_KEY` /
-  `APP_STORE_API_ISSUER` を `op run` で渡す）
+- 公証用の App Store Connect API キー（`.p8`）。**手元にも CI にも平文で置かず、
+  1Password から `op run` で `APP_STORE_API_KEY` / `APP_STORE_API_ISSUER` として
+  渡す。** どの項目かは手元の控えを見る（ここには書かない）
 - Microsoft Partner Center のアカウントと申請 API の設定
   （archival-packager の `store/API設定手順.md`）
 
@@ -60,29 +62,63 @@ Microsoft ストアの審査を両方通した実績があります。** 書き�
 
 Python 6,834 行、試験 114 本、`TODO` / `FIXME` の書き置きなし、`print` の消し忘れなし、
 手元の絶対パスの直書きなし。ruff は同日 CI に入れて 0 件。
-**公開を止めるほど散らかってはいません。** 下の「必ず」だけ済めば出せます。
+**公開を止めるほど散らかってはいません。**
+**下の「必ず」は 2026-09-21 に 6 項目すべて済ませました。権利の面で公開を
+止めるものはありません。** あとは「切り替えるときの操作」だけです。
 
 **必ず（権利と表示。ここだけは出す前に済ませる）**
 
-- [ ] **PaddleOCR-VL のモデルの条件を `NOTICE` に書く。** いまは取得先の URL しか
-      書いていない。Apache-2.0 かどうか、GGUF に変換したものに別の条件が付いていないかを、
-      配っている当人の記載で確かめる（推測で書かない）
-- [ ] **配布物に入る Python の依存の表示を確かめる。** `.app` / `.msix` には依存が
-      丸ごと入るので、入れた時点で再配布になる。flet / onnxruntime / pillow / pyobjc /
-      numpy と、その推移依存まで見る。
-      **archival-packager は 2026-09-12 まで、`flet[all]` 経由で入っていた
-      chardet（LGPL-2.1+）と text-unidecode（Artistic/GPL）を表示なしで配っていた。**
-      local-ocr は最初から `flet[desktop]` だが、**確かめてはいない**
-- [ ] **NDL の 2 つの表示が CC BY 4.0 の条件を満たしているか最終確認。**
-      表示・改変の明示・ライセンスへのリンクは `NOTICE` に書いてある。読み直すだけ
-- [ ] **`tests/data/` の出どころを書く。** `ndl_lite_layout.xml` と
-      `ndl_lite_order.txt` は上流の試し画像から作ったもの。CC BY 4.0 の派生物なら
-      `NOTICE` に 1 行足す
-- [ ] **このファイル自身を読み直す。** 1Password の項目名（`app-store-connect-notarization`）、
-      署名鍵の名前（Team ID 入り）、`~/git/kim/archival-packager` のような手元の道が書いてある。
-      archival-packager は同じ種類のものを公開しているので揃えるなら問題ないが、
-      **一度目で確かめる**
-- [ ] `docs/design.md` の `toyo_urenja_tei/work/paddle/`（手元の道）を、意味の通る書き方に直す
+- [x] **PaddleOCR-VL のモデルの条件を `NOTICE` に書いた（2026-09-21）。**
+      **Apache-2.0。追加の条件は無い。** 配っている当人の記載で確かめた。
+      - GGUF を配っているのは **PaddlePaddle 自身**（repo の持ち主が元のモデルと同じ）。
+        「変換した第三者が別の条件を付けている」形にはなっていない。取得に同意も申請も
+        要らない（Hugging Face の API が `gated: false` を返す）
+      - **落とし穴: GGUF の repo には `LICENSE` ファイルが無い。** モデルカードの
+        バッジが `./LICENSE` を指しているが、その先は Entry not found。
+        条件の拠りどころはモデルカード冒頭の `license: apache-2.0` の記載。
+        全文は元のモデル（`PaddleOCR-VL-1.6`）の側にあり、素の Apache-2.0
+        （末尾が "Copyright (c) 2025 PaddlePaddle Authors"）
+      - 1.5 と 1.5-GGUF も同じ Apache-2.0。1.6 はその派生
+- [x] **配布物に入る Python の依存の表示を確かめた（2026-09-21）。結論: 問題なし。**
+      **コピーレフトは certifi（MPL-2.0）1 つだけで、GPL / LGPL は 1 つも無い。**
+      **archival-packager が踏んだ chardet（LGPL-2.1+）と text-unidecode
+      （Artistic/GPL）は、どちらも入っていない。**
+      - 28 個の一覧と各ライセンスは `NOTICE` の C 節。取り直すのは
+        `uv tree --no-dev --frozen`
+      - **入るものは `pyproject.toml` の `[project] dependencies` だけで決まる。**
+        `flet build` はその行をそのまま pip に渡す（flet-cli の
+        `commands/build_base.py` の `package_python_app` で確認）。
+        `[dependency-groups] dev`（pytest / flet-cli とその下の chardet）は入らない。
+        **`flet[desktop]` を `flet[all]` にした瞬間に崩れる**ので、ここは動かさない
+      - **6 つ（flet / flet-desktop / flatbuffers / pyobjc-core /
+        pyobjc-framework-CoreML / pyobjc-framework-Vision）は、ライセンス全文を
+        wheel のどこにも持っていない。** `METADATA` に名前が書いてあるだけ。
+        この分の文面はこちらで持つ必要がある（`NOTICE` の C 節に書いた）
+      - 版は `uv.lock` ではなくビルド時に pip が解決する。**大きく上げたときは
+        測り直す**
+- [x] **NDL の 2 つの表示を最終確認した（2026-09-21）。** 上流 2 repo とも
+      CC BY 4.0（repo 直下の `LICENCE`、GitHub API の SPDX も `CC-BY-4.0`）。
+      表示・改変の明示・ライセンスへのリンクは `NOTICE` にそろっている
+- [x] **`tests/data/` の出どころを `NOTICE` に書いた（2026-09-21）。**
+      上流 `ndl-lab/ndlocr-lite` の試し画像 `resource/digidepo_3048008_0025.jpg`
+      （表のあるページ）を、上流由来の版面検出にかけて出た座標。CC BY 4.0 の派生物。
+      **画像そのものは入れていない**（座標だけ）
+- [x] **このファイル自身を読み直した（2026-09-21）。** 直したのは 3 か所。
+      - 1Password の項目名は**消した**。公開して得がない（項目名だけでは中身は
+        取れないが、書く理由も無い）
+      - `~/git/kim/archival-packager` は、公開されている
+        https://github.com/nakamura196/archival-packager に差し替えた。
+        読む人にとってはこちらのほうが使える
+      - `~/git/CLAUDE.md` への参照は、そこに書いてある中身そのものに置き換えた
+      - **署名鍵の名前（`Developer ID Application: Satoru Nakamura (Q6S8JS6GWV)`）は
+        そのまま残す。** Team ID は秘密ではない。署名された `.dmg` に対して
+        誰でも `codesign -dv` で読める
+      - `~/PaddleOCR校正` は残す。東洋文庫へ配った版が実際に使っている場所で、
+        `core/paths.py` にも書いてある
+- [x] `docs/design.md` の `toyo_urenja_tei/work/paddle/`（手元の道）を直した
+      （2026-09-21）。CER の数字は残し、**どう測ったか**（人手の翻刻 352 行を正解に
+      2 通りの渡し方で突き合わせた）に書き換えた。正解のデータは別の作業のもので
+      このリポジトリには入っていない、と明記してある
 
 **やった方がよい（読みやすさ。公開を止めはしない）**
 
@@ -154,6 +190,12 @@ Python 6,834 行、試験 114 本、`TODO` / `FIXME` の書き置きなし、`pr
 - [ ] **`scripts/build.zsh`** — 持ってくる。`--exclude` に `.venv` `binaries`
       `build` `tests` `scripts` `.git` `.github` を入れる
       （入れないと `.venv` が丸ごとアプリに入る）
+      - **`--cleanup-packages` を付けないこと。** 付けると依存に同梱されている
+        ライセンス全文が消える（既定では付かない。0.5 で確かめた）
+      - **`NOTICE` と `LICENSE` をアプリの中に入れる。** 依存のうち 6 つは
+        自分ではライセンス全文を持っておらず、その分の文面は `NOTICE` にしかない
+      - **`flutter_assets/NOTICES` の現物をここで確認する。** Flutter 側
+        （BSD-3-Clause ほか）の表示が入っているはず。まだ見ていない
 - [ ] **`scripts/entitlements.plist`** — 持ってくる。
       **常駐サーバを 127.0.0.1 に立てるので、ネットワーク関係の項目が
       archival-packager と同じでよいか確かめる**
@@ -176,7 +218,7 @@ Python 6,834 行、試験 114 本、`TODO` / `FIXME` の書き置きなし、`pr
 - [ ] **GitHub Actions のビルド workflow を書く**（いまは ci / audit /
       dependabot の 3 本だけ）。Windows ランナーで
       `fetch-binaries.ps1` → `flet build windows` → MSIX
-      - **Actions は SHA で固定する**（`~/git/CLAUDE.md` の方針）
+      - **Actions は SHA で固定する**（可変タグは乗っ取られた瞬間に流れ込む）
 - [ ] **`packaging/windows/AppxManifest.xml.in`** と `Assets/` を持ってくる
 - [ ] **Microsoft ストアの規約を、申請前に読み直す。**
       llama-server を同梱にすれば大きな問題は無いはずだが、
@@ -226,9 +268,10 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
 
 ## 順番の目安
 
-~~1~~（済）→ ~~0~~（済）→ 0.5 → 2 →（.dmg を出して使ってもらう）→ 3 → 3.5 → 4。
+~~1~~（済）→ ~~0~~（済）→ ~~0.5 の「必ず」~~（済）→ **公開に切り替える** → 2 →
+（.dmg を出して使ってもらう）→ 3 → 3.5 → 4。
 
-**次は 0.5 です。** リポジトリは非公開で作ってあります。`.dmg` を Releases に
-置くには公開に切り替える必要があり、そこが権利の表示を確かめる関所になります。
+**次は公開への切り替えです**（0.5 の「切り替えるときの操作」）。権利と表示の
+確認は 2026-09-21 に済んでいます。切り替えたら 2.（macOS を配る）へ進みます。
 
 3.5（公開ページ）は Windows ストアに出すときだけ要ります。
