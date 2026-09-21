@@ -53,11 +53,17 @@ class WorkView:
 
         # 単独で読むときの右側。
         self.lines_list = ft.ListView(expand=True, spacing=2, padding=ft.Padding.all(8))
+        # **「まとめて」は読みながら直す場所なので、行の一覧より広く取る。**
+        # 枠を消しただけだと文字が縁にぴたりと付いて読みにくい。
+        # 余白は content_padding で内側に入れる(外の Container だけだと、
+        # 文字の折り返しが縁に触れる)。行間は 1.7 まで開ける。
         self.whole_text = ft.TextField(
             multiline=True,
             expand=True,
             border=ft.InputBorder.NONE,
-            text_size=13,
+            text_size=14,
+            text_style=ft.TextStyle(height=1.7),
+            content_padding=ft.Padding.symmetric(horizontal=16, vertical=12),
             on_change=self._on_text_edit,
         )
         self.count = theme.muted("")
@@ -171,6 +177,11 @@ class WorkView:
 
     def _single_pane(self) -> ft.Control:
         self.pane_body = ft.Container(content=self.lines_list, expand=True)
+        self.whole_pane = ft.Container(
+            content=self.whole_text,
+            expand=True,
+            padding=ft.Padding.only(top=4, bottom=8),
+        )
         return ft.Container(
             width=theme.RIGHT_PANE,
             content=ft.Column(
@@ -405,7 +416,7 @@ class WorkView:
 
     def _on_text_mode(self, _event=None) -> None:
         whole = "whole" in (self.text_mode.selected or ["lines"])
-        self.pane_body.content = self.whole_text if whole else self.lines_list
+        self.pane_body.content = self.whole_pane if whole else self.lines_list
         # 「まとめて」で直した分を、行の一覧にも映す。
         self._render()
         self.page.update()
