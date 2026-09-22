@@ -42,6 +42,11 @@ def _body(name: str) -> str:
 def test_scripts_exist_and_are_executable(script):
     path = SCRIPTS / script
     assert path.is_file(), f"{script} がありません"
+    if sys.platform == "win32":
+        # 実行ビットは POSIX の概念。Windows の git checkout では
+        # os.stat().st_mode が常に固定値を返し、実際のビットを反映しない
+        # （2026-09-22、Windows の CI で初めて踏んだ）。
+        pytest.skip("実行ビットは Windows では確かめられない")
     assert path.stat().st_mode & 0o111, f"{script} に実行ビットがありません"
 
 
