@@ -1,0 +1,115 @@
+# Windows 版をビルドし、MSIX（Microsoft Store が扱う配布形式）に包む。
+#
+# 手動起動のみ（workflow_dispatch）。手元の Windows 機で 1 本通す方針だった
+# （docs/release.md の「3. Windows を配る」）が、以後の版もここで確かめられる
+# ようにしておく。プッシュのたびには走らせない — Windows runner は課金が重い。
+#
+# **`uses:` は必ず SHA で固定する。**（理由は ci.yml のコメントを参照。
+# 可変タグは、そのアクションの持ち主が乗っ取られた瞬間に流れ込む。）
+#
+# 雛形は archival-packager の .github/workflows/ci.yml。scripts/build.ps1 が
+# 取得・ビルド・同梱・点検までを 1 本でやってくれるので、ここでの手順は
+# あちらよりだいぶ短い。
+name: Windows build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+        with:
+          enable-cache: true
+
+      - run: uv sync --locked
+
+      # Windows 固有の不具合は Linux の CI では原理的に捕まらない
+      # （実行ファイル名の付き方、パスの区切り、利用者データの置き場所）。
+      - name: pytest（Windows）
+        run: uv run pytest -q
+
+      # Flet が要求する Flutter のバージョンでキャッシュする。uv.lock のハッシュで
+      # キーすると、無関係な依存を 1 つ変えただけで 1GB 超の Flutter SDK を
+      # 再取得することになる。
+      - name: Resolve required Flutter version
+        id: flutter
+        shell: bash
+        run: |
+          v=$(uv run python -c "import flet.version; print(flet.version.flutter_version)")
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Flet's Flutter
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.flet
+            ~/flutter
+          key: flet-flutter-windows-${{ steps.flutter.outputs.version }}
+
+      # 取得・ビルド・llama.cpp の同梱・点検（.venv が紛れていないか、
+      # local_ocr が入っているか、ライセンス全文が残っているか）まで
+      # build.ps1 が一本でやる。手元の Windows 機で通した手順と同じもの。
+      - name: Build (scripts/build.ps1)
+        env:
+          PYTHONIOENCODING: utf-8
+          PYTHONUTF8: "1"
+          FLET_CLI_SKIP_FLUTTER_DOCTOR: "true"
+        run: pwsh -File scripts/build.ps1
+
+      # MSIX に包む。Store に MSIX で出すと Microsoft が署名し直すので、
+      # こちらで証明書を買う必要がない。Identity は Partner Center が
+      # 2026-09-22 に発行した値（Store ID 9N07ZD1ZPKBZ）を
+      # packaging/windows/AppxManifest.xml.in に入れてあるので、
+      # ここで出る MSIX はそのまま Partner Center にアップロードできる。
+      - name: Package as MSIX
+        shell: pwsh
+        run: |
+          $root = @(Get-ChildItem -Path build\windows -Filter "*.exe" -File)[0].DirectoryName
+          $exe  = @(Get-ChildItem -Path build\windows -Filter "*.exe" -File)[0].Name
+          $ver  = (Select-String -Path pyproject.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
+
+          # MSIX の Version は 4 つ組で、末尾は 0 でなければならない。
+          $manifestVersion = "$ver.0"
+
+          Copy-Item -Recurse -Force packaging\windows\Assets -Destination (Join-Path $root "Assets")
+          (Get-Content packaging\windows\AppxManifest.xml.in -Raw) `
+            -replace '@EXE@', $exe -replace '@VERSION@', $manifestVersion |
+            Set-Content -Path (Join-Path $root "AppxManifest.xml") -Encoding UTF8
+          Write-Host "実行ファイル: $exe / バージョン: $manifestVersion"
+
+          # MakeAppx は Windows SDK に入っている。SDK のバージョンは runner の
+          # 更新で変わるので、決め打ちにせず一番新しいものを拾う。
+          $makeappx = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin" `
+            -Recurse -Filter "makeappx.exe" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "x64" } |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $makeappx) { throw "MakeAppx.exe が見つかりません（Windows SDK 未導入）" }
+          Write-Host "MakeAppx: $($makeappx.FullName)"
+
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          & $makeappx.FullName pack /d $root /p dist\LocalOCR.msix /o
+          if ($LASTEXITCODE -ne 0) { throw "MSIX の作成に失敗しました" }
+          Get-Item dist\LocalOCR.msix | Format-List Name, Length
+
+      - name: Upload the MSIX
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: local-ocr-windows-msix-unsigned
+          path: dist/LocalOCR.msix
+          retention-days: 7
+
+      # 手元に Windows 機が無いときの動作確認用（署名はしていないので配布物ではない）。
+      - name: Upload the unpacked build
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: local-ocr-windows-unsigned
+          path: build/windows
+          retention-days: 7

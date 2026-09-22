@@ -383,10 +383,14 @@ CI を先に書くと、スクリプトの当たりと workflow の当たりが�
         **梱包した形でその解決が効くかは 1.7GB を取って 1 枚読ませるまで分からない**。
         macOS 側は「梱包は通るが中身が動かない」を実際に踏んでいる。**ここが残りの本丸**
       - 梱包（MSIX）はこれから。下の 3 つが残り
-- [ ] **GitHub Actions のビルド workflow を書く**（いまは ci / audit /
-      dependabot の 3 本だけ）。Windows ランナーで
-      `build.ps1` → MSIX。**手で 1 本通してから**
-      - **Actions は SHA で固定する**（可変タグは乗っ取られた瞬間に流れ込む）
+- [x] **GitHub Actions のビルド workflow を書いた（2026-09-22）。**
+      `.github/workflows/windows-build.yml`。手動起動（`workflow_dispatch`）のみ。
+      雛形は archival-packager の `ci.yml`。`build.ps1` が取得・ビルド・同梱・
+      点検を一本でやってくれるので、あちらよりだいぶ短い
+      - **Actions は SHA で固定した**（可変タグは乗っ取られた瞬間に流れ込む）。
+        `cache`/`upload-artifact` の SHA は archival-packager で動作実績のある
+        ものをそのまま流用
+      - **まだ 1 度も走らせていない。** 次にやるのはこれ
 - [x] **`packaging/windows/AppxManifest.xml.in`（2026-09-22）。** `Assets/` は
       既に揃っていた（0. 下ごしらえで作成済み）。archival-packager を雛形に、
       対応言語を `ja-JP`/`en-US` の両方、`runFullTrust` は同梱の llama-server
