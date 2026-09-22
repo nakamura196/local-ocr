@@ -9,9 +9,11 @@
 **Windows 版は 2026-09-21 に手元の Windows 機で 1 本作り、起動して画面が出るところまで
 確かめました**（`build\windows\`、280MB。梱包＝MSIX 化はこれから）。
 **ソースは 2026-09-21 に公開しました。**
-`packaging/windows/` は、アイコン 5 枚に加えて `AppxManifest.xml.in`（2026-09-22、
-Identity は仮の値）も入りました。GitHub Pages（プライバシーポリシー等）と
-ストア掲載文の下書きも書きましたが、**まだ commit / push していません**。
+`packaging/windows/` は、アイコン 5 枚に加えて `AppxManifest.xml.in`（2026-09-22）
+も入りました。GitHub Pages（プライバシーポリシー等）とストア掲載文の下書きは
+commit / push 済み（`https://nakamura196.github.io/local-ocr/`）。**Partner
+Center でのアプリ名予約も 2026-09-22 に済み**（Store ID `9N07ZD1ZPKBZ`）、
+`AppxManifest.xml.in` の Identity は本物の値になっています。
 
 雛形は **archival-packager**（https://github.com/nakamura196/archival-packager ）。
 **同じ Flet 0.86.2 の構成で、Apple の公証と
@@ -389,10 +391,12 @@ CI を先に書くと、スクリプトの当たりと workflow の当たりが�
       既に揃っていた（0. 下ごしらえで作成済み）。archival-packager を雛形に、
       対応言語を `ja-JP`/`en-US` の両方、`runFullTrust` は同梱の llama-server
       起動用として書いた
-      - **`Identity` の `Name`/`Publisher` はまだ仮の値。** Partner Center で
-        「Local OCR」のアプリ名予約（ダッシュボードでの手作業。API からは
-        できない — `store/API設定手順.md` 参照）を済ませたあと、
-        「製品識別情報」ページの本物の値に書き換える必要がある。**ここが次の関所**
+      - [x] **アプリ名の予約（2026-09-22）。** Partner Center で「Local OCR」を
+            予約した（ダッシュボードでの手作業。API からはできない）。
+            **Store ID: `9N07ZD1ZPKBZ`**。3 か月以内（〜2026-12-22）に提出しないと
+            予約が失効する。`Identity` の `Name`/`Publisher` は本物の値に
+            書き換え済み（`SatoruNakamura.LocalOCR` /
+            `CN=B36F83DF-04BA-4243-A19A-C4E79E9C7FF0`）
       - `@EXE@`/`@VERSION@` を実際の値に置き換える仕組み（archival-packager の
         `build.ps1` 相当）はまだ書いていない
 - [ ] **Microsoft ストアの規約を、申請前に読み直す。**
@@ -503,16 +507,12 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
 ~~2 のスクリプト~~（済）→ ~~.dmg を出して使ってもらう~~（済、`v0.1.0`）→
 **3（Windows を配る）** → 3.5 → 4。
 
-**次は Partner Center で「Local OCR」のアプリ名を予約することです。**
-ダッシュボードでの手作業（API からはできない）。予約すると発行される
-Identity Name / Publisher を `packaging/windows/AppxManifest.xml.in` の
-仮の値と差し替える。そのあと:
+**Partner Center でのアプリ名予約は済みました（2026-09-22、Store ID
+`9N07ZD1ZPKBZ`）。** `AppxManifest.xml.in` の Identity も本物の値に差し替え済み。
+**3 か月以内（〜2026-12-22）に Store へ提出しないと予約が失効する。** 次は:
 
 - GitHub Actions の Windows ビルド workflow（`build.ps1` → MSIX）を書く
-- `docs/`（GitHub Pages 一式）と `store/`（掲載文）を commit / push する
-  （**まだしていない**。push しないと `https://nakamura196.github.io/local-ocr/`
-  は 404 のまま）
-- Windows 実機で MSIX を起動してスクリーンショットを撮る
+- Windows 実機で MSIX を作り、起動して `store/screenshots/{ja,en}/` を撮る
 - `scripts/store_submit.py` を持ってくる、または初回はダッシュボードから手で申請
 
 3.5（公開ページ）は Windows ストアに出すときだけ要ります。

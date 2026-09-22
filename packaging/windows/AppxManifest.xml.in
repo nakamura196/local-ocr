@@ -6,12 +6,10 @@
   @EXE@ と @VERSION@ は CI/ビルドスクリプトが実際の値に置き換える
   （archival-packager の build.ps1 と同じ形にすること。まだ書いていない）。
 
-  ★★★ Identity の Name / Publisher はまだ仮の値。 ★★★
-  Partner Center で「Local OCR」のアプリ名予約（ダッシュボードでの手作業。
-  API からはできない）を済ませたあと、そのページの「製品識別情報 /
-  Product identity」に出る本物の値に、必ず両方とも書き換えること。
-  1 文字でも違うと Store は受理しない。archival-packager の実例は
-  `packaging/windows/AppxManifest.xml.in` の同じ場所にコメントで残っている。
+  Identity の Name / Publisher は、Partner Center で「Local OCR」のアプリ名を
+  予約（2026-09-22、ダッシュボードでの手作業。API からはできない）したあと、
+  「製品識別情報 / Product identity」ページから写した本物の値（Store ID:
+  9N07ZD1ZPKBZ）。**勝手に変えないこと。** 1 文字でも違うと Store は受理しない。
 
   runFullTrust は Win32 アプリを MSIX に包むときの標準的な指定。
   同梱した llama-server を子プロセスとして起動するために要る。
@@ -24,8 +22,8 @@
     IgnorableNamespaces="uap rescap">
 
   <Identity
-      Name="TODO-PartnerCenter-Identity-Name"
-      Publisher="TODO-PartnerCenter-Publisher-CN"
+      Name="SatoruNakamura.LocalOCR"
+      Publisher="CN=B36F83DF-04BA-4243-A19A-C4E79E9C7FF0"
       Version="@VERSION@"
       ProcessorArchitecture="x64" />
 
