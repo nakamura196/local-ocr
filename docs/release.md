@@ -1,15 +1,17 @@
 # 配る — 作業手順の下書き
 
-**2026-09-21 時点で、どちらのストアにも出していません。**
+**2026-09-22 時点で、Microsoft ストアにはまだ出していません。**
 済んだのは「0. 下ごしらえ」「0.5. ソースを公開に切り替える前に」
-「1. llama-server の同梱」と、**「2. macOS を配る」のスクリプト 4 本**です。
+「1. llama-server の同梱」「2. macOS を配る」です。
+**macOS 版は `.dmg` を GitHub Release（`v0.1.0`）に出し、第三者が使える状態に
+なっています**（このメモの「`.dmg` はまだ出していません」は古い記述だった。
+実際は `./scripts/release.zsh --publish` まで完了していた）。
 **Windows 版は 2026-09-21 に手元の Windows 機で 1 本作り、起動して画面が出るところまで
-確かめました**（`build\windows\`、280MB。梱包はまだ）。
+確かめました**（`build\windows\`、280MB。梱包＝MSIX 化はこれから）。
 **ソースは 2026-09-21 に公開しました。**
-`.dmg` はまだ GitHub Release に出していません
-（`./scripts/release.zsh --publish` が最後の一手）。
-`packaging/windows/` にはアイコンの 5 枚だけが入っています
-（`AppxManifest.xml.in` などはまだ）。
+`packaging/windows/` は、アイコン 5 枚に加えて `AppxManifest.xml.in`（2026-09-22、
+Identity は仮の値）も入りました。GitHub Pages（プライバシーポリシー等）と
+ストア掲載文の下書きも書きましたが、**まだ commit / push していません**。
 
 雛形は **archival-packager**（https://github.com/nakamura196/archival-packager ）。
 **同じ Flet 0.86.2 の構成で、Apple の公証と
@@ -383,7 +385,16 @@ CI を先に書くと、スクリプトの当たりと workflow の当たりが�
       dependabot の 3 本だけ）。Windows ランナーで
       `build.ps1` → MSIX。**手で 1 本通してから**
       - **Actions は SHA で固定する**（可変タグは乗っ取られた瞬間に流れ込む）
-- [ ] **`packaging/windows/AppxManifest.xml.in`** と `Assets/` を持ってくる
+- [x] **`packaging/windows/AppxManifest.xml.in`（2026-09-22）。** `Assets/` は
+      既に揃っていた（0. 下ごしらえで作成済み）。archival-packager を雛形に、
+      対応言語を `ja-JP`/`en-US` の両方、`runFullTrust` は同梱の llama-server
+      起動用として書いた
+      - **`Identity` の `Name`/`Publisher` はまだ仮の値。** Partner Center で
+        「Local OCR」のアプリ名予約（ダッシュボードでの手作業。API からは
+        できない — `store/API設定手順.md` 参照）を済ませたあと、
+        「製品識別情報」ページの本物の値に書き換える必要がある。**ここが次の関所**
+      - `@EXE@`/`@VERSION@` を実際の値に置き換える仕組み（archival-packager の
+        `build.ps1` 相当）はまだ書いていない
 - [ ] **Microsoft ストアの規約を、申請前に読み直す。**
       llama-server を同梱にすれば大きな問題は無いはずだが、
       「アプリが外からコードを取ってきて動かすこと」の扱いは変わる。
@@ -442,17 +453,25 @@ CI を先に書くと、スクリプトの当たりと workflow の当たりが�
 `archival-packager/docs/_config.yml` に記録がある）。
 macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
 
-- [ ] **GitHub にリポジトリを作る。** いま remote がありません。ここが先
-- [ ] **`docs/` を GitHub Pages として配信する。** 置くのは `docs/_config.yml` 1 枚
-      （テーマは `jekyll-theme-minimal`）。URL は
-      `https://nakamura196.github.io/<repo 名>/privacy-policy.html` の形になる
+- [x] **GitHub にリポジトリを作る。** 済んでいた（このメモが古かっただけ）。
+      `nakamura196/local-ocr` は既に public
+- [x] **`docs/` を GitHub Pages として配信する（2026-09-22）。** `docs/_config.yml`
+      を置き、`gh api -X POST repos/nakamura196/local-ocr/pages` で有効化。
+      URL は `https://nakamura196.github.io/local-ocr/`
       - **リポジトリ名を変えるとリダイレクトされない。** 掲載情報と審査がこの URL を
         見るので、改名するなら URL の差し替えも同時に行う
-- [ ] **`docs/privacy-policy.md`** — これだけは必須。書くこと:
-      「画像は手元だけで処理し、外に送らない」。ただし**モデルの初回取得で
-      Hugging Face と GitHub に繋ぐ**ので、そこは正直に書く
-- [ ] **`docs/index.md`** — 何をする道具か、どこで手に入るか（ストアと Releases の表）
-- [ ] **`docs/usage.md`**（マニュアル）— 必須ではない。掲載文から誘導先があると親切
+      - **まだ push していない。** `docs/` の中身は Pages の設定を有効にしただけでは
+        表示されない。下のファイルをコミットして main に push するまで、
+        URL は 404 のまま
+- [x] **`docs/privacy-policy.md`（2026-09-22）** — 書いた。実際のコードを確認して
+      通信先を洗い出した: 認識モデルの取得（`raw.githubusercontent.com/ndl-lab`、
+      `huggingface.co/PaddlePaddle`）、IIIF 入力時の取得、同一端末内の連携用
+      ローカルブリッジ（既定オフ、`127.0.0.1` のみ、許可元を明示的に指定）。
+      テレメトリ・クラッシュレポート・更新確認は無いことをコードで確認済み
+- [x] **`docs/index.md`（2026-09-22）** — 書いた。Windows のダウンロード欄は
+      「Microsoft Store — 近日公開」のまま（ストアにまだ出ていないため）
+- [ ] **`docs/usage.md`**（マニュアル）— 必須ではない。掲載文から誘導先があると親切。
+      まだ書いていない
 
 **archival-packager の真似をしないところが 1 つあります。**
 あちらは同じ文面を `docs/privacy-policy.md`（公開ページ）と
@@ -462,12 +481,17 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
 
 ### 4. 掲載するもの
 
-- [ ] `store/listing-ja.md` / `listing-en.md` — 説明文。**貼り忘れが起きるので
-      ファイルに置いて、申請はスクリプトから行う**（0.1.0 で開発者名が抜けた前例）
-- [ ] プライバシーポリシーは **3.5 の `docs/privacy-policy.md` が正本**。
-      ここには URL だけ書く（archival-packager のように .txt を別に持たない）
-- [ ] `store/screenshots/{ja,en}/` — 日英それぞれ
-- [ ] `scripts/store_submit.py` — 申請 API。持ってくる
+- [x] **`store/listing-ja.md` / `listing-en.md`（2026-09-22）。** 説明文を書いた。
+      **貼り忘れが起きるのでファイルに置いて、申請はスクリプトから行う**
+      （0.1.0 で開発者名が抜けた前例。`scripts/store_submit.py` はまだ持ってきて
+      いないので、初回申請はダッシュボードに手で貼ることになる）
+- [x] プライバシーポリシーは **3.5 の `docs/privacy-policy.md` が正本**。
+      両ファイルには URL だけ書いた（archival-packager のように .txt を別に持たない）
+- [ ] `store/screenshots/{ja,en}/` — **未撮影。** ディレクトリだけ作った。
+      Windows 実機で MSIX を起動して撮る必要がある（macOS の画面では出せない。
+      Store は言語ごとに 1 枚以上必須 — 無いと確定段階で `NoScreenshotsOfAnyType`
+      で弾かれる、archival-packager の実例）
+- [ ] `scripts/store_submit.py` — 申請 API。まだ持ってきていない
       - **`--check` を申請の直前に挟まない**（1 回目が通って 2 回目が 403 になる）
       - **ダッシュボードと API を混ぜない**（作りかけの申請が残っていると API が失敗する）
 
@@ -476,18 +500,19 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
 ## 順番の目安
 
 ~~1~~（済）→ ~~0~~（済）→ ~~0.5 の「必ず」~~（済）→ ~~公開に切り替える~~（済）→
-~~2 のスクリプト~~（済）→ **.dmg を出して使ってもらう** → 3 → 3.5 → 4。
+~~2 のスクリプト~~（済）→ ~~.dmg を出して使ってもらう~~（済、`v0.1.0`）→
+**3（Windows を配る）** → 3.5 → 4。
 
-**次は `.dmg` を出すことです。** 手順は
+**次は Partner Center で「Local OCR」のアプリ名を予約することです。**
+ダッシュボードでの手作業（API からはできない）。予約すると発行される
+Identity Name / Publisher を `packaging/windows/AppxManifest.xml.in` の
+仮の値と差し替える。そのあと:
 
-    ./scripts/build.zsh
-    ./scripts/sign.zsh
-    op run --env-file=.env -- ./scripts/notarize.zsh
-    op run --env-file=.env -- ./scripts/release.zsh            # dmg を作るまで
-    op run --env-file=.env -- ./scripts/release.zsh --publish   # 別マシンで確かめた後
-
-**`op run` は 1Password の認証（Touch ID）を求めるので、人が居るところで走らせる。**
-サインインが切れていると `error initializing client: authorization timeout` で止まる
-（2026-09-21 に踏んだ）。先に `op signin` を通しておく。
+- GitHub Actions の Windows ビルド workflow（`build.ps1` → MSIX）を書く
+- `docs/`（GitHub Pages 一式）と `store/`（掲載文）を commit / push する
+  （**まだしていない**。push しないと `https://nakamura196.github.io/local-ocr/`
+  は 404 のまま）
+- Windows 実機で MSIX を起動してスクリーンショットを撮る
+- `scripts/store_submit.py` を持ってくる、または初回はダッシュボードから手で申請
 
 3.5（公開ページ）は Windows ストアに出すときだけ要ります。

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX（Microsoft Store が扱う配布形式）のマニフェスト雛形。
+  雛形は archival-packager（同じ Flet 構成で Store 審査を通した実績がある）。
+
+  @EXE@ と @VERSION@ は CI/ビルドスクリプトが実際の値に置き換える
+  （archival-packager の build.ps1 と同じ形にすること。まだ書いていない）。
+
+  ★★★ Identity の Name / Publisher はまだ仮の値。 ★★★
+  Partner Center で「Local OCR」のアプリ名予約（ダッシュボードでの手作業。
+  API からはできない）を済ませたあと、そのページの「製品識別情報 /
+  Product identity」に出る本物の値に、必ず両方とも書き換えること。
+  1 文字でも違うと Store は受理しない。archival-packager の実例は
+  `packaging/windows/AppxManifest.xml.in` の同じ場所にコメントで残っている。
+
+  runFullTrust は Win32 アプリを MSIX に包むときの標準的な指定。
+  同梱した llama-server を子プロセスとして起動するために要る。
+  Store 提出時は制限付き機能として申告する（デスクトップアプリでは通例認められる）。
+-->
+<Package
+    xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+    xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+    xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+    IgnorableNamespaces="uap rescap">
+
+  <Identity
+      Name="TODO-PartnerCenter-Identity-Name"
+      Publisher="TODO-PartnerCenter-Publisher-CN"
+      Version="@VERSION@"
+      ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>Local OCR</DisplayName>
+    <PublisherDisplayName>Satoru Nakamura</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <!--
+    ここに書いた言語は「その言語で使える」という申告になる（Store の規約 10.7）。
+    Local OCR の画面は日本語と英語の両方に対応している（ui/i18n.py）ので、両方書く。
+
+    掲載情報は、ここで宣言した言語にしか置けない。en-US を足さずに英語の
+    掲載情報を送ると拒まれる（archival-packager が実際に踏んだ）。
+
+    初回起動の画面の言語は OS の設定に従う（ui/i18n.py の _system_language）。
+    英語で掲載しておきながら英語環境で日本語の画面が出ると、申告と実物が食い違う。
+    日本語でも英語でもない環境では英語を出す。
+  -->
+  <Resources>
+    <Resource Language="ja-JP" />
+    <Resource Language="en-US" />
+  </Resources>
+
+  <Applications>
+    <Application Id="LocalOCR" Executable="@EXE@" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+          DisplayName="Local OCR"
+          Description="画像に写っている文字を、手元の端末の中だけで読み取ります。"
+          BackgroundColor="transparent"
+          Square150x150Logo="Assets\Square150x150Logo.png"
+          Square44x44Logo="Assets\Square44x44Logo.png">
+        <!-- Square310x310Logo を書くなら Wide310x150Logo も要る（MakeAppx が弾く）。 -->
+        <uap:DefaultTile
+            Square310x310Logo="Assets\Square310x310Logo.png"
+            Wide310x150Logo="Assets\Wide310x150Logo.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- 認識モデルの取得（Hugging Face / GitHub）に要る。 -->
+    <Capability Name="internetClient" />
+    <!-- 同梱した llama-server を子プロセスとして起動するために要る。 -->
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

@@ -1,0 +1,12 @@
+# GitHub Pages（このフォルダを公開サイトとして配信する）の設定。
+#
+# Windows ストアの申請フォームで「プライバシーポリシーの URL」を求められるための
+# 公開先。macOS の .dmg を GitHub Releases で配るだけなら要らない
+# （docs/release.md の「3.5. 公開するページ」参照）。
+#
+# 改名するとリダイレクトされない。この URL は掲載情報や審査で参照されるので、
+# リポジトリ名を変えるときは URL の差し替えも必ず行うこと
+# （archival-packager は 0.1.6 のとき、切れた URL で審査を差し戻された）。
+title: Local OCR
+description: Reads the characters in an image on your own computer — macOS and Windows
+theme: jekyll-theme-minimal
