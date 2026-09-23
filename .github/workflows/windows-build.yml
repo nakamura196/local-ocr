@@ -68,10 +68,18 @@ jobs:
       # （雛形は archival-packager の scripts/screenshot-windows.ps1）。
       # 撮影そのものは runner の描画環境しだいなので失敗を許すが、
       # 「窓が出たか」だけは落として止める（スクリプトが例外を投げる）。
-      - name: Launch the packaged app and take a screenshot
+      #
+      # 宣言した言語（ja-JP/en-US）ごとに 1 枚以上必須（archival-packager が
+      # 実際に "NoScreenshotsOfAnyType" で弾かれた）。
+      - name: Launch the packaged app and take a screenshot (English)
         continue-on-error: true
         shell: pwsh
-        run: pwsh -File scripts/screenshot-windows.ps1
+        run: pwsh -File scripts/screenshot-windows.ps1 -Lang en -Out screenshots\en\01-landing.png
+
+      - name: Launch the packaged app and take a screenshot (Japanese)
+        continue-on-error: true
+        shell: pwsh
+        run: pwsh -File scripts/screenshot-windows.ps1 -Lang ja -Out screenshots\ja\01-landing.png
 
       - name: Upload the screenshot
         continue-on-error: true

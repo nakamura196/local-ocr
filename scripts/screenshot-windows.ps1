@@ -7,8 +7,13 @@
 # **画面全体ではなくアプリの窓だけを切り出す。** 全体を撮ると、後ろの端末画面と
 # 「Test Mode / Windows Server 2025」の透かしが写り込み、掲載には使えない。
 #
-# 使い方: pwsh -File scripts/screenshot-windows.ps1
+# 使い方: pwsh -File scripts/screenshot-windows.ps1 [-Lang ja|en] [-Out path.png]
 # 前提: build\windows にビルド済みの .exe があること。
+#
+# -Lang を渡すと、起動前に settings.json（ui/i18n.py が読む。無指定なら OS の
+# 言語に従う）にその言語を書いておく。Store は宣言した言語（ja-JP/en-US）ごとに
+# 1 枚以上のスクリーンショットを要求するので、両方を撮る必要がある
+# （archival-packager が実際に "NoScreenshotsOfAnyType" で弾かれた）。
 #
 # **まだ「起動直後の何も読んでいない画面」しか撮れない。** README の既存の
 # macOS 版スクリーンショットは、画像を 1 枚読ませて認識済みの状態。
@@ -16,7 +21,26 @@
 # 要る（モデルの初回取得を含む）。今回はまず「Store の最低要件（1366×768 以上
 # を 1 枚）を満たす」ところまで。
 
+param(
+    [ValidateSet("ja", "en")]
+    [string]$Lang,
+    [string]$Out = "screenshots\01-landing.png"
+)
+
 $ErrorActionPreference = "Stop"
+
+if ($Lang) {
+    # core/paths.py の data_dir() と同じ場所（core/prefs.py が読み書きする）。
+    $settingsDir = Join-Path $env:LOCALAPPDATA "Local OCR"
+    New-Item -ItemType Directory -Force -Path $settingsDir | Out-Null
+    $settingsPath = Join-Path $settingsDir "settings.json"
+    $settings = if (Test-Path $settingsPath) {
+        Get-Content $settingsPath -Raw | ConvertFrom-Json -AsHashtable
+    } else { @{} }
+    $settings["lang"] = $Lang
+    ($settings | ConvertTo-Json) | Set-Content -Path $settingsPath -Encoding UTF8
+    Write-Host "言語を $Lang に固定: $settingsPath"
+}
 
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 Add-Type @"
@@ -114,8 +138,8 @@ $h = $r.Bottom - $r.Top
 Write-Host "窓の大きさ: ${w}x${h}"
 if ($w -lt 1366) { Write-Host "::warning::幅が 1366 未満。Store の要件を満たさない" }
 
-New-Item -ItemType Directory -Force -Path screenshots | Out-Null
-$out = "screenshots\01-landing.png"
+New-Item -ItemType Directory -Force -Path (Split-Path $Out -Parent) | Out-Null
+$out = $Out
 $bmp = New-Object System.Drawing.Bitmap $w, $h
 $g = [System.Drawing.Graphics]::FromImage($bmp)
 $g.CopyFromScreen($r.Left, $r.Top, 0, 0, (New-Object System.Drawing.Size $w, $h))
