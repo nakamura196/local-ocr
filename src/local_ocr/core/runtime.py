@@ -8,18 +8,40 @@ import time
 import urllib.error
 import urllib.request
 from collections import deque
+from collections.abc import Callable
+from pathlib import Path
 
 from . import assets, bridge, bundled, fetch, prefs
+from .assets import Asset
 from .fetch import Progress
-from .paths import data_dir, is_windows
+from .paths import is_windows
 
 DEFAULT_PORT = 8080
 
 
 class Runtime:
-    """取得済みかを見て、llama-server を起動・停止する。"""
+    """取得済みかを見て、llama-server を起動・停止する。
 
-    def __init__(self) -> None:
+    **どの GGUF を、どのポートで動かすかは持たない。** PaddleOCR-VL と Yigdzin は
+    別のモデル・別のポートで、2 つ同時に立てられる必要がある(`engines/paddle_vl.py`
+    と `engines/yigdzin.py` が、それぞれ自分の `Runtime` を作って渡す)。ここは
+    起動・停止・ヘルスチェックという、モデルによらない部分だけを持つ。
+    """
+
+    def __init__(
+        self,
+        *,
+        model_path: Path,
+        mmproj_path: Path,
+        missing: Callable[[], list[Asset]],
+        port_pref_key: str = "port",
+        default_port: int = DEFAULT_PORT,
+    ) -> None:
+        self._model_path = model_path
+        self._mmproj_path = mmproj_path
+        self._missing = missing
+        self._port_pref_key = port_pref_key
+        self._default_port = default_port
         self._proc: subprocess.Popen[str] | None = None
         # 同じポートで既に動いているものを借りているか。前の版のアプリや、
         # もう 1 つ開いたこのアプリが立てたサーバがこれにあたる。
@@ -31,7 +53,7 @@ class Runtime:
     # --- 設定 -------------------------------------------------------------
     @property
     def port(self) -> int:
-        return int(prefs.get("port", DEFAULT_PORT))
+        return int(prefs.get(self._port_pref_key, self._default_port))
 
     @property
     def endpoint(self) -> str:
@@ -39,7 +61,7 @@ class Runtime:
 
     # --- 取得 -------------------------------------------------------------
     def fetch_missing(self, on_progress: Progress) -> None:
-        fetch.download_all(assets.missing(), on_progress)
+        fetch.download_all(self._missing(), on_progress)
 
     # --- サーバ -----------------------------------------------------------
     @property
@@ -71,13 +93,12 @@ class Runtime:
                     "開発中は ./scripts/fetch-binaries.zsh を実行してください"
                 )
             bundled.ensure_executable(server)
-            if assets.missing():
+            if self._missing():
                 raise RuntimeError("先に取得を済ませてください")
-            d = data_dir()
             cmd = [
                 str(server),
-                "-m", str(d / "PaddleOCR-VL-1.6.gguf"),
-                "--mmproj", str(d / "PaddleOCR-VL-1.6-mmproj.gguf"),
+                "-m", str(self._model_path),
+                "--mmproj", str(self._mmproj_path),
                 "--host", "127.0.0.1",
                 "--port", str(self.port),
                 "-c", "8192",
