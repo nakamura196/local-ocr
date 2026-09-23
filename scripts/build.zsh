@@ -109,6 +109,21 @@ if [[ "${APP:t}" != "${PRODUCT}.app" ]]; then
   print "  バンドル名を ${PRODUCT}.app に変更"
 fi
 
+# 日本語に対応していると OS に申告する。**これが無いと、ファイルを選ぶ窓や
+# 保存の窓 (OS が出すもの) が、日本語の Mac でも英語で出る。** OS は
+# アプリが申告した言語の中からしか選ばないため。Flet が作る Info.plist は
+# CFBundleDevelopmentRegion=en だけで、--info-plist は配列を渡せないので
+# ここで足す。署名の前でないといけない (sign.zsh より前に走るので間に合う)。
+# 2026-09-22、デモ動画の収録で発覚。
+PLIST="${APP}/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Delete :CFBundleLocalizations" "${PLIST}" 2>/dev/null || true
+/usr/libexec/PlistBuddy \
+  -c "Add :CFBundleLocalizations array" \
+  -c "Add :CFBundleLocalizations:0 string ja" \
+  -c "Add :CFBundleLocalizations:1 string en" \
+  "${PLIST}"
+print "  Info.plist に CFBundleLocalizations (ja, en) を追加"
+
 # --------------------------------------------------------------------------
 print "[2/3] 出来たものを点検"
 

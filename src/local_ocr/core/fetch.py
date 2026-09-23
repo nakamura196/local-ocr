@@ -17,12 +17,16 @@ Progress = Callable[[str, float | None], None]
 
 
 def human(n: int) -> str:
-    """1.8GB のような、人が読める大きさ。"""
-    if n >= 1024**3:
-        return f"{n / 1024**3:.1f}GB"
-    if n >= 1024**2:
-        return f"{round(n / 1024**2)}MB"
-    return f"{max(1, round(n / 1024))}KB"
+    """1.8GB のような、人が読める大きさ。
+
+    **1000 で割る (Finder と同じ)。** 1024 で割っていたころは、同じモデルが
+    画面の札では「1.7GB」、説明文では「1.8GB」と食い違っていた。
+    """
+    if n >= 1000**3:
+        return f"{n / 1000**3:.1f}GB"
+    if n >= 1000**2:
+        return f"{round(n / 1000**2)}MB"
+    return f"{max(1, round(n / 1000))}KB"
 
 
 def total_bytes(assets: Iterable[Asset]) -> int:

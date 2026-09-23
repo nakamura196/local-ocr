@@ -120,7 +120,7 @@ class WorkView:
             overflow=ft.TextOverflow.ELLIPSIS,
             max_lines=1,
         )
-        self.engine_dd = self.ctx.engine_dropdown(width=265, on_change=self._on_engine)
+        self.engine_dd = self.ctx.engine_dropdown(width=300, on_change=self._on_engine)
         self.mode = ft.SegmentedButton(
             segments=[
                 ft.Segment(value="one", label=ft.Text(t("work.mode.one"), size=12)),
