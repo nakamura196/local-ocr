@@ -56,7 +56,8 @@ $CleanupPackageFiles = @("**/*.dSYM", "**/PyObjCTest")
 Write-Host "[1/4] flet build windows"
 # 引数は 1 本の配列にまとめてから渡す。**行継続のバックティックを使わない。**
 # 途中に空白が紛れただけで、以降の行が別のコマンドとして実行される。
-$BuildArgs = @("run", "flet", "build", "windows", ".", "--yes", "--no-rich-output")
+# --no-compile-packages の理由は build.zsh の注 (cv2 が config.py をファイル名で探す)。
+$BuildArgs = @("run", "flet", "build", "windows", ".", "--yes", "--no-rich-output", "--no-compile-packages")
 $BuildArgs += "--exclude"
 $BuildArgs += $Excludes
 $BuildArgs += "--cleanup-package-files"

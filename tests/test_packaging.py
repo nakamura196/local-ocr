@@ -88,6 +88,12 @@ def test_build_declares_japanese_so_system_dialogs_follow():
     assert "string ja" in body
 
 
+@pytest.mark.parametrize("script", ["build.zsh", "build.ps1"])
+def test_build_keeps_package_sources_for_opencv(script):
+    """依存を .pyc に置き換えると、cv2 が config.py を見つけられずに起動で落ちる。"""
+    assert "--no-compile-packages" in _body(script)
+
+
 # --- 2. 配布物に入れるもの / 入れないもの ------------------------------------
 
 @pytest.mark.parametrize("excluded", [".venv", "binaries", "build", "tests", "scripts"])

@@ -75,9 +75,17 @@ print "[1/3] flet build ${TARGET}"
 # （`**.c` `**.h` `**.pyi` `**.a` `__pycache__` など）だけで、
 # `*.dist-info/LICENSE` は対象に入っていない。実測でも 28 個の依存のうち
 # 24 個のライセンス全文が残った。下の [2/3] で毎回数えて見張る。
+#
+# **--no-compile-packages: 依存の .py を .pyc に置き換えない。** 既定では
+# 置き換えたうえで .py を消すが、OpenCV (cv2) の読み込み処理は `config.py` を
+# ファイル名で探して exec する。消されると起動した瞬間に
+# 「OpenCV loader: missing configuration file: ['config.py']」で落ちる
+# (0.1.3 の最初のビルドで実際に落ちた。Yigdzin で cv2 を足したため)。
+# 自分のコード (app) の側は今までどおり置き換える。
 uv run flet build "${TARGET}" . \
   --yes \
   --no-rich-output \
+  --no-compile-packages \
   --exclude "${EXCLUDES[@]}" \
   --cleanup-package-files "${CLEANUP_PACKAGE_FILES[@]}" \
   --product "${PRODUCT}" \
@@ -126,6 +134,14 @@ print "  Info.plist に CFBundleLocalizations (ja, en) を追加"
 
 # --------------------------------------------------------------------------
 print "[2/3] 出来たものを点検"
+
+# cv2 が起動時に探す config.py が残っているか (--no-compile-packages の注を参照)。
+# 無いと、アプリは起動した瞬間に落ちる。署名・公証は通るので、ここで止める。
+if ! find "${APP}" -path '*/site-packages/cv2/config.py' -print -quit | grep -q .; then
+  print -u2 "  cv2/config.py がバンドルにありません。アプリが起動時に落ちます"
+  exit 1
+fi
+print "  cv2/config.py: あり"
 
 # .venv が入っていないか。除外を書き忘れると静かに数百 MB 増えるだけで、
 # 動きは変わらないので気づけない。
