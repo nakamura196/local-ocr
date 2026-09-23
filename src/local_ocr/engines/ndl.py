@@ -61,7 +61,7 @@ class _NdlEngine:
 class NdlKotenLiteEngine(_NdlEngine):
     id = "ndl-koten-lite"
     label = "NDL古典籍OCR Lite（くずし字）"
-    note = "初回だけ 79MB ほど取得します。古典籍・くずし字に向きます。"
+    note = "初回だけ 83MB ほど取得します。古典籍・くずし字に向きます。"
 
     def _assets(self) -> list[Asset]:
         return ndl_assets.koten()
@@ -73,7 +73,7 @@ class NdlKotenLiteEngine(_NdlEngine):
 class NdlLiteEngine(_NdlEngine):
     id = "ndl-lite"
     label = "NDLOCR Lite（近代の活字）"
-    note = "初回だけ 150MB ほど取得します。近代資料の活字・手書きに向きます。"
+    note = "初回だけ 157MB ほど取得します。近代資料の活字・手書きに向きます。"
 
     def _assets(self) -> list[Asset]:
         return ndl_assets.lite()

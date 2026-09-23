@@ -77,6 +77,17 @@ def test_build_drops_the_debug_symbols_that_break_xcode():
     assert "*.dSYM" in body, "dSYM を落としていません。macOS のビルドが失敗します"
 
 
+def test_build_declares_japanese_so_system_dialogs_follow():
+    """日本語を申告しないと、ファイルを選ぶ窓 (OS が出すもの) が英語で出る。
+
+    OS はアプリが申告した言語の中からしか選ばない。Flet の Info.plist は en だけ。
+    2026-09-22、デモ動画の収録で、日本語の Mac で「開く」の窓が英語だったのを見て発覚。
+    """
+    body = _body("build.zsh")
+    assert "CFBundleLocalizations" in body
+    assert "string ja" in body
+
+
 # --- 2. 配布物に入れるもの / 入れないもの ------------------------------------
 
 @pytest.mark.parametrize("excluded", [".venv", "binaries", "build", "tests", "scripts"])

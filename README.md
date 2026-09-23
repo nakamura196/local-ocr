@@ -58,8 +58,8 @@ into whatever tool you proofread in.
 | --- | --- | --- | --- |
 | Apple Vision | macOS | — | Modern print and handwriting. Fast |
 | Windows OCR | Windows | — | Same. Not implemented yet |
-| [NDLOCR Lite](https://github.com/ndl-lab/ndlocr-lite) | both | 150 MB | Modern Japanese print |
-| [NDL Kotenseki OCR Lite](https://github.com/ndl-lab/ndlkotenocr-lite) | both | 79 MB | Pre-modern Japanese, cursive |
+| [NDLOCR Lite](https://github.com/ndl-lab/ndlocr-lite) | both | 157 MB | Modern Japanese print |
+| [NDL Kotenseki OCR Lite](https://github.com/ndl-lab/ndlkotenocr-lite) | both | 83 MB | Pre-modern Japanese, cursive |
 | PaddleOCR-VL | both | ~1.8 GB | Chinese classical texts, multilingual |
 
 Models are fetched on first use and cached; `llama-server`, which runs the
@@ -140,8 +140,8 @@ CC BY 4.0, and llama.cpp is MIT.
 | --- | --- | --- | --- |
 | Apple Vision | macOS | 不要 | 現代の活字・手書き。速い |
 | Windows 標準 OCR | Windows | 不要 | 同上。未実装 |
-| [NDLOCR Lite](https://github.com/ndl-lab/ndlocr-lite) | 両方 | 150MB | 近代資料・活字 |
-| [NDL古典籍OCR Lite](https://github.com/ndl-lab/ndlkotenocr-lite) | 両方 | 79MB | 古典籍・くずし字 |
+| [NDLOCR Lite](https://github.com/ndl-lab/ndlocr-lite) | 両方 | 157MB | 近代資料・活字 |
+| [NDL古典籍OCR Lite](https://github.com/ndl-lab/ndlkotenocr-lite) | 両方 | 83MB | 古典籍・くずし字 |
 | PaddleOCR-VL | 両方 | 約 1.8GB | 漢籍・多言語 |
 
 モデルは初回に取得して手元に残します。PaddleOCR-VL を動かす `llama-server` は

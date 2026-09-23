@@ -182,7 +182,7 @@ class LandingView:
         return ft.Row(
             [
                 theme.muted(t("common.engine")),
-                self.ctx.engine_dropdown(width=250, on_change=self._on_engine),
+                self.ctx.engine_dropdown(width=300, on_change=self._on_engine),
                 self.engine_state,
                 self.engine_note,
                 ft.Container(expand=True),

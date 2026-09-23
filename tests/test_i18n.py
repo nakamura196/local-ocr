@@ -37,3 +37,15 @@ def test_falls_back_to_lang(monkeypatch):
 def test_reads_macos_setting_without_env(monkeypatch):
     monkeypatch.delenv("LANG", raising=False)
     assert i18n._os_ui_language() != ""
+
+
+def test_engine_notes_match_the_download_size():
+    """説明文の大きさと、画面の札 (fetch.human) の大きさが食い違わないこと。"""
+    from local_ocr.core import fetch
+    from local_ocr.engines import all_engines
+
+    for e in all_engines():
+        if not e.assets:
+            continue
+        size = fetch.human(fetch.total_bytes(e.assets))
+        assert size in i18n.engine_note(e), (e.id, size)
