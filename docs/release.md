@@ -1,19 +1,20 @@
 # 配る — 作業手順の下書き
 
-**2026-09-22 時点で、Microsoft ストアにはまだ出していません。**
-済んだのは「0. 下ごしらえ」「0.5. ソースを公開に切り替える前に」
-「1. llama-server の同梱」「2. macOS を配る」です。
-**macOS 版は `.dmg` を GitHub Release（`v0.1.0`）に出し、第三者が使える状態に
-なっています**（このメモの「`.dmg` はまだ出していません」は古い記述だった。
-実際は `./scripts/release.zsh --publish` まで完了していた）。
-**Windows 版は 2026-09-21 に手元の Windows 機で 1 本作り、起動して画面が出るところまで
-確かめました**（`build\windows\`、280MB。梱包＝MSIX 化はこれから）。
-**ソースは 2026-09-21 に公開しました。**
-`packaging/windows/` は、アイコン 5 枚に加えて `AppxManifest.xml.in`（2026-09-22）
-も入りました。GitHub Pages（プライバシーポリシー等）とストア掲載文の下書きは
-commit / push 済み（`https://nakamura196.github.io/local-ocr/`）。**Partner
-Center でのアプリ名予約も 2026-09-22 に済み**（Store ID `9N07ZD1ZPKBZ`）、
-`AppxManifest.xml.in` の Identity は本物の値になっています。
+**2026-09-22、両方のストアで公開が完了しました。**
+macOS 版は `.dmg` を GitHub Release（`v0.1.0`）に、Windows 版は Microsoft Store
+（Store ID `9N07ZD1ZPKBZ`、審査通過済み。バッジ「In Microsoft Store」を確認済み）
+に出ています。ソースも公開済みです。
+
+Windows 側の経緯:
+2026-09-21 に手元の Windows 機で 1 本作り、起動して画面が出るところまで確かめた
+（`build\windows\`、280MB）。翌 2026-09-22、`packaging/windows/AppxManifest.xml.in`
+を作り、Partner Center でアプリ名を予約（Store ID `9N07ZD1ZPKBZ`、Identity は本物の
+値に差し替え済み）。GitHub Actions のビルド workflow（`.github/workflows/
+windows-build.yml`）で MSIX とスクリーンショット（日英）を CI 上で作れることを確認。
+そのあと Partner Center の申請フォーム（Pricing/Properties/Age ratings/Packages/
+Store listings）を埋めて提出し、**同日中に審査を通過して公開された。**
+GitHub Pages（プライバシーポリシー等）とストア掲載文の下書きは commit / push 済み
+（`https://nakamura196.github.io/local-ocr/`）。
 
 雛形は **archival-packager**（https://github.com/nakamura196/archival-packager ）。
 **同じ Flet 0.86.2 の構成で、Apple の公証と
@@ -490,8 +491,8 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
       `huggingface.co/PaddlePaddle`）、IIIF 入力時の取得、同一端末内の連携用
       ローカルブリッジ（既定オフ、`127.0.0.1` のみ、許可元を明示的に指定）。
       テレメトリ・クラッシュレポート・更新確認は無いことをコードで確認済み
-- [x] **`docs/index.md`（2026-09-22）** — 書いた。Windows のダウンロード欄は
-      「Microsoft Store — 近日公開」のまま（ストアにまだ出ていないため）
+- [x] **`docs/index.md`（2026-09-22）** — 書いた。審査通過後、Windows のダウンロード欄も
+      Microsoft Store への実際のリンクに差し替え済み（別セッションで対応）
 - [ ] **`docs/usage.md`**（マニュアル）— 必須ではない。掲載文から誘導先があると親切。
       まだ書いていない
 
@@ -505,8 +506,8 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
 
 - [x] **`store/listing-ja.md` / `listing-en.md`（2026-09-22）。** 説明文を書いた。
       **貼り忘れが起きるのでファイルに置いて、申請はスクリプトから行う**
-      （0.1.0 で開発者名が抜けた前例。`scripts/store_submit.py` はまだ持ってきて
-      いないので、初回申請はダッシュボードに手で貼ることになる）
+      （0.1.0 で開発者名が抜けた前例）。**初回申請は結局ダッシュボードに手で貼った**
+      （`scripts/store_submit.py` は持ってきていない。次回の更新で要るかを判断する）
 - [x] プライバシーポリシーは **3.5 の `docs/privacy-policy.md` が正本**。
       両ファイルには URL だけ書いた（archival-packager のように .txt を別に持たない）
 - [x] **`store/screenshots/{ja,en}/`（2026-09-22）。** CI の Windows runner で
@@ -514,29 +515,28 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
       settings.json を仕込んで言語を固定したので、runner の既定言語に依存しない。
       **まだ「起動直後の何も読んでいない画面」だけ。** README の macOS 版
       （画像を読ませて認識済み）と同じ形にするのは次の課題
-- [ ] `scripts/store_submit.py` — 申請 API。まだ持ってきていない
+- [ ] `scripts/store_submit.py` — 申請 API。まだ持ってきていない。次回の更新
+      （アプリ内容の差し替え）で要るかどうかは、そのときに判断する
       - **`--check` を申請の直前に挟まない**（1 回目が通って 2 回目が 403 になる）
       - **ダッシュボードと API を混ぜない**（作りかけの申請が残っていると API が失敗する）
 
 ---
 
-## 順番の目安
+## 完了（2026-09-22）
 
-~~1~~（済）→ ~~0~~（済）→ ~~0.5 の「必ず」~~（済）→ ~~公開に切り替える~~（済）→
-~~2 のスクリプト~~（済）→ ~~.dmg を出して使ってもらう~~（済、`v0.1.0`）→
-**3（Windows を配る）** → 3.5 → 4。
+~~1~~ → ~~0~~ → ~~0.5~~ → ~~公開に切り替える~~ → ~~2 のスクリプト~~ →
+~~.dmg を出して使ってもらう~~（`v0.1.0`）→ ~~3（Windows を配る）~~ →
+**両ストアで公開完了**。
 
-**Partner Center でのアプリ名予約は済みました（2026-09-22、Store ID
-`9N07ZD1ZPKBZ`）。** `AppxManifest.xml.in` の Identity も本物の値に差し替え済み。
-**3 か月以内（〜2026-12-22）に Store へ提出しないと予約が失効する。**
+**やったこと(Windows 側の一連)**: Partner Center でアプリ名予約
+（Store ID `9N07ZD1ZPKBZ`）→ `AppxManifest.xml.in` の Identity を本物の値に
+差し替え → GitHub Actions（`.github/workflows/windows-build.yml`）で MSIX と
+スクリーンショット（日英）を CI 上で作成 → Partner Center の申請フォーム
+（Pricing/Properties/Age ratings/Packages/Store listings）を埋めて提出 →
+**同日中に審査通過、公開。**
 
-**GitHub Actions の Windows ビルド workflow も書いて、実際に MSIX とスクリーンショット
-（日英）を CI で作れることを確かめました（2026-09-22、`.github/workflows/windows-build.yml`）。**
-残りは:
-
-- `scripts/store_submit.py` を持ってくる、または初回はダッシュボードから手で申請
-  （MSIX・掲載文・スクリーンショットは揃っている）
-- README の macOS 版のような「画像を読ませて認識済み」の画面に近づける
-  （急がない。今のスクリーンショットでも Store の最低要件は満たしている）
-
-3.5（公開ページ）は Windows ストアに出すときだけ要ります。
+**残っている小さな宿題（急がない）**:
+- README の macOS 版のような「画像を読ませて認識済み」の画面に、Windows の
+  スクリーンショットも近づける（今のは「起動直後の何も読んでいない画面」）
+- `scripts/store_submit.py`（次回更新時の判断）
+- `docs/usage.md`（マニュアル、必須ではない）
