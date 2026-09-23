@@ -14,7 +14,7 @@ texts — and export plain text or TEI/XML.
 | Platform | Where |
 | --- | --- |
 | macOS | [Releases](https://github.com/nakamura196/local-ocr/releases/latest) (signed and notarised `.dmg`) |
-| Windows | Microsoft Store — coming soon |
+| Windows | [Microsoft Store](https://apps.microsoft.com/detail/9N07ZD1ZPKBZ) (free; the Store signs it, so no SmartScreen warning) |
 
 Nothing else to install. `llama-server`, which runs the PaddleOCR-VL model,
 is bundled with the application; recognition models are fetched on first use.
@@ -55,7 +55,7 @@ TEI/XML で書き出せます。
 | | |
 | --- | --- |
 | macOS | [Releases](https://github.com/nakamura196/local-ocr/releases/latest)(署名・公証済みの `.dmg`) |
-| Windows | Microsoft Store — 近日公開 |
+| Windows | [Microsoft ストア](https://apps.microsoft.com/detail/9N07ZD1ZPKBZ)(無料。ストアが署名するので警告は出ません) |
 
 導入作業は要りません。PaddleOCR-VL のモデルを動かす `llama-server` はアプリに
 同梱しています。認識モデルは初回使用時に取得します。

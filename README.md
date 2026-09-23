@@ -21,10 +21,20 @@ scanned scroll on the left, the recognised lines on the right](docs/images/scree
 National Diet Library Digital Collections,
 <https://dl.ndl.go.jp/pid/1287221/1/2> (see [`NOTICE`](NOTICE)).</sub>
 
-### Status
+### Download
 
-**Not released yet.** No signed build is published; run it from source for now
-(see [Development](#development)).
+| Platform | Where | Notes |
+| --- | --- | --- |
+| macOS | [`.dmg` from Releases](https://github.com/nakamura196/local-ocr/releases/latest) | Signed and notarised by Apple — no "unidentified developer" prompt |
+| Windows | [Microsoft Store](https://apps.microsoft.com/detail/9N07ZD1ZPKBZ) | Free; the Store signs it, so no SmartScreen warning |
+
+Nothing else to install. `llama-server` is bundled. **Recognition models are
+downloaded on first use** — up to about 1.8 GB for PaddleOCR-VL, less for the
+others — so the first run of an engine takes a while and needs a network
+connection. Everything after that stays on your machine.
+
+There is also a [page with more detail](https://nakamura196.github.io/local-ocr/).
+To run from source instead, see [Development](#development).
 
 ### What it does
 
@@ -95,10 +105,21 @@ CC BY 4.0, and llama.cpp is MIT.
 <sub>写っている資料: 『竹取物語』3軸, 江戸前期 — 国立国会図書館デジタルコレクション
 <https://dl.ndl.go.jp/pid/1287221/1/2> （[`NOTICE`](NOTICE) 参照）。</sub>
 
-### いまの状態
+### ダウンロード
 
-**まだ配っていません。** 署名済みの配布物はありません。当面は手元で動かしてください
-（[開発](#開発)）。
+| | 入手先 | 備考 |
+| --- | --- | --- |
+| macOS | [Releases の `.dmg`](https://github.com/nakamura196/local-ocr/releases/latest) | Apple の署名・公証済み。「開発元が未確認」の警告は出ません |
+| Windows | [Microsoft ストア](https://apps.microsoft.com/detail/9N07ZD1ZPKBZ) | 無料。ストアが署名するので警告は出ません |
+
+ほかに入れるものはありません。`llama-server` は同梱しています。
+**文字を読むためのモデルは、初回に使うときに取得します**
+（PaddleOCR-VL で 1.8GB ほど。ほかはもっと小さい）。そのため、
+各エンジンの 1 回目だけ時間がかかり、ネットワークが要ります。
+以降は端末の中だけで動きます。
+
+くわしくは[紹介ページ](https://nakamura196.github.io/local-ocr/)にあります。
+手元のソースから動かす場合は[開発](#開発)へ。
 
 ### 何をする道具か
 
