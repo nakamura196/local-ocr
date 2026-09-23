@@ -11,8 +11,8 @@ import cv2
 import numpy as np
 import pytest
 
-from local_ocr.core import yigdzin_assets
-from local_ocr.engines import all_engines
+from local_ocr.core import tei, yigdzin_assets
+from local_ocr.engines import Line, all_engines
 from local_ocr.yigdzin import line_detection as ld
 
 # --- 取得するもの -------------------------------------------------------------
@@ -106,3 +106,24 @@ def test_box_in_original_space_undoes_a_rotation():
     assert abs(y - oy) <= 3
     assert abs(w - ow) <= 6
     assert abs(h - oh) <= 6
+
+
+# --- TEI/facsimile への受け渡し ---------------------------------------------------
+
+
+def test_result_lines_export_as_tei_zones():
+    """`YigdzinEngine.recognize()` が返す形(box 付きの Line)が、そのまま
+    facsimile の zone として出ること。実モデルで確かめた形をここでは合成データで
+    固定しておく(回帰の見張り)。
+    """
+    lines = [
+        Line(text="行1", box=(329, 96, 1449, 26)),
+        Line(text="行2", box=(314, 136, 1450, 23)),
+    ]
+    page = tei.Page(lines=lines, width=2204, height=453, image_url="sample_0.png")
+    xml = tei.build([page], tei.Meta(title="t", engine="yigdzin"))
+    assert '<zone xml:id="f1_l1" ulx="329" uly="96" lrx="1778" lry="122"/>' in xml
+    assert '<zone xml:id="f1_l2" ulx="314" uly="136" lrx="1764" lry="159"/>' in xml
+    assert '<lb corresp="#f1_l1"' in xml
+    assert "行1" in xml
+    assert "行2" in xml
