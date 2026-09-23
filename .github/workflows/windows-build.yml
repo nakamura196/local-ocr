@@ -64,6 +64,23 @@ jobs:
           FLET_CLI_SKIP_FLUTTER_DOCTOR: "true"
         run: pwsh -File scripts/build.ps1
 
+      # Store の掲載に要る画面写真。手元に Windows 機が無いので、この runner で撮る
+      # （雛形は archival-packager の scripts/screenshot-windows.ps1）。
+      # 撮影そのものは runner の描画環境しだいなので失敗を許すが、
+      # 「窓が出たか」だけは落として止める（スクリプトが例外を投げる）。
+      - name: Launch the packaged app and take a screenshot
+        continue-on-error: true
+        shell: pwsh
+        run: pwsh -File scripts/screenshot-windows.ps1
+
+      - name: Upload the screenshot
+        continue-on-error: true
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: local-ocr-windows-screenshots
+          path: screenshots/
+          retention-days: 7
+
       # MSIX に包む。Store に MSIX で出すと Microsoft が署名し直すので、
       # こちらで証明書を買う必要がない。Identity は Partner Center が
       # 2026-09-22 に発行した値（Store ID 9N07ZD1ZPKBZ）を

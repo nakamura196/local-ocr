@@ -390,7 +390,21 @@ CI を先に書くと、スクリプトの当たりと workflow の当たりが�
       - **Actions は SHA で固定した**（可変タグは乗っ取られた瞬間に流れ込む）。
         `cache`/`upload-artifact` の SHA は archival-packager で動作実績のある
         ものをそのまま流用
-      - **まだ 1 度も走らせていない。** 次にやるのはこれ
+      - [x] **1 回目は落ちた（2026-09-22）。** `tests/test_packaging.py` の
+            実行ビットの検査が Windows で落ちた。`os.stat().st_mode` は
+            Windows の git checkout では POSIX の実行ビットを反映しない
+            （常に固定値）。macOS 専用スクリプト（`build.zsh` 等）の話なので、
+            Windows では `pytest.skip` にした
+      - [x] **2 回目で通った（2026-09-22）。** `LocalOCR.msix`（約 107MB）が
+            出来て、アーティファクトとしてアップロードされた。**local-ocr で
+            初めての MSIX。** ダウンロードして手元では確認済み（署名は無い —
+            Store が提出時に署名し直す）
+      - [x] **画面写真を撮る手立てを追加（2026-09-22）。**
+            `scripts/screenshot-windows.ps1`（雛形は archival-packager）を
+            workflow に足した。**まだ「起動直後の何も読んでいない画面」しか
+            撮れない。** README の macOS 版のような「画像を読ませて認識済み」
+            の画面にするには、サンプル画像を読ませて認識完了まで待つ処理が
+            要る（次の課題）
 - [x] **`packaging/windows/AppxManifest.xml.in`（2026-09-22）。** `Assets/` は
       既に揃っていた（0. 下ごしらえで作成済み）。archival-packager を雛形に、
       対応言語を `ja-JP`/`en-US` の両方、`runFullTrust` は同梱の llama-server
