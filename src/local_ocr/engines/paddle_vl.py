@@ -18,6 +18,14 @@ from ..core.runtime import Runtime
 from .base import Progress, Result
 
 
+def _dest(key: str) -> object:
+    """必要なファイルの置き場所を、`assets.required()` の定義から引く。
+
+    ここで別にファイル名を書かない。1 か所(`core/assets.py`)だけを直せば済む。
+    """
+    return next(a.dest for a in paddle_assets.required() if a.key == key)
+
+
 class PaddleVLEngine:
     id = "paddle-vl"
     label = "PaddleOCR-VL（漢籍・多言語）"
@@ -25,7 +33,11 @@ class PaddleVLEngine:
     platforms = frozenset({"darwin", "win32"})
 
     def __init__(self) -> None:
-        self._rt = Runtime()
+        self._rt = Runtime(
+            model_path=_dest("model"),
+            mmproj_path=_dest("mmproj"),
+            missing=paddle_assets.missing,
+        )
 
     @property
     def runtime(self) -> Runtime:

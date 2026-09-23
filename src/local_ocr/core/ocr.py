@@ -59,7 +59,15 @@ def to_data_url(img: Image.Image) -> str:
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
 
 
-def recognize(endpoint: str, img: Image.Image, timeout: float = 300.0) -> str:
+def recognize(
+    endpoint: str, img: Image.Image, timeout: float = 300.0, *, prompt: str = PROMPT
+) -> str:
+    """llama-server(PaddleOCR-VL 系のアーキテクチャ全般)に画像 1 枚を投げる。
+
+    `prompt` は既定で PaddleOCR-VL のもの。Yigdzin は行クロップに特化した別の
+    指示文を渡す(`yigdzin/pipeline.py`)。`model` の値は llama-server 側では
+    無視される(`-m` で読み込んだものを常に使う)ので、ここでは固定のままでよい。
+    """
     body = json.dumps(
         {
             "model": "paddleocr-vl",
@@ -70,7 +78,7 @@ def recognize(endpoint: str, img: Image.Image, timeout: float = 300.0) -> str:
                     "role": "user",
                     "content": [
                         {"type": "image_url", "image_url": {"url": to_data_url(img)}},
-                        {"type": "text", "text": PROMPT},
+                        {"type": "text", "text": prompt},
                     ],
                 }
             ],

@@ -414,6 +414,11 @@ _STRINGS: dict[str, tuple[str, str]] = {
         "初回だけ 1.8GB ほど取得します。版面ごと読み、縦書きにも向きます。",
         "Downloads about 1.8GB the first time. Reads a whole page, including vertical text.",
     ),
+    "engine.yigdzin.label": ("Yigdzin-1（チベット語）", "Yigdzin-1 (Tibetan)"),
+    "engine.yigdzin.note": (
+        "初回だけ 1.7GB ほど取得します。行を見つけてから読みます。",
+        "Downloads about 1.7GB the first time. Finds each line, then reads it.",
+    ),
     # --- うまくいかないとき ---
     "error.server.title": ("OCR を起動できませんでした", "Could not start the OCR engine"),
     "error.server.detail": (

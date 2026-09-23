@@ -20,6 +20,10 @@ dependencies = [
     # 配布物に 1 つ増えるごとに .app と .msix が重くなるので、増やす前に要否を見る。
     "onnxruntime>=1.22,<2",
     "numpy>=2.0,<3",
+    # Yigdzin(yigdzin)の行検出(BDRC/PhotiLines_v2)が要る。マスクの輪郭抽出と
+    # 回転補正に使っていて、NDL と違って本当に使う場所があるので引き込む
+    # (src/local_ocr/yigdzin/line_detection.py)。headless 版で GUI 依存を避ける。
+    "opencv-python-headless>=4.10,<5",
 ]
 
 # 端末から使う口。`uv run local-ocr ...` / 入れたあとは `local-ocr ...`。

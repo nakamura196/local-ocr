@@ -10,6 +10,7 @@ from .apple_vision import AppleVisionEngine
 from .base import Engine, Line, Progress, Result, runs_here
 from .ndl import NdlKotenLiteEngine, NdlLiteEngine
 from .paddle_vl import PaddleVLEngine
+from .yigdzin import YigdzinEngine
 
 __all__ = [
     "Engine",
@@ -27,6 +28,7 @@ _ALL: list[type] = [
     NdlKotenLiteEngine,
     NdlLiteEngine,
     PaddleVLEngine,
+    YigdzinEngine,
 ]
 
 

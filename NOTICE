@@ -3,7 +3,7 @@ Local OCR — attribution for bundled and downloaded components
 
 このファイルは 3 つに分かれています。
 
-  A. 読む道具（モデル）— NDL 2 種、PaddleOCR-VL
+  A. 読む道具（モデル）— NDL 2 種、PaddleOCR-VL、Yigdzin-1、PhotiLines_v2
   B. 同梱する実行ファイル — llama.cpp、LLVM OpenMP
   C. 配布物（.app / .msix）に入る Python の依存
 
@@ -85,6 +85,71 @@ PaddleOCR-VL  (PaddlePaddle)
 取得するだけなので、Local OCR が配るものの中にモデルは入りません。
 それでも上の表示を残します。
 
+--------------------------------------------------------------------
+Yigdzin-1  (Buddhist Digital Resource Center)
+--------------------------------------------------------------------
+
+「読む道具」のうち Yigdzin-1 (yigdzin) のモデル (.gguf) は、初回に
+次から取得します。**同梱はしていません。**
+
+  https://huggingface.co/nakamura196/yigdzin1-gguf
+
+  元モデル: https://huggingface.co/BDRC/tibetan-ocr
+  © Buddhist Digital Resource Center
+  Licensed under the Apache License, Version 2.0
+  https://www.apache.org/licenses/LICENSE-2.0
+
+**PaddleOCR-VL と違い、GGUF に変換したのは配っている当人ではなく、
+このプロジェクトです。** BDRC/tibetan-ocr を llama.cpp で動かせる GGUF の
+形にした版は、2026-09-22 の時点でどこにも公開されていませんでした
+(Hugging Face の検索で確認)。Apache-2.0 は変換・再配布を認めているので、
+自分で変換し、`nakamura196/yigdzin1-gguf` として公開しています。
+
+  - 元モデルのモデルカードに `license: apache-2.0` と書いてあります。
+    Hugging Face の API が返す値も同じです(`cardData.license`)。
+    取得に同意や申請は要りません(`gated: false`)。
+  - 変換に使った llama.cpp は無改造の本家です。変換スクリプト
+    (`conversion/ernie.py`)に、元モデルの `processor_config.json` の
+    形が本家 PaddleOCR-VL-1.6 と違う点(`min_pixels`/`max_pixels` ではなく
+    `size.shortest_edge`/`size.longest_edge`)を読めるようにする、位置
+    エンコーディングとは無関係の小さな互換性修正だけを加えています。
+    推論側の挙動は変えていません(本家の llama-server でそのまま動きます)。
+  - 変換元は PaddlePaddle/PaddleOCR-VL-1.6 の派生モデルです。1.6 本体の
+    ライセンス表示は、上の PaddleOCR-VL の項を参照してください。
+
+--------------------------------------------------------------------
+PhotiLines_v2  (Buddhist Digital Resource Center)
+--------------------------------------------------------------------
+
+Yigdzin-1 に渡す前に、版面のどこに行があるかを見つける部分
+(行検出、ONNX)は、初回に次から取得します。**同梱はしていません。**
+
+  https://huggingface.co/BDRC/PhotiLines_v2
+
+  © Buddhist Digital Resource Center
+  Licensed under CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+
+2026-09-23 に、モデルカードの記載で確かめたことを残しておきます。
+
+  - モデルカードの `cardData.license` が `cc-by-4.0` です。取得に同意や
+    申請は要りません(`gated: false`)。
+  - モデル本体(.onnx / .onnx.data)はそのまま取得して使っています。改変は
+    していません。
+  - `src/local_ocr/yigdzin/line_detection.py` は、BDRC純正のデスクトップ
+    アプリ(`buda-base/tibetan-ocr-app`、MIT — 下記)の同名モジュールの
+    考え方を踏襲した改変物です。何を持ってきて何を変えたかは、
+    `src/local_ocr/yigdzin/__init__.py` と、同ファイルの docstring に
+    書いてあります。
+
+  buda-base/tibetan-ocr-app のライセンス表示(参考にした範囲):
+
+    https://github.com/buda-base/tibetan-ocr-app
+
+    MIT License — 2026-09-23 に repo の `LICENSE` で確認。
+
+取得するだけなので、Local OCR が配るものの中にモデルは入りません。
+それでも上の表示を残します。
+
 ====================================================================
 B. 同梱する実行ファイル
 ====================================================================
@@ -156,9 +221,13 @@ C. 配布物（.app / .msix）に入る Python の依存
     text-unidecode（Artistic/GPL）まで配ることになります。**
     2026-09-21 に `uv tree --no-dev` で確かめた結果、どちらも入っていません。
 
-下の一覧は 2026-09-21 に数えたものです（28 個）。ライセンスの値は、各
-パッケージが自分で申告しているもの（wheel の `METADATA` の
-`License-Expression` / `License` / Classifier）をそのまま写しました。
+下の一覧は 2026-09-21 に数えたもの（28 個）に、2026-09-23 に足した
+opencv-python-headless（Yigdzin の行検出が要る。`pyproject.toml` の注記を
+参照）を加えたものです（29 個）。`uv tree --no-dev` で確かめたところ、
+opencv-python-headless が新たに引き込む依存は無く（numpy は既に居るもの）、
+増えたのは 1 個だけです。ライセンスの値は、各パッケージが自分で申告している
+もの（wheel の `METADATA` の `License-Expression` / `License` / Classifier）
+をそのまま写しました。
 
   MIT
     anyio / h11 / markdown-it-py / mdurl / onnxruntime / repath / rich / six
@@ -175,7 +244,7 @@ C. 配布物（.app / .msix）に入る Python の依存
     pygments
 
   Apache-2.0
-    flet / flet-desktop / msgpack / flatbuffers
+    flet / flet-desktop / msgpack / flatbuffers / opencv-python-headless
 
   Apache-2.0 OR BSD-2-Clause
     packaging
@@ -193,6 +262,12 @@ C. 配布物（.app / .msix）に入る Python の依存
 wheel の `*.dist-info/licenses/` にライセンス全文が入っており、`flet build`
 はそれを消しません（消すのは `--cleanup-packages` を付けたときだけで、
 既定では付きません）。**この引数を足すと表示が消えるので、足さないこと。**
+
+（opencv-python-headless だけ、`LICENSE.txt` / `LICENSE-3RD-PARTY.txt` が
+`licenses/` の下ではなく `*.dist-info/` の直下に入っています。`flet build`
+は dist-info をまるごと運ぶので、消える理由は無いはずですが、ほかの
+パッケージほど個別には確かめていません。配布物を作ったら、
+`Contents/Resources/app/*.dist-info` の中を一度覗いて確認してください。）
 
 **ただし 6 つは、ライセンスの全文をどこにも持っていません。**
 `METADATA` に名前が書いてあるだけです（2026-09-21 に中を探して確認）。
