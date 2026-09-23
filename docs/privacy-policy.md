@@ -55,6 +55,13 @@ crash reporting, and no update check.
 - Exported text: only the location the user chooses
 - Settings: the same folder as the models, as `settings.json`
 
+The models take up to about 2 GB. If the drive holding those folders is
+short of space, set the environment variable `LOCAL_OCR_DATA_DIR` to a
+folder on another drive and restart the application; everything above
+moves there. The current location is shown on the application's Settings
+screen. Files already downloaded are not moved for you — copy them across,
+or let the application fetch them again.
+
 ### Uninstallation
 
 Removing the application removes the application itself. The models folder
@@ -125,6 +132,12 @@ Satoru Nakamura, The University of Tokyo — nakamura@hi.u-tokyo.ac.jp
   `%LOCALAPPDATA%\Local OCR`、macOS は `~/Library/Application Support/Local OCR` 配下
 - 書き出したテキスト: 利用者が指定した場所のみ
 - 設定: モデルと同じフォルダの `settings.json`
+
+モデルは最大 2GB ほどになります。上のフォルダがあるドライブの空きが足りない
+場合は、環境変数 `LOCAL_OCR_DATA_DIR` に別の場所を設定してアプリを起動し直して
+ください。上記がすべてそちらに移ります。いまの場所はアプリの「設定」画面に
+表示されています。**取得済みのファイルは自動では移りません。** 手で写すか、
+アプリに取り直させてください。
 
 ### アンインストール
 

@@ -19,6 +19,20 @@ FORMER_DIR_NAME = "PaddleOCR Local"
 # 取得済みの方に再取得させないため、あればそちらを使う。
 LEGACY_DIR_NAME = "PaddleOCR校正"
 
+# 置き場所を明示的に指定したいときの逃げ道。
+#
+# **画面には出していない。** 設定を増やすと、その分だけ説明するものが増える。
+# 大半の方は触らなくてよい。要るのは 1 つの場面で、そこでは本物に困る:
+# **Windows で C: が小さく D: が大きい機械**。モデルは最大 1.8GB あるので、
+# 空きが無い機械では入らない。そういう方に「この 1 行を実行してください」と
+# 案内して救うための口。
+#
+# **画面の設定にしなかった理由。** 設定ファイル（settings.json）は、その
+# 置き場所の中にある。「どこに置くか」を、その場所の中には書けない。
+# 画面から変えられるようにするには、既定の場所に道しるべのファイルを別に置く
+# 二段構えが要る。実際に困る方が出てから作る。
+DATA_DIR_ENV = "LOCAL_OCR_DATA_DIR"
+
 
 def is_windows() -> bool:
     return platform.system() == "Windows"
@@ -37,7 +51,16 @@ def data_dir() -> Path:
 
     ホーム直下ではなく OS の作法に従う。ホーム直下はバックアップ対象に
     入りやすく、2GB 近い再取得可能なファイルを同期させてしまう。
+
+    環境変数 LOCAL_OCR_DATA_DIR があれば、そこを使う（DATA_DIR_ENV の注を参照）。
     """
+    # **いちばん強い。** 空きが無い機械の逃げ道なので、ほかの候補がどう在ろうと
+    # 指定された場所を使う。空文字は「指定していない」として扱う（シェルで
+    # うっかり空のまま export したときに、変な場所を掘らせない）。
+    override = os.environ.get(DATA_DIR_ENV, "").strip()
+    if override:
+        return Path(override).expanduser()
+
     legacy = Path.home() / LEGACY_DIR_NAME
     if legacy.is_dir():
         return legacy
