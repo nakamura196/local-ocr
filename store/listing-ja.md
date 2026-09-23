@@ -97,10 +97,11 @@ nakamura@hi.u-tokyo.ac.jp
 
 ## スクリーンショット
 
-**未撮影(2026-09-22 時点)。** 手元にあるのは macOS 版の画面(`docs/images/
-screenshot-ja.png`, 1600×1057)のみ。Windows ストアには Windows 実機で撮った
-画面を出す。`packaging/windows/` の梱包(MSIX)ができてから、Windows 機で
-起動して撮る。置き場所は `store/screenshots/ja/`。要件は 1366×768 以上。
+`store/screenshots/ja/01-landing.png`(1486×973。要件の1366×768以上)。
+2026-09-22、CIのWindows runnerで`scripts/screenshot-windows.ps1`が撮った
+(settings.jsonを仕込んで言語をjaに固定)。**まだ「起動直後の何も読んでいない
+画面」だけ。** README のmacOS版(画像を読ませて認識済み)と同じ形にするのは
+次の課題。差し替えるときは撮り直すこと。
 
 ---
 

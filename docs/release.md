@@ -509,10 +509,11 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
       いないので、初回申請はダッシュボードに手で貼ることになる）
 - [x] プライバシーポリシーは **3.5 の `docs/privacy-policy.md` が正本**。
       両ファイルには URL だけ書いた（archival-packager のように .txt を別に持たない）
-- [ ] `store/screenshots/{ja,en}/` — **未撮影。** ディレクトリだけ作った。
-      Windows 実機で MSIX を起動して撮る必要がある（macOS の画面では出せない。
-      Store は言語ごとに 1 枚以上必須 — 無いと確定段階で `NoScreenshotsOfAnyType`
-      で弾かれる、archival-packager の実例）
+- [x] **`store/screenshots/{ja,en}/`（2026-09-22）。** CI の Windows runner で
+      撮った（`scripts/screenshot-windows.ps1`、1486×973、要件の 1366×768 以上）。
+      settings.json を仕込んで言語を固定したので、runner の既定言語に依存しない。
+      **まだ「起動直後の何も読んでいない画面」だけ。** README の macOS 版
+      （画像を読ませて認識済み）と同じ形にするのは次の課題
 - [ ] `scripts/store_submit.py` — 申請 API。まだ持ってきていない
       - **`--check` を申請の直前に挟まない**（1 回目が通って 2 回目が 403 になる）
       - **ダッシュボードと API を混ぜない**（作りかけの申請が残っていると API が失敗する）
@@ -527,10 +528,15 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
 
 **Partner Center でのアプリ名予約は済みました（2026-09-22、Store ID
 `9N07ZD1ZPKBZ`）。** `AppxManifest.xml.in` の Identity も本物の値に差し替え済み。
-**3 か月以内（〜2026-12-22）に Store へ提出しないと予約が失効する。** 次は:
+**3 か月以内（〜2026-12-22）に Store へ提出しないと予約が失効する。**
 
-- GitHub Actions の Windows ビルド workflow（`build.ps1` → MSIX）を書く
-- Windows 実機で MSIX を作り、起動して `store/screenshots/{ja,en}/` を撮る
+**GitHub Actions の Windows ビルド workflow も書いて、実際に MSIX とスクリーンショット
+（日英）を CI で作れることを確かめました（2026-09-22、`.github/workflows/windows-build.yml`）。**
+残りは:
+
 - `scripts/store_submit.py` を持ってくる、または初回はダッシュボードから手で申請
+  （MSIX・掲載文・スクリーンショットは揃っている）
+- README の macOS 版のような「画像を読ませて認識済み」の画面に近づける
+  （急がない。今のスクリーンショットでも Store の最低要件は満たしている）
 
 3.5（公開ページ）は Windows ストアに出すときだけ要ります。
