@@ -7,6 +7,8 @@ Flet 0.86 は書き方の作法が変わっているところが多く(ボタン
 
 from __future__ import annotations
 
+import sys
+
 import flet as ft
 import pytest
 
@@ -60,6 +62,11 @@ class FakeCtx:
 def ctx(monkeypatch) -> FakeCtx:
     # 利用者の設定(前回の続き・選んでいる道具)に左右されないようにする。
     monkeypatch.setattr(prefs, "load", dict)
+    # 配布先は macOS と Windows だけ。CI (Linux) では動く道具が 1 つも無く、
+    # 既定の道具を選べずに AppState が作れない。そこでは Windows のふりをする
+    # (NDL 2 種と PaddleOCR-VL が並ぶ。未取得のままでも組み立てには足りる)。
+    if sys.platform not in ("darwin", "win32"):
+        monkeypatch.setattr(sys, "platform", "win32")
     return FakeCtx(AppState())
 
 

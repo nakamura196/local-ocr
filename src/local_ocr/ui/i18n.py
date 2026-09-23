@@ -9,6 +9,7 @@ from __future__ import annotations
 import locale
 import os
 import re
+import sys
 
 from ..core import prefs
 
@@ -441,13 +442,42 @@ _STRINGS: dict[str, tuple[str, str]] = {
 
 
 def _system_language() -> str:
-    """OS の言語。分からなければ英語にしておく。"""
-    try:
-        code = locale.getlocale()[0] or ""
-    except (TypeError, ValueError):
-        code = ""
-    code = code or os.environ.get("LANG", "")
+    """OS の言語。分からなければ英語にしておく。
+
+    **環境変数 (LANG) を頼りにしない。** 端末から起動すると LANG が入っているが、
+    Finder やスタートメニューから起動したアプリには入らない。v0.1.0 はこれを
+    頼りにしていたため、日本語の Mac でも初回は英語の画面になっていた
+    (2026-09-22、デモ動画の収録で発覚。開発中は端末から起動していて気づかなかった)。
+    OS の「言語と地域」の設定を直接読む。
+    """
+    code = _os_ui_language()
+    if not code:
+        try:
+            code = locale.getlocale()[0] or ""
+        except (TypeError, ValueError):
+            code = ""
+        code = code or os.environ.get("LANG", "")
     return "ja" if code.lower().startswith("ja") else "en"
+
+
+def _os_ui_language() -> str:
+    """OS の画面の言語 ("ja-JP" など)。取れなければ空文字。"""
+    try:
+        if sys.platform == "darwin":
+            # システム設定 → 言語と地域 の「優先する言語」の先頭
+            from Foundation import NSLocale
+
+            langs = NSLocale.preferredLanguages()
+            return str(langs[0]) if langs else ""
+        if sys.platform == "win32":
+            import ctypes
+
+            # 下位 10 ビットが主言語。0x11 が日本語 (LANG_JAPANESE)
+            lang_id = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+            return "ja" if lang_id & 0x3FF == 0x11 else "en"
+    except Exception:  # noqa: BLE001 — 取れなければ従来の方法に任せる
+        return ""
+    return ""
 
 
 def current() -> str:
