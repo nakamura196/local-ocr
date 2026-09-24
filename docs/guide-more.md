@@ -1,6 +1,15 @@
-# ③ いろいろな使い方（フォルダ・IIIF・くらべる）
-
-[使い方の一覧に戻る](guide.md)
+---
+layout: guide
+lang: ja
+title: ③ いろいろな使い方
+eyebrow: Local OCR の使い方
+lead: フォルダ・IIIF マニフェスト・貼り付けから読む方法と、読む道具のくらべ方。動画は約 5 分です。
+nav:
+  - { title: 紹介ページ, url: ./ }
+  - { title: 使い方の一覧, url: guide.html }
+  - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
+footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"
+---
 
 <div style="position:relative;padding-bottom:62.5%;height:0;overflow:hidden;margin:1em 0"><iframe src="https://www.youtube-nocookie.com/embed/X0H37OL3quI" title="いろいろな使い方" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
 
