@@ -1,10 +1,20 @@
-# ① インストールと、読む道具の取得（Mac）
-
-[使い方の一覧に戻る](guide.md)
+---
+layout: guide
+lang: ja
+title: ① インストールと、読む道具の取得（Mac）
+eyebrow: Local OCR の使い方
+lead: Mac へのインストールから、読む道具を取得して最初の 1 枚を読むまで。動画は約 3 分です。
+nav:
+  - { title: 紹介ページ, url: ./ }
+  - { title: 使い方の一覧, url: guide.html }
+  - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
+footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"
+---
 
 <div style="position:relative;padding-bottom:62.5%;height:0;overflow:hidden;margin:1em 0"><iframe src="https://www.youtube-nocookie.com/embed/XIsV5euLb_U" title="インストールと、読む道具の取得" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
 
-Windows の方は、[Microsoft ストア](https://apps.microsoft.com/detail/9N07ZD1ZPKBZ)で「入手」を押すと入ります。以下の 1〜3 は Mac の手順です。
+> Windows の方は、[Microsoft ストア](https://apps.microsoft.com/detail/9N07ZD1ZPKBZ)で「入手」を押すと入ります。以下の 1〜3 は Mac の手順です。
+{: .note }
 
 ## 1. ダウンロードする
 
@@ -39,7 +49,9 @@ Finder で「アプリケーション」フォルダを開き、Local OCR をダ
 
 ![取得の確認](images/guide/consent.jpg)
 
-取得は最初の 1 回だけです。回線の速さによって、数分から数十分かかります。
+> 取得は最初の 1 回だけです。回線の速さによって、数分から数十分かかります。
+{: .point }
+
 終わると、そのまま読み始めます。右側に、読み取った文字が 1 行ずつ出ます。
 
 ![初めて読んだ結果](images/guide/first-result.jpg)
