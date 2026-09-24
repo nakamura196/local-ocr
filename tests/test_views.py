@@ -278,6 +278,26 @@ def test_many_engines_to_compare_can_be_scrolled_sideways(fakes):
     assert columns_row.scroll == ft.ScrollMode.ALWAYS
 
 
+def test_many_engines_to_pick_wrap_instead_of_running_off_the_right(fakes):
+    """道具が多いとき、上のチェックボックスは折り返す。右で切れると押せない道具が出る。"""
+    ctx, engines = fakes
+    _page(ctx)
+    ctx.state.compare = True
+    ctx.state.compare_ids = {e.id for e in engines}
+    view = WorkView(ctx)
+    view.build()
+
+    pane = view.body.content.controls[2]
+    header = pane.content.controls[0].content
+    picks = header.controls[1]
+    # 横並びの中では、expand で幅をもらわないと wrap しても折り返さない。
+    assert picks.wrap and picks.expand
+    # 1 つずつ名前の幅に縮めておかないと、1 行に 1 つずつになる。
+    assert len(picks.controls) == len(engines)
+    for pick in picks.controls:
+        assert pick.tight and isinstance(pick.controls[0], ft.Checkbox)
+
+
 def test_the_page_image_is_shrunk_before_it_is_sent_to_the_screen():
     """8000 画素の撮影画像を、そのまま画面へ送らない(1 回 80MB になり画面が止まる)。"""
     import io

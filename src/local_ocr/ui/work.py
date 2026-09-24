@@ -268,16 +268,17 @@ class WorkView:
         picks: list[ft.Control] = []
         for engine in self.state.usable:
             ready = self._ready(engine)
-            picks.append(
-                ft.Checkbox(
-                    label=engine_short(engine),
-                    value=engine.id in self.compare_ids and ready,
-                    disabled=not ready,
-                    tooltip=None if ready else t("compare.not_fetched.detail"),
-                    data=engine.id,
-                    on_change=self._on_pick,
-                )
+            box = ft.Checkbox(
+                label=engine_short(engine),
+                value=engine.id in self.compare_ids and ready,
+                disabled=not ready,
+                tooltip=None if ready else t("compare.not_fetched.detail"),
+                data=engine.id,
+                on_change=self._on_pick,
             )
+            # 札つきの Checkbox は、幅の上限をもらうと横いっぱいに伸びる。
+            # 折り返す並びに直に置くと 1 行に 1 つになるので、名前の幅に縮めておく。
+            picks.append(ft.Row([box], spacing=0, tight=True))
         columns: list[ft.Control] = []
         for i, col in enumerate(self.columns):
             if i:
@@ -297,7 +298,10 @@ class WorkView:
                     _pane_header(
                         [
                             ft.Text(t("work.mode.compare"), size=13, weight=ft.FontWeight.W_600),
-                            ft.Row(picks, spacing=4, tight=True, wrap=True),
+                            # **expand で残りの幅を渡す。** 横並びの中に置いた Row は
+                            # 幅の上限を知らず、wrap しても折り返さずに右で切れる
+                            # (道具 6 つ以上で起きた)。
+                            ft.Row(picks, spacing=4, wrap=True, expand=True),
                         ]
                     ),
                     # **横のスクロールバーは常に出す。** 列が窓に収まらないとき、
