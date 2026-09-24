@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import flet as ft
+from PIL import Image
 
 from ..core import export, fetch
 from . import status, theme
@@ -31,6 +32,8 @@ if TYPE_CHECKING:
 
 # 版面の拡大の上限。小さな切り抜きを無闇に引き伸ばしても粗くなるだけ。
 MAX_ZOOM = 2.0
+# 版面を画面へ送るときの細かさ。出す寸法の 2 倍(Retina の画面)まであれば粗く見えない。
+PREVIEW_DENSITY = 2
 # ページを行き来する帯の高さ。2 ページ以上のときだけ、版面の下に出す。
 PAGER = 44
 
@@ -41,7 +44,9 @@ class WorkView:
         self.page = ctx.page
         self.state = ctx.state
         self.selected = -1
-        self._png: bytes | None = None
+        # 版面を画面に送る分。**縮めてから送る**(`_preview`)。どの寸法で作ったかも持つ。
+        self._picture: bytes | None = None
+        self._picture_for = (0, 0)
         self._boxes: list[ft.Container] = []
         # 束を読んでいる途中で「中止」が押されたか。次のページに移る前に見る。
         self._cancel = False
@@ -295,7 +300,9 @@ class WorkView:
                             ft.Row(picks, spacing=4, tight=True, wrap=True),
                         ]
                     ),
-                    ft.Row(columns, spacing=0, expand=True, scroll=ft.ScrollMode.AUTO),
+                    # **横のスクロールバーは常に出す。** 列が窓に収まらないとき、
+                    # 右の列は隠れる。バーが出ていないと、隠れていることに気づけない。
+                    ft.Row(columns, spacing=0, expand=True, scroll=ft.ScrollMode.ALWAYS),
                 ],
                 spacing=0,
                 expand=True,
@@ -387,7 +394,7 @@ class WorkView:
             return
         doc.go(index)
         self.selected = -1
-        self._png = None
+        self._picture = None
         self._render()
         self._sync_pager()
         self.page.update()
@@ -421,7 +428,7 @@ class WorkView:
             job.release()
             return
         doc.keep_only(index)
-        self._png = None
+        self._picture = None
         self._render()
         self.panel.hide()
         self.page.update()
@@ -471,10 +478,9 @@ class WorkView:
         self._scale = scale
         sw, sh = max(1, round(img.width * scale)), max(1, round(img.height * scale))
 
-        if self._png is None:
-            buf = io.BytesIO()
-            img.convert("RGB").save(buf, format="PNG")
-            self._png = buf.getvalue()
+        if self._picture is None or self._picture_for != (sw, sh):
+            self._picture = _preview(img, sw, sh)
+            self._picture_for = (sw, sh)
 
         for i, line in enumerate(job.lines):
             if not line.box:
@@ -498,7 +504,7 @@ class WorkView:
             content=ft.Stack(
                 [
                     ft.Image(
-                        src=self._png,
+                        src=self._picture,
                         width=sw,
                         height=sh,
                         fit=ft.BoxFit.FILL,
@@ -994,7 +1000,7 @@ class WorkView:
             if job.image is None:
                 try:
                     await asyncio.to_thread(job.load)
-                    self._png = None
+                    self._picture = None
                 except Exception as exc:  # noqa: BLE001 - 画面に出して続けられるようにする
                     traceback.print_exc()
                     report = status.explain(exc)
@@ -1113,6 +1119,24 @@ class WorkView:
             self.strip.show(
                 status.empty(t("work.nothing_found"), t("work.nothing_found.detail"))
             )
+
+
+def _preview(img: Image.Image, width: int, height: int) -> bytes:
+    """版面を、画面に出す寸法まで縮めて JPEG にする。
+
+    **元の画像をそのまま送らない。** 描き直すたびに版面ごと画面へ送り直すので、
+    8000 画素の撮影画像を PNG にすると 1 回 80MB になり、画面が止まる
+    (枠も版面も出ないまま固まる)。枠の位置は元の画像の座標から計算するので、
+    送る絵を縮めても枠はずれない。
+    """
+    small = img.convert("RGB")
+    small.thumbnail(
+        (max(1, width * PREVIEW_DENSITY), max(1, height * PREVIEW_DENSITY)),
+        Image.Resampling.LANCZOS,
+    )
+    buf = io.BytesIO()
+    small.save(buf, format="JPEG", quality=88)
+    return buf.getvalue()
 
 
 def _safe_name(stem: str) -> str:
