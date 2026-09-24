@@ -543,10 +543,10 @@ def main() -> int:
         print("前回の申請を複製しています…")
         submission = create_submission(token, store_id)
 
-    # **掲載情報はダッシュボードで手直しした版が公開されている**（2026-09-24 に
-    # 突き合わせて確認）。store/listing-*.md は 40 字ほどで折り返してあり、
-    # そのまま送ると文の途中で改行された説明文になる。md を整えるまでは
-    # --package-only で本体だけ差し替える。
+    # 説明文は 2026-09-24 に、ダッシュボードで手直しして公開中の版と揃えた
+    # （store/listing-ja.md。段落の途中で折り返さない）。ただし公開中は日本語だけで、
+    # 簡単な説明は空、キーワードは 3 件。md のまま送るとこれらが変わる。
+    # 本体だけ差し替えたいときは --package-only。
     if not args.package_only:
         submission = apply_listings(submission, listings_by_lang)
     submission = ensure_device_families(submission)
