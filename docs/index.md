@@ -5,9 +5,10 @@
 ## English
 
 A desktop application that reads the characters in an image **on your own
-computer**. macOS and Windows. Choose the recognition engine to match the
-material — modern print, Japanese cursive (kuzushiji), or Chinese classical
-texts — and export plain text or TEI/XML.
+computer**. macOS and Windows. It reads Japanese (from modern print
+to pre-modern cursive, kuzushiji), Chinese (classical and modern), English and
+Tibetan; choose the recognition engine to match the material, and export plain
+text or TEI/XML.
 
 ### Download
 
@@ -50,8 +51,9 @@ Contact: nakamura@hi.u-tokyo.ac.jp
 ## 日本語
 
 画像に写っている文字を **手元の端末の中だけで** 読み取るデスクトップ
-アプリケーションです。macOS と Windows に対応します。現代の活字、崩し字、
-漢文など、資料に合わせて認識エンジンを選べます。プレーンテキストまたは
+アプリケーションです。macOS と Windows に対応します。日本語（現代の活字から
+古典籍のくずし字まで）、中国語（漢文・現代文）、英語、チベット語を読めます。
+資料に合わせて認識エンジンを選べます。プレーンテキストまたは
 TEI/XML で書き出せます。
 
 ### ダウンロード
