@@ -19,6 +19,10 @@ texts — and export plain text or TEI/XML.
 Nothing else to install. `llama-server`, which runs the PaddleOCR-VL model,
 is bundled with the application; recognition models are fetched on first use.
 
+### How to use
+
+[Video guides and step-by-step instructions](guide.md) (in Japanese).
+
 ### What it does
 
 Images in, characters out — nothing else. Recognition happens entirely on
@@ -59,6 +63,10 @@ TEI/XML で書き出せます。
 
 導入作業は要りません。PaddleOCR-VL のモデルを動かす `llama-server` はアプリに
 同梱しています。認識モデルは初回使用時に取得します。
+
+### 使い方
+
+[動画と手順の説明](guide.md)（インストール・基本・いろいろな使い方）
 
 ### できること
 
