@@ -10,6 +10,9 @@
 雛形は [archival-packager](https://github.com/nakamura196/archival-packager) の
 `store/listing-en.md`。
 
+**説明文は日本語版(2026-09-24 にストアで公開中の文面)と同じ形に揃えた。英語の掲載はまだストアに出ていない。**
+ストアの欄は素のテキストで、改行はそのまま表示される。**段落の途中で折り返さないこと。**
+
 ---
 
 ## 製品名
@@ -18,53 +21,32 @@ Local OCR
 
 ## 簡単な説明(Short description・最大 1000 文字)
 
-Reads the characters in an image on your own computer — nothing leaves the
-device. Choose the recognition engine to match the material: modern print,
-Japanese cursive (kuzushiji), or Chinese classical texts. For archives,
-libraries and researchers digitising and transcribing historical documents.
+Reads the characters in an image on your own computer — nothing leaves the device. Choose the recognition engine to match the material: modern print, Japanese cursive (kuzushiji), or Chinese classical texts. For archives, libraries and researchers digitising and transcribing historical documents.
 
 ## 説明(Description)
 
-Local OCR is a desktop application that recognises the characters in an
-image and turns them into text. Recognition happens entirely on your
-computer; no image or recognised text is sent anywhere.
+Local OCR is a desktop application that recognises the characters in an image and turns them into text. Recognition happens entirely on your computer; no image or recognised text is sent anywhere.
 
-It was built for researchers and librarians who need to transcribe large
-volumes of pre-modern material — cursive Japanese and classical Chinese in
-particular. It is the successor to
-[tei-scanner](https://github.com/nakamura196/tei-scanner) (macOS only, Apple
-Vision only).
+It was built for researchers and librarians who need to transcribe large volumes of pre-modern material — cursive Japanese and classical Chinese in particular.
 
-What it does
+What it does:
+• Several recognition engines to choose from, suited to different material (modern print, Japanese cursive (kuzushiji), and Chinese classical / multilingual text)
+• Reads image files, the clipboard, a folder of page images, or a IIIF manifest URL
+• Exports plain text (.txt) or TEI/XML (.xml)
+• Compares two engines run over the same page, side by side
+• Also usable from the command line, for batch processing
 
-- Several recognition engines to choose from, suited to different material:
-  modern print, Japanese cursive (kuzushiji), and Chinese classical /
-  multilingual text
-- Reads image files, the clipboard, a folder of page images, or a
-  [IIIF](https://iiif.io/) manifest URL
-- Exports plain text (.txt) or TEI/XML (.xml)
-- Compares two engines run over the same page, side by side
-- Also usable from the command line, for batch processing
+Why you might use it:
+• Nothing else to install. The tools that run the recognition engines are bundled
+• Originals are never modified. Files are read only
+• Nothing is sent externally, apart from a one-time model download per engine and, if you use it, the IIIF manifest you point it at
 
-Why you might use it
+Who it is for:
+Anyone responsible for digitising and transcribing pre-modern documents or early printed books at an archive, library, museum or research institution. It does not assume you are an information systems specialist.
 
-- Nothing else to install. The tools that run the recognition engines are
-  bundled
-- Originals are never modified. Files are read only
-- Nothing is sent externally, apart from a one-time model download per
-  engine and, if you use it, the IIIF manifest you point it at
-
-Who it is for
-
-Anyone responsible for digitising and transcribing pre-modern documents or
-early printed books at an archive, library, museum or research institution.
-It does not assume you are an information systems specialist.
-
-Please note
-
-- The interface is Japanese and English
-- The PaddleOCR-VL engine's recognition model is about 1.8 GB and is
-  downloaded the first time you use it
+Please note:
+• The interface is Japanese and English
+• The PaddleOCR-VL engine's recognition model is about 1.8 GB and is downloaded the first time you use it
 
 Developed by Satoru Nakamura (The University of Tokyo).
 
