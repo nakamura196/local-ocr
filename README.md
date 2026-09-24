@@ -1,9 +1,10 @@
 # Local OCR
 
 A desktop application that reads the characters in an image **on your own
-computer**. One codebase, macOS and Windows. Choose the recognition engine to
-match the material — modern print, Japanese cursive (kuzushiji), or Chinese
-classical texts — and export plain text or TEI/XML.
+computer**. One codebase, macOS and Windows. It reads Japanese (from modern
+print to pre-modern cursive, kuzushiji), Chinese (classical and modern),
+English and Tibetan; choose the recognition engine to match the material, and
+export plain text or TEI/XML.
 
 Successor to [tei-scanner](https://github.com/nakamura196/tei-scanner)
 (Swift, macOS only, Apple Vision only).
@@ -54,13 +55,14 @@ into whatever tool you proofread in.
 
 ### Recognition engines
 
-| Engine | Platform | Download | Suited to |
-| --- | --- | --- | --- |
-| Apple Vision | macOS | — | Modern print and handwriting. Fast |
-| Windows OCR | Windows | — | Same. Not implemented yet |
-| [NDLOCR Lite](https://github.com/ndl-lab/ndlocr-lite) | both | 157 MB | Modern Japanese print |
-| [NDL Kotenseki OCR Lite](https://github.com/ndl-lab/ndlkotenocr-lite) | both | 83 MB | Pre-modern Japanese, cursive |
-| PaddleOCR-VL | both | ~1.8 GB | Chinese classical texts, multilingual |
+| Engine | Platform | Download | Languages | Suited to |
+| --- | --- | --- | --- | --- |
+| Apple Vision | macOS | — | Japanese, English, Chinese (simplified, traditional) | Modern print and handwriting. Fast |
+| Windows OCR | Windows | — | — | Same. Not implemented yet |
+| [NDLOCR Lite](https://github.com/ndl-lab/ndlocr-lite) | both | 157 MB | Japanese | Modern Japanese print |
+| [NDL Kotenseki OCR Lite](https://github.com/ndl-lab/ndlkotenocr-lite) | both | 83 MB | Japanese (incl. kanbun) | Pre-modern Japanese, cursive |
+| PaddleOCR-VL | both | ~1.8 GB | Chinese, Japanese, English and many more (109 per the upstream description) | Chinese classical texts, multilingual |
+| [Yigdzin-1](https://huggingface.co/nakamura196/yigdzin1-gguf) | both | ~1.7 GB | Tibetan | Tibetan texts |
 
 Models are fetched on first use and cached; `llama-server`, which runs the
 PaddleOCR-VL model, is bundled with the application.
@@ -136,13 +138,14 @@ CC BY 4.0, and llama.cpp is MIT.
 
 ### 読む道具（エンジン）
 
-| 道具 | 対応 | 取得 | 向き |
-| --- | --- | --- | --- |
-| Apple Vision | macOS | 不要 | 現代の活字・手書き。速い |
-| Windows 標準 OCR | Windows | 不要 | 同上。未実装 |
-| [NDLOCR Lite](https://github.com/ndl-lab/ndlocr-lite) | 両方 | 157MB | 近代資料・活字 |
-| [NDL古典籍OCR Lite](https://github.com/ndl-lab/ndlkotenocr-lite) | 両方 | 83MB | 古典籍・くずし字 |
-| PaddleOCR-VL | 両方 | 約 1.8GB | 漢籍・多言語 |
+| 道具 | 対応 | 取得 | 読める言語 | 向き |
+| --- | --- | --- | --- | --- |
+| Apple Vision | macOS | 不要 | 日本語・英語・中国語（簡体・繁体） | 現代の活字・手書き。速い |
+| Windows 標準 OCR | Windows | 不要 | — | 同上。未実装 |
+| [NDLOCR Lite](https://github.com/ndl-lab/ndlocr-lite) | 両方 | 157MB | 日本語 | 近代資料・活字 |
+| [NDL古典籍OCR Lite](https://github.com/ndl-lab/ndlkotenocr-lite) | 両方 | 83MB | 日本語（漢文を含む） | 古典籍・くずし字 |
+| PaddleOCR-VL | 両方 | 約 1.8GB | 中国語・日本語・英語ほか多数（配布元の説明では 109 言語） | 漢籍・多言語 |
+| [Yigdzin-1](https://huggingface.co/nakamura196/yigdzin1-gguf) | 両方 | 約 1.7GB | チベット語 | チベット語の資料 |
 
 モデルは初回に取得して手元に残します。PaddleOCR-VL を動かす `llama-server` は
 アプリに同梱します。
