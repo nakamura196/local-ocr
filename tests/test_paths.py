@@ -105,10 +105,11 @@ def test_a_tilde_in_the_environment_variable_is_expanded(home, monkeypatch):
     シェルが展開してくれるとは限らない（Windows はしない。値を引用符で
     囲んだときもしない）。展開しないと `./~/Models` を掘ることになる。
 
-    `expanduser()` が見るのは環境変数 HOME で、`Path.home()` の差し替えでは
-    届かない。ここだけ HOME も向け直す。
+    `expanduser()` が見るのは環境変数 HOME（Windows では USERPROFILE）で、
+    `Path.home()` の差し替えでは届かない。ここだけ両方を向け直す。
     """
     monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
     monkeypatch.setenv(paths.DATA_DIR_ENV, "~/Models")
 
     assert paths.data_dir() == home / "Models"
