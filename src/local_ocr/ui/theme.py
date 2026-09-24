@@ -28,9 +28,24 @@ _MODES = {
 }
 
 
+# **スクロールバーは濃く、太く、溝も見せる。** 既定の薄い灰色では、くらべる画面で
+# 右の列が隠れていることに気づけなかった。色は意味の名前で持つので明暗どちらでも読める。
+SCROLLBAR = ft.ScrollbarTheme(
+    thickness=10,
+    radius=5,
+    thumb_color={
+        ft.ControlState.HOVERED: ft.Colors.ON_SURFACE,
+        ft.ControlState.DEFAULT: ft.Colors.OUTLINE,
+    },
+    track_visibility=True,
+    track_color=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+    track_border_color=ft.Colors.TRANSPARENT,
+)
+
+
 def setup(page: ft.Page) -> None:
-    page.theme = ft.Theme(color_scheme_seed=SEED)
-    page.dark_theme = ft.Theme(color_scheme_seed=SEED)
+    page.theme = ft.Theme(color_scheme_seed=SEED, scrollbar_theme=SCROLLBAR)
+    page.dark_theme = ft.Theme(color_scheme_seed=SEED, scrollbar_theme=SCROLLBAR)
     page.theme_mode = theme_mode()
     page.bgcolor = ft.Colors.SURFACE
     # 余白は各画面が持つ。ページ側に付けると全面に敷く投入エリアが作れない。
