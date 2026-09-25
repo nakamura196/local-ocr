@@ -1,34 +1,31 @@
-"""ほかの道具から、この機械の OCR を使えるようにする窓口。
+"""ほかの道具から、この機械の OCR を使えるようにする窓口の、開け閉めと決めごと。
 
 ブラウザの中で動く頁(校正の画面など)は、手元のコマンドを起動できない。
-繋ぐ道は HTTP しかないので、**開けている間だけ llama-server を立てたままにし**、
-127.0.0.1 の決まったポートで待つ。
+繋ぐ道は HTTP しかないので、**開けている間だけ窓口(`core/gateway.py`)を立て**、
+127.0.0.1 の決まったポート(既定 8080)で待つ。PaddleOCR-VL の llama-server は
+その後ろ(8082)に隠れ、窓口だけが話す。
 
 決めごとは 4 つ。
 
 - **既定は閉じている。** 開けた時点で、その機械で開いているどの頁からでも
   画像を投げられる状態になる。利用者が設定画面で開けたときだけ開く
 - **繋いでよい相手は、利用者が足した一覧だけ。** `*`(どの頁からでも)は作らない。
-  閉じている間と、一覧が空のときは、誰も名乗れない相手を渡して全部断る。
-  **`--cors-origins` を省いてはいけない。** 省くと llama-server の既定の `*` になり、
-  閉じているつもりのまま全開になる
+  閉じている間と、一覧が空のときは、どの頁も通さない
 - **外には出さない。** 待つのは 127.0.0.1 だけなので、同じ機械の中からしか繋がらない
-- **繋いでよい相手を変えたら、立て直す。** llama-server は起動のときの一覧しか見ない。
-  ここで立て直しておかないと、画面の一覧と実際に通る相手がずれる
-
-いま出せるのは PaddleOCR-VL だけ(常駐のサーバを持つのがこれだけのため)。
-`engines/base.py` の `recognize` をそのまま外に出す汎用の窓口は、
-読む道具が出揃ってから作る(docs/design.md)。
+- **llama-server 自身は誰も通さない**(`--cors-origins` に誰も名乗れない相手を渡す)。
+  頁は必ず窓口を通る。窓口は一覧を毎回読むので、相手を変えても立て直さなくてよい
 """
 
 from __future__ import annotations
 
+import socket
 import urllib.parse
 from typing import TYPE_CHECKING
 
 from . import prefs
 
 if TYPE_CHECKING:  # 実行時には取り込まない(runtime.py がこちらを取り込むため)
+    from .gateway import Gateway
     from .runtime import Runtime
 
 # 起動スクリプト版と同じ既定。校正の画面からしか呼べないようにしている。
@@ -88,25 +85,30 @@ def normalize_origin(text: str) -> str:
     return f"{parsed.scheme}://{parsed.netloc}"
 
 
-def cors_value() -> str:
-    """llama-server の `--cors-origins` にそのまま渡す値。
+def allows(origin: str) -> bool:
+    """この頁(出どころ)からの呼び出しを通してよいか。閉じている間は誰も通さない。"""
+    return enabled() and origin != DENY_ALL and origin in allowed_origins()
 
-    閉じている間も、立っているサーバはある(画面から読むときに使う)。そのときは
-    **どの頁からも通さない**値にしておく。窓口の開け閉めが、ここだけで効く。
-    """
-    origins = allowed_origins() if enabled() else []
-    return ",".join(origins) if origins else DENY_ALL
+
+# --- 窓口の場所 -----------------------------------------------------------
+PORT_PREF_KEY = "port"  # 前の版で llama-server を立てていたのと同じ設定・同じ既定
+DEFAULT_PORT = 8080
+
+
+def port() -> int:
+    return int(prefs.get(PORT_PREF_KEY, DEFAULT_PORT))
 
 
 class Bridge:
-    """窓口の開け閉め。サーバの起動・停止そのものは `Runtime` が持つ。
+    """窓口の開け閉め。窓口(HTTP)は `Gateway`、PaddleOCR-VL のサーバは `Runtime` が持つ。
 
     **新しく `Runtime` を作らない。** 読む道具が持っているものをそのまま渡す。
     別に作ると同じポートへ二重に立てようとして、重みを二度読むことになる。
     """
 
-    def __init__(self, runtime: Runtime) -> None:
+    def __init__(self, runtime: Runtime | None, gateway: Gateway | None = None) -> None:
         self._rt = runtime
+        self._gw = gateway
 
     @property
     def enabled(self) -> bool:
@@ -114,11 +116,11 @@ class Bridge:
 
     @property
     def endpoint(self) -> str:
-        return self._rt.endpoint
+        return f"http://127.0.0.1:{self.port}"
 
     @property
     def port(self) -> int:
-        return self._rt.port
+        return port()
 
     @property
     def origins(self) -> list[str]:
@@ -127,29 +129,46 @@ class Bridge:
     @property
     def open(self) -> bool:
         """いま本当に繋がるか。開けたつもりで落ちていることがあるので、毎回見る。"""
-        return enabled() and self._rt.ready
+        if not enabled():
+            return False
+        if self._gw is not None:
+            return self._gw.running
+        return self._rt is not None and self._rt.ready
 
     def port_busy(self) -> bool:
         """閉じたあとも同じポートで何かが待っているか(もう 1 つ開いたこのアプリなど)。"""
-        return self._rt.health() != "down"
+        try:
+            with socket.create_connection(("127.0.0.1", self.port), timeout=0.5):
+                return True
+        except OSError:
+            return False
 
     # --- 開け閉め ---------------------------------------------------------
     def turn_on(self) -> None:
-        """開ける。重みの読み込みが終わるまで戻らないので、**糸(スレッド)から呼ぶ。**
+        """開ける。PaddleOCR-VL の読み込みが終わるまで戻らないので、**糸(スレッド)から呼ぶ。**
 
         失敗しても設定は倒さない。「開けるつもりだが開けていない」を画面に出して、
         何をすればよいかを見せるため(黙って閉じると、なぜ繋がらないか分からない)。
         """
         set_enabled(True)
-        # 閉じた状態で立っていたら、繋いでよい相手を入れ替えるために立て直す。
-        self._rt.stop()
-        self._rt.start()
-        if not self._rt.wait_ready():
-            raise RuntimeError("OCR を起動できませんでした")
+        if self._gw is not None and not self._gw.running:
+            try:
+                self._gw.start(self.port)
+            except OSError as exc:
+                raise RuntimeError("OCR の窓口を開けませんでした") from exc
+        # PaddleOCR-VL が取得済みなら、先に立てておく(最初の 1 回を待たせない)。
+        # 取得していなければ立てない。ほかの道具(NDL など)は窓口から使える。
+        if self._rt is not None and getattr(self._rt, "fetched", True):
+            self._rt.start()
+            if not self._rt.wait_ready():
+                raise RuntimeError("OCR を起動できませんでした")
 
     def turn_off(self) -> None:
         set_enabled(False)
-        self._rt.stop()
+        if self._gw is not None:
+            self._gw.stop()
+        if self._rt is not None:
+            self._rt.stop()
 
     # --- 繋いでよい相手 ---------------------------------------------------
     def add_origin(self, origin: str) -> None:

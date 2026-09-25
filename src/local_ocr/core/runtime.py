@@ -59,6 +59,11 @@ class Runtime:
     def endpoint(self) -> str:
         return f"http://127.0.0.1:{self.port}"
 
+    @property
+    def fetched(self) -> bool:
+        """重みが揃っているか(立てられるか)。"""
+        return not self._missing()
+
     # --- 取得 -------------------------------------------------------------
     def fetch_missing(self, on_progress: Progress) -> None:
         fetch.download_all(self._missing(), on_progress)
@@ -104,9 +109,9 @@ class Runtime:
                 "-c", "8192",
                 "-ngl", "99",
                 # **省いてはいけない。** 既定は `*` で、その機械で開いている
-                # どの頁からでも投げられる状態になる。閉じている間は誰も
-                # 名乗れない相手が入る (core/bridge.py)。
-                "--cors-origins", bridge.cors_value(),
+                # どの頁からでも投げられる状態になる。ほかの道具は窓口
+                # (core/gateway.py) を通して使うので、ここは誰も通さない。
+                "--cors-origins", bridge.DENY_ALL,
             ]
             # Windows でコンソールの黒い窓が一瞬出るのを抑える。
             flags = subprocess.CREATE_NO_WINDOW if is_windows() else 0  # type: ignore[attr-defined]

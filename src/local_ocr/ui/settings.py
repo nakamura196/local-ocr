@@ -301,10 +301,6 @@ class EngineCard:
             self.busy = False
             self.view.refresh()
 
-    def _serves_bridge(self) -> bool:
-        """この道具が、ほかの道具に開く窓口の中身か(常駐のサーバを持つか)。"""
-        return getattr(self.engine, "runtime", None) is not None
-
     # --- 削除 -------------------------------------------------------------
     def confirm_remove(self) -> None:
         size = fetch.human(sum(a.size_on_disk() for a in self.engine.assets))
@@ -327,12 +323,9 @@ class EngineCard:
         try:
             # 常駐しているものは先に止める。動いたまま消すと、次の起動で
             # 壊れた状態のまま残ることがある。
+            # 窓口は閉じない。ほかの道具は窓口から使い続けられ、消した道具を
+            # 頼まれたときは窓口が「取得していません」と返す(`core/gateway.py`)。
             self.engine.shutdown()
-            # **窓口も閉じる。** 消した道具でしか応えられないので、開けたままだと
-            # ほかの道具からは開いて見えて、投げると必ず失敗する。
-            bridge = self.view.bridge
-            if bridge is not None and bridge.enabled and self._serves_bridge():
-                bridge.turn_off()
             for asset in self.engine.assets:
                 fetch.remove(asset)
             self.progress.plain(t("settings.remove.done"))
@@ -574,14 +567,11 @@ class BridgeCard:
         self._reopen()
 
     def _reopen(self) -> None:
-        """**変えた一覧を、その場でサーバに効かせる。**
+        """変えた一覧を画面に出す。
 
-        llama-server は起動のときの一覧しか見ない。立て直さないと、画面に
-        書いてある相手と、実際に通る相手がずれる(黙ってずれるのが一番よくない)。
+        窓口(`core/gateway.py`)は呼ばれるたびに一覧を読むので、立て直さなくても
+        その場で効く(前の版は llama-server を立て直していて、1 分ほど待たせた)。
         """
-        if self.bridge.enabled and not self.busy:
-            self.page.run_task(self._open, t("share.state.reopening"))
-            return
         self.sync()
         self.page.update()
 

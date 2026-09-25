@@ -1,7 +1,7 @@
 """ほかの道具に開く窓口。画面を出さずに確かめられるところを見る。
 
-**いちばん見たいのは「閉じている間は誰も通さない」。** `--cors-origins` を
-省くと llama-server の既定が `*` になり、閉じているつもりで全開になる。
+**いちばん見たいのは「閉じている間は誰も通さない」。** 頁は必ず窓口
+(`core/gateway.py`)を通り、窓口は `bridge.allows` で相手を見る。
 """
 
 from __future__ import annotations
@@ -23,15 +23,17 @@ def settings(tmp_path: Path, monkeypatch):
 
 def test_closed_by_default_and_nobody_gets_through():
     assert bridge.enabled() is False
-    # `*` でも空でもなく、誰も名乗れない相手が入る。
-    assert bridge.cors_value() == bridge.DENY_ALL
-    assert "*" not in bridge.cors_value()
+    # 既定の相手(校正の画面)でも、閉じている間は通さない。
+    assert bridge.allows("https://tei-iiif-editor.vercel.app") is False
 
 
 def test_opening_lets_the_listed_pages_through():
     bridge.set_allowed_origins(["https://example.com", "http://localhost:3000"])
     bridge.set_enabled(True)
-    assert bridge.cors_value() == "https://example.com,http://localhost:3000"
+    assert bridge.allows("https://example.com") is True
+    assert bridge.allows("http://localhost:3000") is True
+    assert bridge.allows("https://evil.example") is False
+    assert bridge.allows(bridge.DENY_ALL) is False
 
 
 def test_an_empty_list_lets_nobody_through_even_while_open():
@@ -39,7 +41,7 @@ def test_an_empty_list_lets_nobody_through_even_while_open():
     bridge.set_allowed_origins([])
     # 空の一覧を既定で埋め戻さない(外したのに戻っては困る)。
     assert bridge.allowed_origins() == []
-    assert bridge.cors_value() == bridge.DENY_ALL
+    assert bridge.allows("https://tei-iiif-editor.vercel.app") is False
 
 
 def test_the_launch_script_setting_is_carried_over():
@@ -96,17 +98,39 @@ def test_adding_and_removing_keeps_the_order_and_drops_duplicates():
     assert b.origins == ["https://b.example"]
 
 
-def test_turning_on_stands_the_server_back_up_with_the_new_list():
+def test_turning_on_opens_the_gateway_and_starts_paddle_behind_it():
     rt = _FakeRuntime()
-    b = bridge.Bridge(rt)
+    gw = _FakeGateway()
+    b = bridge.Bridge(rt, gw)
     b.turn_on()
-    # 閉じた状態で立っていたものは、繋いでよい相手を入れ替えるため立て直す。
-    assert rt.calls == ["stop", "start", "wait"]
+    # 窓口は相手の一覧を毎回読むので、立っている llama-server を立て直さない。
+    assert gw.calls == ["start 8080"]
+    assert rt.calls == ["start", "wait"]
     assert b.enabled is True
     assert b.open is True
     b.turn_off()
+    assert gw.calls[-1] == "stop"
     assert rt.calls[-1] == "stop"
     assert b.enabled is False
+
+
+def test_without_paddle_the_gateway_still_opens():
+    """PaddleOCR-VL を取得していなくても、ほかの道具は窓口から使える。"""
+    rt = _FakeRuntime(fetched=False)
+    gw = _FakeGateway()
+    b = bridge.Bridge(rt, gw)
+    b.turn_on()
+    assert rt.calls == []
+    assert b.open is True
+
+
+def test_a_busy_port_is_reported_and_leaves_the_setting_on():
+    gw = _FakeGateway(busy=True)
+    b = bridge.Bridge(_FakeRuntime(), gw)
+    with pytest.raises(RuntimeError):
+        b.turn_on()
+    assert b.enabled is True
+    assert b.open is False
 
 
 def test_a_server_that_will_not_come_up_leaves_the_setting_on():
@@ -122,9 +146,10 @@ def test_a_server_that_will_not_come_up_leaves_the_setting_on():
 class _FakeRuntime:
     """llama-server は立てない。呼ばれた順だけ見る。"""
 
-    def __init__(self, comes_up: bool = True) -> None:
+    def __init__(self, comes_up: bool = True, fetched: bool = True) -> None:
         self.calls: list[str] = []
         self.ready = False
+        self.fetched = fetched
         self._comes_up = comes_up
         self.port = 8080
         self.endpoint = "http://127.0.0.1:8080"
@@ -143,3 +168,22 @@ class _FakeRuntime:
 
     def health(self, timeout: float = 1.0) -> str:
         return "ready" if self.ready else "down"
+
+
+class _FakeGateway:
+    """HTTP は立てない。呼ばれた順だけ見る。"""
+
+    def __init__(self, busy: bool = False) -> None:
+        self.calls: list[str] = []
+        self.running = False
+        self._busy = busy
+
+    def start(self, port: int) -> None:
+        if self._busy:
+            raise OSError("address in use")
+        self.calls.append(f"start {port}")
+        self.running = True
+
+    def stop(self) -> None:
+        self.calls.append("stop")
+        self.running = False

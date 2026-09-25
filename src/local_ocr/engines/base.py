@@ -21,10 +21,14 @@ Progress = Callable[[str, float | None], None]
 
 @dataclass
 class Line:
-    """読んだ 1 行。`box` は元画像の画素座標で (x, y, w, h)。"""
+    """読んだ 1 行。`box` は元画像の画素座標で (x, y, w, h)。
+
+    `polygon` は 4 隅 (傾いた行や縦書きの列をそのまま囲める)。返せる道具だけが入れる。
+    """
 
     text: str
     box: tuple[int, int, int, int] | None = None
+    polygon: list[tuple[int, int]] | None = None
 
 
 @dataclass
