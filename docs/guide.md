@@ -5,7 +5,7 @@ title: 使い方
 eyebrow: Local OCR の使い方
 lead: 動画と、写真つきの手順があります。はじめての方は ① からご覧ください。
 nav:
-  - { title: 紹介ページ, url: ./ }
+  - { title: トップ, url: ./ }
   - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
 quick_links:
   - { title: インストールと、読む道具の取得, text: Mac の手順。動画 3 分, url: guide-install.html }

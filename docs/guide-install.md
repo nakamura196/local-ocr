@@ -5,7 +5,7 @@ title: ① インストールと、読む道具の取得（Mac）
 eyebrow: Local OCR の使い方
 lead: Mac へのインストールから、読む道具を取得して最初の 1 枚を読むまで。動画は約 3 分です。
 nav:
-  - { title: 紹介ページ, url: ./ }
+  - { title: トップ, url: ./ }
   - { title: 使い方の一覧, url: guide.html }
   - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
 footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"
@@ -18,7 +18,7 @@ footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"
 
 ## 1. ダウンロードする
 
-[紹介ページ](index.md)の「ダウンロード」で、Mac の行の「Releases」を押します。
+[トップページ](index.md)の「ダウンロード」で、Mac の行の「Releases」を押します。
 開いたページの下の方、「Assets」にある `local-ocr-0.1.3.dmg` を押します（数字は版によって変わります）。
 
 ![Releases のページ](images/guide/releases.jpg)

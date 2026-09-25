@@ -34,7 +34,7 @@ downloaded on first use** — up to about 1.8 GB for PaddleOCR-VL, less for the
 others — so the first run of an engine takes a while and needs a network
 connection. Everything after that stays on your machine.
 
-There is also a [page with more detail](https://nakamura196.github.io/local-ocr/).
+There is also a [page with more detail](https://lo.ldas.jp/).
 To run from source instead, see [Development](#development).
 
 ### What it does
@@ -120,7 +120,7 @@ CC BY 4.0, and llama.cpp is MIT.
 各エンジンの 1 回目だけ時間がかかり、ネットワークが要ります。
 以降は端末の中だけで動きます。
 
-くわしくは[紹介ページ](https://nakamura196.github.io/local-ocr/)にあります。
+くわしくは[紹介ページ](https://lo.ldas.jp/)にあります。
 手元のソースから動かす場合は[開発](#開発)へ。
 
 ### 何をする道具か
