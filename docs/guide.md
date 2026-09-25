@@ -14,7 +14,7 @@ quick_links:
 footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"
 ---
 
-> どの動画も音声は無く、字幕で説明しています。
+> どの動画も、声と字幕で説明しています。
 {: .point }
 
 ## 動画と手順

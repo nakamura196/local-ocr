@@ -11,7 +11,7 @@ nav:
 footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"
 ---
 
-<div style="position:relative;padding-bottom:62.5%;height:0;overflow:hidden;margin:1em 0"><iframe src="https://www.youtube-nocookie.com/embed/XIsV5euLb_U" title="インストールと、読む道具の取得" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+<div style="position:relative;padding-bottom:62.5%;height:0;overflow:hidden;margin:1em 0"><iframe src="https://www.youtube-nocookie.com/embed/DUlKilClRgM" title="インストールと、読む道具の取得" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
 
 > Windows の方は、[Microsoft ストア](https://apps.microsoft.com/detail/9N07ZD1ZPKBZ)で「入手」を押すと入ります。以下の 1〜3 は Mac の手順です。
 {: .note }

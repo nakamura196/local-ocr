@@ -11,7 +11,7 @@ nav:
 footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"
 ---
 
-<div style="position:relative;padding-bottom:62.5%;height:0;overflow:hidden;margin:1em 0"><iframe src="https://www.youtube-nocookie.com/embed/pktFRD6RiO8" title="基本の使い方" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+<div style="position:relative;padding-bottom:62.5%;height:0;overflow:hidden;margin:1em 0"><iframe src="https://www.youtube-nocookie.com/embed/qaLAR2l7FPI" title="基本の使い方" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
 
 ## 1. 画像を開いて読む
 
