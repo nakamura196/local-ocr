@@ -62,7 +62,11 @@ Productivity(生産性) ＞ サブカテゴリなし
 
 ## プライバシーポリシーの URL
 
-https://nakamura196.github.io/local-ocr/privacy-policy.html
+https://lo.ldas.jp/privacy-policy.html
+
+**この欄と下の認定担当者向けメモは、申請 API では送られない**(`scripts/store_submit.py` が触らず、API の申請にも値が出てこない)。
+Partner Center の画面で直接直す。プライバシーポリシーの URL は「プロパティ」にある。
+2026-09-25 に旧 URL (nakamura196.github.io/local-ocr/…) から新 URL へ書き換えた (旧 URL も転送されるので切れてはいない)。
 
 ## サポートの連絡先
 
@@ -113,7 +117,7 @@ runFullTrust は、この同梱実行ファイルを子プロセスとして起�
 認識モデルは初回使用時にのみ、Hugging Face または GitHub(ndl-lab)から取得します。利用者のファイルや入力内容は送信しません。
 
 個人情報の収集・送信はありません。
-https://nakamura196.github.io/local-ocr/privacy-policy.html
+https://lo.ldas.jp/privacy-policy.html
 ```
 
 **未確認: 文字数。** 提出直前に数え直すこと(archival-packager は 446 文字だった)。
