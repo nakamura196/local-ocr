@@ -1,4 +1,6 @@
-# プライバシーポリシー / Privacy Policy
+---
+title: "プライバシーポリシー / Privacy Policy"
+---
 
 **Local OCR**
 

@@ -5,7 +5,7 @@ title: ③ いろいろな使い方
 eyebrow: Local OCR の使い方
 lead: フォルダ・IIIF マニフェスト・貼り付けから読む方法と、読む道具のくらべ方。動画は約 5 分です。
 nav:
-  - { title: 紹介ページ, url: ./ }
+  - { title: トップ, url: ./ }
   - { title: 使い方の一覧, url: guide.html }
   - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
 footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"

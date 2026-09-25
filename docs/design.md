@@ -1,4 +1,7 @@
-# Local OCR — 設計
+---
+title: "設計"
+eyebrow: Local OCR 技術資料
+---
 
 画像の文字を、手元のパソコンだけで読む道具。macOS と Windows を 1 つのコードベースから出す。
 

@@ -1,4 +1,7 @@
-# 配る — 作業手順の下書き
+---
+title: "配る — 作業手順の下書き"
+eyebrow: Local OCR 技術資料
+---
 
 **2026-09-22、両方のストアで公開が完了しました。**
 macOS 版は `.dmg` を GitHub Release（`v0.1.0`）に、Windows 版は Microsoft Store
@@ -14,7 +17,7 @@ windows-build.yml`）で MSIX とスクリーンショット（日英）を CI �
 そのあと Partner Center の申請フォーム（Pricing/Properties/Age ratings/Packages/
 Store listings）を埋めて提出し、**同日中に審査を通過して公開された。**
 GitHub Pages（プライバシーポリシー等）とストア掲載文の下書きは commit / push 済み
-（`https://nakamura196.github.io/local-ocr/`）。
+（`https://nakamura196.github.io/local-ocr/`。2026-09-24 から独自ドメイン `https://lo.ldas.jp/`）。
 
 雛形は **archival-packager**（https://github.com/nakamura196/archival-packager ）。
 **同じ Flet 0.86.2 の構成で、Apple の公証と
@@ -481,6 +484,7 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
 - [x] **`docs/` を GitHub Pages として配信する（2026-09-22）。** `docs/_config.yml`
       を置き、`gh api -X POST repos/nakamura196/local-ocr/pages` で有効化。
       URL は `https://nakamura196.github.io/local-ocr/`
+      （2026-09-24 から `https://lo.ldas.jp/`。旧 URL は GitHub が転送する。設定は `docs/_config.yml` の冒頭）
       - **リポジトリ名を変えるとリダイレクトされない。** 掲載情報と審査がこの URL を
         見るので、改名するなら URL の差し替えも同時に行う
       - **まだ push していない。** `docs/` の中身は Pages の設定を有効にしただけでは
