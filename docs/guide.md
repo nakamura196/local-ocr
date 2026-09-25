@@ -11,6 +11,7 @@ quick_links:
   - { title: インストールと、読む道具の取得, text: Mac の手順。動画 3 分, url: guide-install.html }
   - { title: 基本の使い方, text: 読む・確かめる・保存する。動画 3 分, url: guide-basic.html }
   - { title: いろいろな使い方, text: フォルダ・IIIF・くらべる。動画 5 分, url: guide-more.html }
+  - { title: 校正の画面で使う, text: TEI/IIIF エディタで枠ごとに読む。動画 2 分半, url: guide-editor.html }
 footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"
 ---
 
@@ -22,5 +23,4 @@ footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"
 1. [インストールと、読む道具の取得（Mac）](guide-install.md) — 3 分
 2. [基本の使い方（読む・確かめる・保存する）](guide-basic.md) — 3 分
 3. [いろいろな使い方（フォルダ・IIIF・くらべる）](guide-more.md) — 5 分
-
-エディタとの連携の説明は、準備中です。
+4. [校正の画面（TEI/IIIF エディタ）で使う](guide-editor.md) — 2 分半
