@@ -10,7 +10,7 @@
 雛形は [archival-packager](https://github.com/nakamura196/archival-packager) の
 `store/listing-en.md`。
 
-**説明文は日本語版(2026-09-24 にストアで公開中の文面)と同じ形に揃えた。英語の掲載はまだストアに出ていない。**
+**ここが正本。** 2026-09-24 にこのファイルのまま `scripts/store_submit.py` で送り、英語の掲載を初めて出した。
 ストアの欄は素のテキストで、改行はそのまま表示される。**段落の途中で折り返さないこと。**
 
 ---
@@ -21,7 +21,7 @@ Local OCR
 
 ## 簡単な説明(Short description・最大 1000 文字)
 
-Reads the characters in an image on your own computer — nothing leaves the device. Choose the recognition engine to match the material: modern print, Japanese cursive (kuzushiji), or Chinese classical texts. For archives, libraries and researchers digitising and transcribing historical documents.
+Reads the characters in an image on your own computer — nothing leaves the device. Choose the recognition engine to match the material: modern print, Japanese cursive (kuzushiji), Chinese classical texts, or Tibetan. For archives, libraries and researchers digitising and transcribing historical documents.
 
 ## 説明(Description)
 
@@ -30,7 +30,7 @@ Local OCR is a desktop application that recognises the characters in an image an
 It was built for researchers and librarians who need to transcribe large volumes of pre-modern material — cursive Japanese and classical Chinese in particular.
 
 What it does:
-• Several recognition engines to choose from, suited to different material (modern print, Japanese cursive (kuzushiji), and Chinese classical / multilingual text)
+• Several recognition engines to choose from, suited to different material (modern print, Japanese cursive (kuzushiji), Chinese classical / multilingual text, and Tibetan)
 • Reads image files, the clipboard, a folder of page images, or a IIIF manifest URL
 • Exports plain text (.txt) or TEI/XML (.xml)
 • Compares two engines run over the same page, side by side
@@ -46,7 +46,7 @@ Anyone responsible for digitising and transcribing pre-modern documents or early
 
 Please note:
 • The interface is Japanese and English
-• The PaddleOCR-VL engine's recognition model is about 1.8 GB and is downloaded the first time you use it
+• The recognition models for the PaddleOCR-VL engine (about 1.8 GB) and the Tibetan Yigdzin-1 engine (about 1.7 GB) are downloaded the first time you use them
 
 Developed by Satoru Nakamura (The University of Tokyo).
 
