@@ -32,9 +32,9 @@ quick_links:
 
 ### 動画で見る
 
-インストール、基本の使い方、いろいろな使い方の 3 本が続けて流れます。声と字幕で説明しています。
+インストール、基本の使い方、いろいろな使い方、校正の画面（TEI/IIIF エディタ）で使う、の 4 本が続けて流れます。声と字幕で説明しています。
 
-<iframe src="https://www.youtube-nocookie.com/embed/DUlKilClRgM?playlist=DUlKilClRgM,qaLAR2l7FPI,SSWMVJbkjf8&rel=0" title="Local OCR の使い方" style="width:100%;aspect-ratio:16/10;border:0" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>
+<iframe src="https://www.youtube-nocookie.com/embed/DUlKilClRgM?playlist=DUlKilClRgM,qaLAR2l7FPI,SSWMVJbkjf8,O56_yGbKBVI&rel=0" title="Local OCR の使い方" style="width:100%;aspect-ratio:16/10;border:0" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>
 
 *同じ内容を、写真つきの手順でも読めます: [使い方](guide.md)*
 

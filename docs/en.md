@@ -36,10 +36,10 @@ is bundled with the application; recognition models are fetched on first use.
 
 ### Watch
 
-Three short videos play in a row: installing, basic use, and more ways to use it.
+Four short videos play in a row: installing, basic use, more ways to use it, and using it from the TEI/IIIF editor.
 The narration and captions are in Japanese.
 
-<iframe src="https://www.youtube-nocookie.com/embed/DUlKilClRgM?playlist=DUlKilClRgM,qaLAR2l7FPI,SSWMVJbkjf8&rel=0" title="How to use Local OCR" style="width:100%;aspect-ratio:16/10;border:0" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>
+<iframe src="https://www.youtube-nocookie.com/embed/DUlKilClRgM?playlist=DUlKilClRgM,qaLAR2l7FPI,SSWMVJbkjf8,O56_yGbKBVI&rel=0" title="How to use Local OCR" style="width:100%;aspect-ratio:16/10;border:0" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>
 
 ### What it does
 
