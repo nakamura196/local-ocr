@@ -221,8 +221,8 @@ _STRINGS: dict[str, tuple[str, str]] = {
         "Even while this is open, images never leave this computer.",
     ),
     "share.engines": (
-        "いま外から使えるのは PaddleOCR-VL だけです。",
-        "For now PaddleOCR-VL is the only engine offered here.",
+        "取得済みの読む道具は、どれでも外から使えます。",
+        "Any engine you have fetched can be used from outside.",
     ),
     "share.origins": ("許可する相手", "Pages allowed to connect"),
     "share.origins.note": (
@@ -259,10 +259,6 @@ _STRINGS: dict[str, tuple[str, str]] = {
     "share.state.opening": (
         "開いています。初めて開くときは 1 分ほどかかります。",
         "Opening. The first time takes about a minute.",
-    ),
-    "share.state.reopening": (
-        "許可する相手が変わったので、開き直しています。",
-        "Reopening with the new list.",
     ),
     "share.state.closing": ("閉じています。", "Closing."),
     "share.state.open": (

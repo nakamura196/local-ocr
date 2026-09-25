@@ -13,6 +13,7 @@ from PIL import Image
 
 from ..core import prefs, source, tei
 from ..core.bridge import Bridge
+from ..core.gateway import Gateway
 from ..core.ocr import IMAGE_SUFFIXES
 from ..engines import Engine, Line, Result, all_engines, runs_here
 from .i18n import current, engine_label, t
@@ -267,18 +268,20 @@ class AppState:
     def bridge(self) -> Bridge | None:
         """設定の「ほかの道具から使えるようにする」が使う窓口。
 
-        **読む道具が持っているサーバをそのまま渡す。** ここで新しく作ると、
-        同じポートに二重に立てようとして重みを二度読む。常駐のサーバを持つ
-        道具が 1 つも無ければ None(窓口の節ごと出さない)。
+        **読む道具とサーバは、画面と同じものをそのまま渡す。** ここで新しく作ると、
+        同じポートに二重に立てようとして重みを二度読む。窓口から使えるのは、
+        この OS で動く道具すべて(`core/gateway.py`)。
         """
         if self._bridge is None:
             runtime = next(
                 (rt for e in self.engines if (rt := getattr(e, "runtime", None)) is not None),
                 None,
             )
-            if runtime is None:
-                return None
-            self._bridge = Bridge(runtime)
+            gateway = Gateway(
+                engines=lambda: self.usable,
+                upstream=lambda: runtime.endpoint if runtime is not None else None,
+            )
+            self._bridge = Bridge(runtime, gateway)
         return self._bridge
 
     def shutdown(self) -> None:

@@ -15,7 +15,12 @@ from ..core import assets as paddle_assets
 from ..core import ocr as ocr_call
 from ..core.assets import Asset
 from ..core.runtime import Runtime
-from .base import Progress, Result
+from .base import Line, Progress, Result
+
+# llama-server を立てるポート。**8080 は窓口(`core/gateway.py`)が使う**ので、
+# その後ろに隠す。8081 は Yigdzin(`engines/yigdzin.py`)。
+PORT_PREF_KEY = "port_paddle"
+DEFAULT_PORT = 8082
 
 
 def _dest(key: str) -> object:
@@ -37,6 +42,8 @@ class PaddleVLEngine:
             model_path=_dest("model"),
             mmproj_path=_dest("mmproj"),
             missing=paddle_assets.missing,
+            port_pref_key=PORT_PREF_KEY,
+            default_port=DEFAULT_PORT,
         )
 
     @property
@@ -75,6 +82,24 @@ class PaddleVLEngine:
             raise RuntimeError("先に準備を済ませてください")
         text = ocr_call.recognize(self._rt.endpoint, img)
         return Result(text=text, raw=None)
+
+    def recognize_lines(self, img: Image.Image) -> Result:
+        """行ごとの文字と位置(「Spotting:」)。窓口がページ全体を読むときに使う。
+
+        画面の「読む」はこれまでどおり `recognize`(文字だけ)。
+        """
+        if not self._rt.ready:
+            raise RuntimeError("先に準備を済ませてください")
+        lines: list[Line] = []
+        for text, poly in ocr_call.spot(self._rt.endpoint, img):
+            if poly is None:
+                lines.append(Line(text=text))
+                continue
+            pts = [(round(x), round(y)) for x, y in poly]
+            xs, ys = [x for x, _ in pts], [y for _, y in pts]
+            box = (min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys))
+            lines.append(Line(text=text, box=box, polygon=pts))
+        return Result(text="\n".join(ln.text for ln in lines), lines=lines, raw=None)
 
     def shutdown(self) -> None:
         self._rt.stop()
