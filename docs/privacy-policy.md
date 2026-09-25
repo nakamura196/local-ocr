@@ -60,8 +60,7 @@ crash reporting, and no update check.
 The models take up to about 2 GB. If the drive holding those folders is
 short of space, set the environment variable `LOCAL_OCR_DATA_DIR` to a
 folder on another drive and restart the application; everything above
-moves there. **This applies from the release after 0.1.0** — 0.1.0 always
-uses the folders named above. The current location is shown on the application's Settings
+moves there. The current location is shown on the application's Settings
 screen. Files already downloaded are not moved for you — copy them across,
 or let the application fetch them again.
 
@@ -138,8 +137,7 @@ Satoru Nakamura, The University of Tokyo — nakamura@hi.u-tokyo.ac.jp
 
 モデルは最大 2GB ほどになります。上のフォルダがあるドライブの空きが足りない
 場合は、環境変数 `LOCAL_OCR_DATA_DIR` に別の場所を設定してアプリを起動し直して
-ください。上記がすべてそちらに移ります。**0.1.0 の次の版からの動作です。**
-0.1.0 は常に上記のフォルダを使います。いまの場所はアプリの「設定」画面に
+ください。上記がすべてそちらに移ります。いまの場所はアプリの「設定」画面に
 表示されています。**取得済みのファイルは自動では移りません。** 手で写すか、
 アプリに取り直させてください。
 
