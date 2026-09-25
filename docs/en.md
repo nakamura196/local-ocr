@@ -37,9 +37,9 @@ is bundled with the application; recognition models are fetched on first use.
 ### Watch
 
 Three short videos play in a row: installing, basic use, and more ways to use it.
-They have no sound; the explanation is in (Japanese) captions.
+The narration and captions are in Japanese.
 
-<iframe src="https://www.youtube-nocookie.com/embed/XIsV5euLb_U?playlist=XIsV5euLb_U,pktFRD6RiO8,X0H37OL3quI&rel=0" title="How to use Local OCR" style="width:100%;aspect-ratio:16/10;border:0" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>
+<iframe src="https://www.youtube-nocookie.com/embed/DUlKilClRgM?playlist=DUlKilClRgM,qaLAR2l7FPI,SSWMVJbkjf8&rel=0" title="How to use Local OCR" style="width:100%;aspect-ratio:16/10;border:0" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>
 
 ### What it does
 
