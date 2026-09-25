@@ -416,14 +416,11 @@ class BridgeCard:
                 [
                     ft.Row(
                         [
-                            ft.Column(
-                                [
-                                    ft.Text(
-                                        t("settings.share"), size=14, weight=ft.FontWeight.W_600
-                                    ),
-                                    theme.muted(t("settings.share.note")),
-                                ],
-                                spacing=4,
+                            # 題と説明は上の見出しに出ている。ここではスイッチの名前だけ。
+                            ft.Text(
+                                t("share.switch"),
+                                size=14,
+                                weight=ft.FontWeight.W_600,
                                 expand=True,
                             ),
                             self.switch,
