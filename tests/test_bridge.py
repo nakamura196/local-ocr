@@ -46,12 +46,43 @@ def test_an_empty_list_lets_nobody_through_even_while_open():
 
 def test_the_launch_script_setting_is_carried_over():
     """起動スクリプト版と、この窓口より前の版は 1 つだけ持っていた。"""
-    prefs.save(origin="https://tei-iiif-editor.vercel.app")
-    assert bridge.allowed_origins() == ["https://tei-iiif-editor.vercel.app"]
+    prefs.save(origin="https://example.com")
+    assert bridge.allowed_origins() == ["https://example.com"]
+
+
+def test_a_saved_old_editor_url_gains_the_new_one():
+    """前の版は旧 URL を保存している。新しい URL のエディタからも繋がるようにする。"""
+    bridge.set_allowed_origins([bridge.OLD_EDITOR_ORIGIN, "http://localhost:3000"])
+    assert bridge.allowed_origins() == [
+        bridge.EDITOR_ORIGIN,
+        bridge.OLD_EDITOR_ORIGIN,
+        "http://localhost:3000",
+    ]
+    bridge.set_enabled(True)
+    assert bridge.allows(bridge.EDITOR_ORIGIN) is True
+
+
+def test_the_launch_script_old_editor_url_gains_the_new_one():
+    prefs.save(origin=bridge.OLD_EDITOR_ORIGIN)
+    assert bridge.allowed_origins() == [bridge.EDITOR_ORIGIN, bridge.OLD_EDITOR_ORIGIN]
+
+
+def test_the_new_editor_url_is_added_only_once():
+    """足したあとに利用者が外したら、戻さない。"""
+    bridge.set_allowed_origins([bridge.OLD_EDITOR_ORIGIN])
+    bridge.allowed_origins()
+    bridge.set_allowed_origins([bridge.OLD_EDITOR_ORIGIN])
+    assert bridge.allowed_origins() == [bridge.OLD_EDITOR_ORIGIN]
+
+
+def test_a_list_without_the_editor_is_left_alone():
+    bridge.set_allowed_origins(["https://example.com"])
+    assert bridge.allowed_origins() == ["https://example.com"]
 
 
 def test_the_default_is_the_proofreading_page():
     assert bridge.allowed_origins() == list(bridge.DEFAULT_ORIGINS)
+    assert bridge.allowed_origins()[0] == "https://tei-editor.ldas.jp"
 
 
 @pytest.mark.parametrize(

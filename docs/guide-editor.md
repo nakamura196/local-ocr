@@ -13,7 +13,7 @@ footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"
 
 <div style="position:relative;padding-bottom:62.5%;height:0;overflow:hidden;margin:1em 0"><iframe src="https://www.youtube-nocookie.com/embed/O56_yGbKBVI" title="校正の画面で使う" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
 
-[TEI/IIIF エディタ](https://tei-iiif-editor.vercel.app)は、画像を見ながら翻刻を直すための画面です。
+[TEI/IIIF エディタ](https://tei-editor.ldas.jp)は、画像を見ながら翻刻を直すための画面です。
 Local OCR を開いておくと、エディタから PaddleOCR-VL を使えます。
 読むのは、エディタで選んだ枠の中だけです。1 行分でも、行の一部でもかまいません。
 
@@ -27,7 +27,8 @@ Local OCR の「設定」を開き、「ほかの道具から使えるように�
 
 ![設定の「ほかの道具から使えるようにする」をオンにしたところ](images/guide/editor-share.jpg)
 
-「許可する相手」には、公開しているエディタ（`https://tei-iiif-editor.vercel.app`）が最初から入っています。
+「許可する相手」には、公開しているエディタ（`https://tei-editor.ldas.jp`）が最初から入っています。
+以前の URL（`https://tei-iiif-editor.vercel.app`）も並んで入っています。前の版から使っている方にも、新しい URL が自動で足されます。
 ほかの画面から使うときは、ここに足してください。
 
 PaddleOCR-VL を取得していなければ、先に取得しておきます（[① インストールと、読む道具の取得](guide-install.md)）。

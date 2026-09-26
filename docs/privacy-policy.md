@@ -44,7 +44,8 @@ The application contacts the network in these cases only:
   page) send images to be recognised. When off, nothing is reachable. When
   turned on, a server listens on `127.0.0.1` only — unreachable from other
   computers — and accepts requests only from the origins the user has
-  explicitly allow-listed (default: `https://tei-iiif-editor.vercel.app`).
+  explicitly allow-listed (default: `https://tei-editor.ldas.jp` and its former address
+  `https://tei-iiif-editor.vercel.app`).
 
 The application performs no other network activity. There is no telemetry, no
 crash reporting, and no update check.
@@ -123,7 +124,8 @@ Satoru Nakamura, The University of Tokyo — nakamura@hi.u-tokyo.ac.jp
   認識させられる機能があります。無効のときは誰からも接続できません。
   有効にすると、`127.0.0.1`(同じ端末からのみ到達可能。ほかの端末からは
   繋がりません)で待ち受け、利用者があらかじめ許可した接続元
-  (既定は `https://tei-iiif-editor.vercel.app`)からの要求だけを受け付けます。
+  (既定は `https://tei-editor.ldas.jp` と、以前の URL
+  `https://tei-iiif-editor.vercel.app`)からの要求だけを受け付けます。
 
 これ以外に、アプリが自ら通信を行うことはありません。利用状況の送信(テレメトリ)、
 クラッシュレポートの送信、更新確認のいずれも行いません。
