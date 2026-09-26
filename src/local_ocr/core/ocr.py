@@ -15,6 +15,8 @@ from pathlib import Path
 
 from PIL import Image, ImageGrab
 
+from .ruler import mask_rulers
+
 # 受け付ける画像の拡張子。入口(選ぶ・フォルダ・端末)で共通に使う。
 IMAGE_SUFFIXES = ("png", "jpg", "jpeg", "tif", "tiff", "bmp", "webp")
 
@@ -29,6 +31,10 @@ SPOT_PROMPT = "Spotting:"
 # 位置は画像の幅・高さを 0〜999 に割った目盛りで返る。
 LOC_SCALE = 999
 _LOC = re.compile(r"<\|LOC_(\d+)\|>")
+# 位置の付かない行がこれだけ続いたら、読みが崩れたとみなして打ち切る。
+# 本文の行には必ず位置が付く。崩れるのは定規の数字を「1, 2, 3, …」と数え続けるとき
+# (2026-09-25 に 030_01_025 で実測。上限の 4096 まで 40 秒ほど数え続けた)。
+RUNAWAY_LINES = 20
 # 位置以外の特殊な印(終わりの </s> など)。本文には残さない。
 _SPECIAL = re.compile(r"</s>|<\|[^|>]*\|>")
 
@@ -109,6 +115,67 @@ def parse_spotting(content: str, width: int, height: int) -> list[tuple[str, Pol
     return out
 
 
+class Runaway(RuntimeError):
+    """位置の付かない行が続き、読みが崩れたので打ち切った。
+
+    画像に定規などが写っていて、`ruler.mask_rulers` で消せなかったときに起きる。
+    範囲を切って読み直してもらうしかない。
+    """
+
+
+def _loc_ids(endpoint: str, timeout: float) -> range:
+    """位置の印 `<|LOC_0|>`〜`<|LOC_999|>` のトークン番号(連番)。"""
+    got = _post(
+        f"{endpoint}/tokenize",
+        {"content": f"<|LOC_0|><|LOC_{LOC_SCALE}|>", "parse_special": True},
+        timeout,
+    )["tokens"]
+    return range(got[0], got[-1] + 1)
+
+
+def _stream(endpoint: str, body: dict, loc: range, timeout: float) -> str:
+    """`/completion` を少しずつ受け取り、位置の印を `<|LOC_n|>` に戻した全文を返す。
+
+    **本文はトークンではなく `content` から取る。** 漢字 1 字が複数のトークンに分かれると、
+    llama-server は字がそろうまで送らず、そろった回にはトークンを最後の 1 つしか載せない
+    (2026-09-25 に実測。「睨」の 3 トークンのうち 1 つしか届かず、文字化けした)。
+    位置の印は 1 つで完結したトークンなので、番号から `<|LOC_n|>` に戻せる。
+
+    位置の付かない行が `RUNAWAY_LINES` 続いたら、接続を切って `Runaway` を投げる
+    (接続が切れると llama-server も生成をやめる)。
+    """
+    req = urllib.request.Request(
+        f"{endpoint}/completion",
+        data=json.dumps({**body, "stream": True, "return_tokens": True}).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    out: list[str] = []
+    line, placed, unplaced = "", False, 0
+    with urllib.request.urlopen(req, timeout=timeout) as res:
+        for raw in res:
+            if not raw.startswith(b"data: "):
+                continue
+            chunk = json.loads(raw[6:])
+            text = chunk.get("content", "")
+            out.append(text)
+            for tok in chunk.get("tokens") or []:
+                if tok in loc:
+                    out.append(f"<|LOC_{tok - loc.start}|>")
+                    placed = True
+            line += text
+            while "\n" in line:
+                done, line = line.split("\n", 1)
+                if done.strip():
+                    unplaced = 0 if placed else unplaced + 1
+                placed = False
+                if unplaced >= RUNAWAY_LINES:
+                    raise Runaway(f"{unplaced} lines without a position")
+            if chunk.get("stop"):
+                break
+    return "".join(out)
+
+
 def spot(
     endpoint: str, img: Image.Image, timeout: float = 300.0
 ) -> list[tuple[str, Polygon | None]]:
@@ -118,9 +185,12 @@ def spot(
     llama-server の OpenAI 互換の窓口はそれを消して本文だけにする(2026-09-25 に実測。
     位置が無いように見えて、「Paddle は行の位置を返さない」と誤解していた)。
     そこで、会話の型を文字列にしてから下の窓口 `/completion` に投げ、
-    返った印の並び(トークン)をそのまま文字に戻す。
+    返った印の番号(トークン)から位置を拾う(`_stream`)。
+
+    読む前に定規を背景の色で塗りつぶす(`ruler.py`)。位置は動かさないので座標はそのまま。
+    それでも崩れたら `Runaway`。
     """
-    data = _jpeg_base64(img)
+    data = _jpeg_base64(mask_rulers(img))
     messages = [
         {
             "role": "user",
@@ -131,18 +201,16 @@ def spot(
         }
     ]
     prompt = _post(f"{endpoint}/apply-template", {"messages": messages}, timeout)["prompt"]
-    done = _post(
-        f"{endpoint}/completion",
+    content = _stream(
+        endpoint,
         {
             "prompt": {"prompt_string": prompt, "multimodal_data": [data]},
             "temperature": 0,
             "n_predict": MAX_TOKENS,
-            "return_tokens": True,
         },
+        _loc_ids(endpoint, timeout),
         timeout,
     )
-    tokens = done.get("tokens") or []
-    content = _post(f"{endpoint}/detokenize", {"tokens": tokens}, timeout).get("content", "")
     w, h = img.size
     return parse_spotting(content, w, h)
 

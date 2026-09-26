@@ -9,6 +9,7 @@
 
 **特定の相手に合わせない。** 中身は `engines/base.py` の `recognize` をそのまま外に出すだけ。
 PaddleOCR-VL は、`lines` を付けると「Spotting:」で行の位置まで返す(`engines/paddle_vl.py`)。
+読みが崩れて打ち切ったとき(定規など、`ocr.Runaway`)は 422 `{"error": "runaway"}`。
 
 下の 2 つは、この窓口より前の作り(llama-server を 8080 にそのまま立てていた)との互換のため。
 TEI/IIIF エディタはいまこの 2 つで話しているので、エディタを直さなくても動き続ける。
@@ -34,6 +35,7 @@ from PIL import Image, UnidentifiedImageError
 
 from ..engines.base import Engine, Result, runs_here
 from . import bridge
+from .ocr import Runaway
 
 DEFAULT_ENGINE = "paddle-vl"
 # 受け取る大きさの上限。ページ画像 1 枚なら十分で、取り違えた巨大なものは断る。
@@ -151,7 +153,12 @@ class Gateway:
             started = time.monotonic()
             engine.prepare(lambda _msg, _frac: None)
             reader = getattr(engine, "recognize_lines", None) if want_lines else None
-            result = reader(img) if reader else engine.recognize(img)
+            try:
+                result = reader(img) if reader else engine.recognize(img)
+            except Runaway:
+                # 定規などに引っかかって読みが崩れた。呼び手には「範囲を切って読み直して」と
+                # 案内してもらう(500 の「失敗」とは分ける)。
+                return 422, {"error": "runaway", "engine": engine_id}
             seconds = time.monotonic() - started
         return 200, result_json(engine, img, result, seconds)
 
