@@ -201,26 +201,47 @@ eyebrow: Local OCR 技術資料
 - https の頁から 127.0.0.1 を呼ぶと、Chrome の「ローカルネットワークへの接続を許可」が
   最初の 1 回出る。これは消せない
 
-### 窓口の口（済。2026-09-25）
+### 窓口の口（済。2026-09-25、範囲と読み方は 2026-09-26）
 
 ```
-GET  http://127.0.0.1:8080/v1/engines   → {engines:[{id, label, ready, lines}]}
-POST http://127.0.0.1:8080/v1/ocr       → {engine, image, lines} を渡すと
-                                           {engine, width, height, seconds, text,
-                                            lines:[{text, box:{x,y,w,h}, polygon:[[x,y]×4]}]}
+GET  http://127.0.0.1:8080/v1/engines   → {engines:[{id, label, ready, lines, modes}]}
+POST http://127.0.0.1:8080/v1/ocr       → {engine, image, mode?, region?} を渡すと
+                                           {engine, width, height, seconds, mode, region, text,
+                                            lines:[{text, box:{x,y,w,h}|null, polygon:[[x,y]×4]|null}],
+                                            check?:{placed, unplaced, plain_lines, plain_chars, problems},
+                                            plain?}
 GET  http://127.0.0.1:8080/health                  ┐ 前からある口。PaddleOCR-VL の
 POST http://127.0.0.1:8080/v1/chat/completions     ┘ llama-server へそのまま渡す
 ```
 
-- 中身は `engines/base.py` の `recognize(画像) → Result` を**そのまま外に出すだけ**。
-  **この機械の「OCR 置き場」にする**ので、特定の相手に合わせない。使えるのは、
-  この OS で動いて取得済みの道具すべて（Apple Vision・NDL 2 種・PaddleOCR-VL・Yigdzin）
-- `engine` を省くと PaddleOCR-VL。`image` は `data:` の URL でも base64 だけでもよい。
-  `lines` は既定で真。偽にすると文字だけ（PaddleOCR-VL は「OCR:」で読む）
-- 座標は、渡された画像の画素。**取得はよそからの呼び出しで始めない**（409 `not_fetched`）
-- 読みが崩れて打ち切ったとき（定規など、下記）は 422 `runaway`。呼び手は「範囲を切って読み直して」と案内する
+- 読むのは画面・端末と同じ芯（`core/reading.py`）。**この機械の「OCR 置き場」にする**ので、
+  特定の相手に合わせない。使えるのは、この OS で動いて取得済みの道具すべて
+- `engine` を省くと PaddleOCR-VL。`image` は `data:` の URL でも base64 だけでもよい
+- `region` {x, y, w, h}（渡した画像の画素）を付けると、その範囲だけを読む。枠は**渡した画像全体の座標**で返る。
+  PaddleOCR-VL には、細長い範囲（短い辺が長い辺の 0.4 未満）に紙の色の余白を足して渡す
+  （細長いと縦の座標が縮み、狭いと左の列に位置が付かない。音釋の切り出しで実測）
+- `mode` は道具ごとの読み方。`/v1/engines` の `modes`（先頭が既定）。
+  - PaddleOCR-VL: `text`（文字だけ）/ `lines`（「Spotting:」で行の位置、位置で並べ替え、位置なしでも読んで点検）
+  - NDL の 2 つ: `layout`（版面から行を探す）/ `line`（行を探す段を飛ばし、画像か範囲を 1 行として読む）
+  - **画面の設定（道具ごとの読み方）は見ない。** 呼び手が決める
+- `lines` モードの点検（`check`）: `problems` は `runaway`（位置の無い行が続いて打ち切り。
+  行は位置なしの読みに差し替え、box は null）・`repeat`（同じ字 10 字以上 / 同じ行 5 回以上）・
+  `stopped_early`（字数が位置なしの 8 割未満）。`plain` は位置なしで読んだ全文。
+  **位置の付かなかった行も `lines` に残す**（box: null、読む順の場所に）
+- **前からの呼び方（`mode` 無し）は 0.1.5 のエディタ向けにそのまま。** `lines`（既定で真）で
+  PaddleOCR-VL の読み方を決め、点検はしない（1 回だけ読む）。並べ替えだけは効く。
+  打ち切りは前と同じ 422 `runaway`
+- 座標は、渡された画像の画素。**取得はよそからの呼び出しで始めない**（409 `not_fetched`）。
+  形の違う `mode` / `region` は 400（`bad_mode` と選べる `modes` / `bad_region`）
 - 下の 2 つは互換のため。TEI/IIIF エディタは今この 2 つで話しているので、エディタを
   直さなくても動き続ける。以前の起動スクリプト（zip）も同じ 8080 に同じ 2 つを立てる
+
+**Spotting の並べ替え（`reading.order_by_position`）。** Spotting は列の中を横書きの並べ方
+（上端が高い順、同じ高さなら左が先）で返し、割注の左右が入れ替わる。縦書きとして並べ直す：
+列は右から左、列の中は上から下、上下に重なる細い行（列幅の 0.75 未満）は「帯」にまとめて
+右 → 左。030-01 の 25 面で、近くの行どうしの前後が 91% → 97%（NDL の TEI は 76%）。
+無作為抽出 14 面でも割注・段組 9 面中 8 面で NDL を上回った。調査の試作
+（`tmp/paddle-spotting-study/order_eval.py`）と 15 面で並びが一致することを確かめてある。
 
 **PaddleOCR-VL の行の位置は「Spotting:」で取る**（`core/ocr.py` の `spot`）。
 PaddleOCR-VL 1.5 以降は、指示を「OCR:」ではなく「Spotting:」にすると、行ごとに
@@ -245,8 +266,8 @@ PaddleOCR-VL 1.5 以降は、指示を「OCR:」ではなく「Spotting:」に�
    本と接して写った定規はこちらで止まる（塗らずに読ませた実測で 3.5 秒。以前は上限まで 40 秒）
 
 **TEI/IIIF エディタとの接続は、この窓口の最初の利用者という位置付け。**
-いまは枠ごとの読み直し（前からある 2 つの口）だけ。「ページ全体の OCR」（枠をまとめて作る）
-を PaddleOCR-VL でも行うには、エディタから `/v1/ocr` を呼ぶよう直す（未着手）。
+「ページ全体の OCR」はエディタ PR #36 から `/v1/ocr` を使う。次は、エディタが `mode: "lines"` と
+`region` で呼び、`check` を利用者に見せ、範囲の中の古い行を整理すること（未着手）。
 
 ## 端末から使う（CLI）
 

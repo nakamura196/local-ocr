@@ -59,6 +59,10 @@ class KotenPipeline:
         texts = read_single(self.recognizer, crops)
         return [Read(text, box) for text, box in zip(texts, boxes, strict=True)]
 
+    def read_line(self, img: Image.Image) -> str:
+        """画像全体を 1 行として読む(行を探す段を飛ばす)。"""
+        return self.recognizer.read(img)
+
 
 class LitePipeline:
     """近代資料・活字向け。DEIMv2 で版面を読み解き、長さ違いの PARSeq 3 つで読む。"""
@@ -84,6 +88,13 @@ class LitePipeline:
         hints = [float(line.get("PRED_CHAR_CNT", "100")) for line in lines]
         texts = read_cascade(self.short, self.medium, self.long, crops, hints)
         return [Read(text, box) for text, box in zip(texts, boxes, strict=True)]
+
+    def read_line(self, img: Image.Image) -> str:
+        """画像全体を 1 行として読む(行を探す段を飛ばす)。
+
+        文字数の見当が無いので、短いモデルから始め、入りきらなければ長い方へ送る。
+        """
+        return read_cascade(self.short, self.medium, self.long, [img], [3])[0]
 
 
 __all__ = ["Detection", "KotenPipeline", "LitePipeline", "Read"]

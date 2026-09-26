@@ -43,6 +43,7 @@ class _FakeEngine:
     id = "paddle-vl"
     label = "Paddle"
     platforms = frozenset({"darwin", "win32", "linux"})
+    modes = ("text", "lines")
 
     def __init__(self, fetched: bool = True) -> None:
         self.fetched = fetched
@@ -185,7 +186,13 @@ def test_a_script_on_this_machine_needs_no_origin(served):
     base, _ = served
     status, _, body = _call(f"{base}/v1/engines", origin=None)
     assert status == 200
-    assert json.loads(body)["engines"][0] == {"id": "paddle-vl", "label": "Paddle", "ready": True, "lines": True}
+    assert json.loads(body)["engines"][0] == {
+        "id": "paddle-vl",
+        "label": "Paddle",
+        "ready": True,
+        "lines": True,
+        "modes": ["text", "lines"],
+    }
 
 
 def test_an_engine_not_fetched_is_not_fetched_from_outside(served):
@@ -207,6 +214,56 @@ def test_a_reading_cut_short_is_told_apart_from_a_failure(served):
     status, _, body = _call(f"{base}/v1/ocr", {"image": _image()})
     assert status == 422
     assert json.loads(body) == {"error": "runaway", "engine": "paddle-vl"}
+
+
+def test_the_old_editor_gets_no_check_and_the_same_fields(served):
+    """0.1.5 のエディタの呼び方(mode 無し)。点検はしない(1 回だけ読む)、項目は前と同じ。"""
+    base, engine = served
+    status, _, body = _call(f"{base}/v1/ocr", {"image": _image()})
+    out = json.loads(body)
+    assert status == 200
+    assert engine.seen == [(120, 480)]
+    assert "check" not in out
+
+
+def test_a_region_is_read_with_positions_and_checked(served):
+    base, engine = served
+    region = {"x": 20, "y": 40, "w": 60, "h": 200}
+    status, _, body = _call(f"{base}/v1/ocr", {"image": _image(), "mode": "lines", "region": region})
+    assert status == 200
+    out = json.loads(body)
+    # 60×200 は細長いので、左右に余白を足して 80×200 で読ませる(位置付き・位置なしの 2 回)
+    assert engine.seen == [(80, 200), (80, 200)]
+    assert out["mode"] == "lines"
+    assert out["region"] == region
+    # 余白 10 画素を引き、範囲の左上を足して、元の画像の座標に戻る(範囲の外には出ない)
+    assert out["lines"][0]["box"] == {"x": 20, "y": 60, "w": 30, "h": 180}
+    assert out["check"]["placed"] == 1
+    assert out["plain"] == "文字だけ"
+
+
+def test_a_runaway_is_answered_with_the_plain_reading_in_the_new_way(served):
+    base, engine = served
+
+    def runaway(img):
+        raise ocr.Runaway("20 lines without a position")
+
+    engine.recognize_lines = runaway
+    status, _, body = _call(f"{base}/v1/ocr", {"image": _image(), "mode": "lines"})
+    assert status == 200
+    out = json.loads(body)
+    assert out["check"]["problems"] == ["runaway"]
+    assert [ln["text"] for ln in out["lines"]] == ["文字だけ"]
+    assert out["lines"][0]["box"] is None
+
+
+def test_a_bad_mode_or_region_is_refused(served):
+    base, _ = served
+    status, _, body = _call(f"{base}/v1/ocr", {"image": _image(), "mode": "line"})
+    assert (status, json.loads(body)["modes"]) == (400, ["text", "lines"])
+    region = {"x": 500, "y": 0, "w": 10, "h": 10}  # 画像(120×480)の外
+    status, _, body = _call(f"{base}/v1/ocr", {"image": _image(), "region": region})
+    assert (status, json.loads(body)["error"]) == (400, "bad_region")
 
 
 def test_bad_input_is_answered_not_crashed(served):

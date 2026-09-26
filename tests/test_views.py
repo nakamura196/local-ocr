@@ -16,6 +16,7 @@ import pytest
 from local_ocr.core import prefs
 from local_ocr.engines import Result
 from local_ocr.ui import work
+from local_ocr.ui.i18n import t
 from local_ocr.ui.landing import LandingView
 from local_ocr.ui.settings import SettingsView
 from local_ocr.ui.state import AppState, Doc, Job, Run
@@ -326,3 +327,42 @@ def test_the_page_image_is_redone_when_the_window_changes_size(fakes):
     view._render()
     assert view._picture_for != before
     assert view._picture_for[0] > before[0]
+
+
+def test_a_dragged_area_is_read_and_replaces_only_its_lines(fakes):
+    """版面をドラッグして囲み、読むと、その範囲の行だけが新しい読みに替わる。"""
+    from types import SimpleNamespace
+
+    ctx, engines = fakes
+    job = _page(ctx)
+    ctx.state.set_engine(engines[0].id)
+    view = WorkView(ctx)
+    view.build()
+    asyncio.run(view._run_all(job, [engines[0]]))
+    assert [ln.text for ln in job.lines] == ["0-0", "0-1", "0-2"]
+
+    # 2 行目 (100, 400, 80, 250) だけを囲む。ドラッグは画面の点で来る。
+    s = view._scale
+
+    def at(x, y):
+        return SimpleNamespace(local_position=SimpleNamespace(x=x * s, y=y * s))
+
+    view._on_drag_start(at(50, 380))
+    view._on_drag(at(300, 700))
+    view._on_drag_end()
+    assert view.region is not None and view.region.contains((100, 400, 80, 250))
+    assert view.run_button.content == t("work.run.region")
+
+    def reread(img):
+        # 範囲で切った画像が渡る。枠は切った画像の座標で返す。
+        from local_ocr.engines import Line
+
+        return Result(text="新", lines=[Line("新", (50, 20, 80, 250))])
+
+    engines[0].recognize = reread
+    asyncio.run(view._run_all(job, [engines[0]]))
+    assert [ln.text for ln in job.lines] == ["0-0", "新", "0-2"]
+    assert job.lines[1].box == (100, 400, 80, 250)
+
+    view.clear_region()
+    assert view.region is None and view._sel.visible is False

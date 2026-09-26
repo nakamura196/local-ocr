@@ -19,6 +19,9 @@ class _NdlEngine:
     """取得と読み込みの段取りは 2 つで同じ。違うのは何を取るかと、何を作るか。"""
 
     platforms = frozenset({"darwin", "win32"})
+    # 読み方(`core/reading.py`)。先頭が既定。"line" は行を探す段を飛ばし、
+    # 渡された画像(囲んだ範囲)を 1 行として読む。
+    modes = ("layout", "line")
 
     def __init__(self) -> None:
         self._pipeline = None
@@ -52,6 +55,15 @@ class _NdlEngine:
         reads = self._pipeline.run(img.convert("RGB"))
         lines = [Line(text=read.text, box=read.box) for read in reads]
         return Result(text="\n".join(line.text for line in lines), lines=lines)
+
+    def recognize_line(self, img: Image.Image) -> Result:
+        """画像全体を 1 行として読む。枠は画像全体。"""
+        if self._pipeline is None:
+            raise RuntimeError("先に準備を済ませてください")
+        rgb = img.convert("RGB")
+        text = self._pipeline.read_line(rgb)
+        lines = [Line(text=text, box=(0, 0, rgb.width, rgb.height))] if text else []
+        return Result(text=text, lines=lines)
 
     def shutdown(self) -> None:
         # ONNX Runtime の読み込み分を離す。常駐するものは持たない。

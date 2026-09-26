@@ -17,7 +17,7 @@ import sys
 import time
 from pathlib import Path
 
-from .core import export, fetch, iiif, source, tei
+from .core import export, fetch, iiif, reading, source, tei
 from .engines import Engine, Line, all_engines, runs_here
 from .ui.i18n import current, engine_label, t
 
@@ -43,9 +43,15 @@ def main(argv: list[str] | None = None) -> int:
         size = fetch.human(fetch.total_bytes(engine.assets))
         return _fail(t("cli.not_fetched", engine=engine_label(engine), size=size))
 
+    try:
+        mode = reading.mode_for(engine, args.mode or None)
+        region = reading.Region.parse(args.region)
+    except ValueError:
+        return _fail(t("cli.bad_option", modes=", ".join(reading.modes(engine)) or "-"))
+
     out = Path(args.out) if args.out else None
     try:
-        pages, texts = _read(engine, bundle.items, out, quiet=args.quiet)
+        pages, texts = _read(engine, bundle.items, out, quiet=args.quiet, mode=mode, region=region)
     finally:
         engine.shutdown()
     if not pages:
@@ -68,7 +74,12 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _read(
-    engine: Engine, items: list[source.Item], out: Path | None, quiet: bool
+    engine: Engine,
+    items: list[source.Item],
+    out: Path | None,
+    quiet: bool,
+    mode: str = "",
+    region: reading.Region | None = None,
 ) -> tuple[list[tei.Page], list[str]]:
     """1 ページずつ読む。1 ページこけても残りは読む(戻り値には入れない)。"""
 
@@ -86,7 +97,7 @@ def _read(
             img = source.open_image(item)
             try:
                 started = time.monotonic()
-                result = engine.recognize(img)
+                result = reading.read(engine, img, region=region, mode=mode or None)
                 width, height = img.size
             finally:
                 img.close()
@@ -139,6 +150,8 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--format", choices=("text", "tei"), default="text", help=t("cli.help.format"))
     p.add_argument("--out", metavar="PATH", default="", help=t("cli.help.out"))
     p.add_argument("--title", metavar="TEXT", default="", help=t("cli.help.title"))
+    p.add_argument("--mode", metavar="MODE", default="", help=t("cli.help.mode"))
+    p.add_argument("--region", metavar="X,Y,W,H", default="", help=t("cli.help.region"))
     p.add_argument("--fetch", action="store_true", help=t("cli.help.fetch"))
     p.add_argument("--quiet", "-q", action="store_true", help=t("cli.help.quiet"))
     p.add_argument("--list-engines", action="store_true", help=t("cli.help.list"))

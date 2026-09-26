@@ -32,11 +32,33 @@ class Line:
 
 
 @dataclass
+class Check:
+    """行の位置を後から付ける道具(PaddleOCR-VL の「Spotting:」)の読みの点検。
+
+    位置付きの読みは、途中で読むのをやめたり、同じ字を繰り返したりする。
+    位置なしでも読ませて行数と字数をくらべ、抜けを知らせる(`core/reading.py`)。
+    """
+
+    # 位置の付いた行 / 付かなかった行
+    placed: int = 0
+    unplaced: int = 0
+    # 位置なし(文字だけ)で読んだときの行数と字数。読まなかったときは 0。
+    plain_lines: int = 0
+    plain_chars: int = 0
+    # 見つけた崩れ。"runaway"(位置の無い行が続いて打ち切り) / "repeat"(同じ字の繰り返し) /
+    # "stopped_early"(位置なしより字がずっと少ない)
+    problems: list[str] = field(default_factory=list)
+
+
+@dataclass
 class Result:
     text: str
     lines: list[Line] = field(default_factory=list)
     # エンジンが返した生の値。書き出しや不具合調べのために残す。
     raw: object | None = None
+    # 位置なしで読んだ全文(点検のために読んだとき)。抜けがあったとき、こちらを見せられる。
+    plain: str | None = None
+    check: Check | None = None
 
 
 @runtime_checkable
