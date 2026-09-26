@@ -196,6 +196,19 @@ def test_an_engine_not_fetched_is_not_fetched_from_outside(served):
     assert json.loads(body)["error"] == "not_fetched"
 
 
+def test_a_reading_cut_short_is_told_apart_from_a_failure(served):
+    """定規などで読みが崩れたら 422 runaway。エディタは「範囲を切って読み直して」と案内する。"""
+    base, engine = served
+
+    def runaway(img):
+        raise ocr.Runaway("20 lines without a position")
+
+    engine.recognize_lines = runaway
+    status, _, body = _call(f"{base}/v1/ocr", {"image": _image()})
+    assert status == 422
+    assert json.loads(body) == {"error": "runaway", "engine": "paddle-vl"}
+
+
 def test_bad_input_is_answered_not_crashed(served):
     base, _ = served
     assert _call(f"{base}/v1/ocr", {"image": "not an image"})[0] == 400
