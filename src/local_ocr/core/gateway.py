@@ -3,13 +3,19 @@
 待つのは 127.0.0.1 の 1 つのポート(既定 8080)だけ。出すものは 3 つ。
 
     GET  /v1/engines            読む道具の一覧(取得済みか、行の位置を返せるか)
-    POST /v1/ocr                {engine, image, lines} → {text, lines:[{text, box, polygon}], …}
+    POST /v1/ocr                {engine, image, mode?, region?} → {text, lines:[{text, box, polygon}], …}
     GET  /health                PaddleOCR-VL の状態(下の 2 つと合わせて、前からある口)
     POST /v1/chat/completions   PaddleOCR-VL の llama-server へそのまま渡す
 
-**特定の相手に合わせない。** 中身は `engines/base.py` の `recognize` をそのまま外に出すだけ。
-PaddleOCR-VL は、`lines` を付けると「Spotting:」で行の位置まで返す(`engines/paddle_vl.py`)。
-読みが崩れて打ち切ったとき(定規など、`ocr.Runaway`)は 422 `{"error": "runaway"}`。
+**特定の相手に合わせない。** 読むのは画面と同じ芯(`core/reading.py`)。
+
+- `region` {x, y, w, h}(元の画像の画素)を付けると、その範囲だけ読む。枠は元の画像の座標で返る
+- `mode` は道具ごとの読み方(`/v1/engines` の `modes`、先頭が既定)。PaddleOCR-VL の
+  "lines" は、行の位置・読む順の並べ替え・抜けの点検(`check` と `plain`)まで返す。
+  **画面の設定は見ない。** 呼び手が決める(同じ呼び出しが、画面の操作で変わらないように)
+- 前からの呼び方(`mode` 無し、`lines` は既定 true)は 0.1.5 のエディタが使っている。
+  PaddleOCR-VL は "lines" で読むが点検はしない(待ち時間を変えない)。読みが崩れて
+  打ち切ったとき(定規など)は、前と同じ 422 `{"error": "runaway"}`
 
 下の 2 つは、この窓口より前の作り(llama-server を 8080 にそのまま立てていた)との互換のため。
 TEI/IIIF エディタはいまこの 2 つで話しているので、エディタを直さなくても動き続ける。
@@ -34,7 +40,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from PIL import Image, UnidentifiedImageError
 
 from ..engines.base import Engine, Result, runs_here
-from . import bridge
+from . import bridge, reading
 from .ocr import Runaway
 
 DEFAULT_ENGINE = "paddle-vl"
@@ -55,13 +61,22 @@ def decode_image(value: str) -> Image.Image:
     return img
 
 
-def result_json(engine: Engine, img: Image.Image, result: Result, seconds: float) -> dict:
+def result_json(
+    engine: Engine,
+    img: Image.Image,
+    result: Result,
+    seconds: float,
+    mode: str = "",
+    region: reading.Region | None = None,
+) -> dict:
     w, h = img.size
-    return {
+    out = {
         "engine": engine.id,
         "width": w,
         "height": h,
         "seconds": round(seconds, 3),
+        "mode": mode or None,
+        "region": region.as_dict() if region else None,
         "text": result.text,
         "lines": [
             {
@@ -76,6 +91,18 @@ def result_json(engine: Engine, img: Image.Image, result: Result, seconds: float
             for ln in result.lines
         ],
     }
+    if result.check is not None:
+        c = result.check
+        # 位置の付かなかった行は `lines` に box: null で入っている(読む順の場所に)。
+        out["check"] = {
+            "placed": c.placed,
+            "unplaced": c.unplaced,
+            "plain_lines": c.plain_lines,
+            "plain_chars": c.plain_chars,
+            "problems": list(c.problems),
+        }
+        out["plain"] = result.plain
+    return out
 
 
 class Gateway:
@@ -125,8 +152,10 @@ class Gateway:
                 "label": e.label,
                 "ready": e.available(),
                 # 行の位置を返せるか。Apple Vision・NDL・Yigdzin は元から、
-                # PaddleOCR-VL は「Spotting:」(`recognize_lines`)で返す。
+                # PaddleOCR-VL は mode "lines"(「Spotting:」)で返す。
                 "lines": True,
+                # 選べる読み方。先頭が既定。選べない道具は空。
+                "modes": list(reading.modes(e)),
             }
             for e in self._engines()
             if runs_here(e)
@@ -148,19 +177,38 @@ class Gateway:
             img = decode_image(str(body.get("image") or ""))
         except ValueError:
             return 400, {"error": "bad_image"}
-        want_lines = body.get("lines", True) is not False
+        try:
+            region = reading.Region.parse(body.get("region"))
+            if region is not None and region.clip(*img.size) is None:
+                raise ValueError("region")
+        except ValueError:
+            return 400, {"error": "bad_region"}
+        legacy = "mode" not in body
+        if legacy:
+            # 前からの呼び方。`lines`(既定 true)で PaddleOCR-VL の読み方を決める。
+            wanted = None
+            if reading.spots(engine):
+                wanted = "lines" if body.get("lines", True) is not False else "text"
+        else:
+            wanted = str(body.get("mode") or "") or None
+        try:
+            mode = reading.mode_for(engine, wanted)
+        except ValueError:
+            return 400, {"error": "bad_mode", "modes": list(reading.modes(engine))}
         with self._lock(engine_id):
             started = time.monotonic()
             engine.prepare(lambda _msg, _frac: None)
-            reader = getattr(engine, "recognize_lines", None) if want_lines else None
             try:
-                result = reader(img) if reader else engine.recognize(img)
+                result = reading.read(engine, img, region=region, mode=mode, check=not legacy)
             except Runaway:
                 # 定規などに引っかかって読みが崩れた。呼び手には「範囲を切って読み直して」と
-                # 案内してもらう(500 の「失敗」とは分ける)。
+                # 案内してもらう(500 の「失敗」とは分ける)。新しい呼び方では起きない
+                # (位置なしの読みに切り替え、`check.problems` に "runaway" を書く)。
                 return 422, {"error": "runaway", "engine": engine_id}
             seconds = time.monotonic() - started
-        return 200, result_json(engine, img, result, seconds)
+        return 200, result_json(
+            engine, img, result, seconds, mode, region.clip(*img.size) if region else None
+        )
 
     # --- 前からある口 -------------------------------------------------------
     def relay(self, method: str, path: str, data: bytes | None) -> tuple[int, bytes, str]:

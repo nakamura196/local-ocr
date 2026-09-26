@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 import flet as ft
 
 from ..core import bridge as bridge_core
-from ..core import fetch, iiif
+from ..core import fetch, iiif, reading
 from ..core.bridge import Bridge
 from ..core.paths import data_dir
 from ..engines import Engine, runs_here
@@ -233,11 +233,43 @@ class EngineCard:
                         spacing=8,
                     ),
                     self.progress.control,
+                    *self._mode_rows(),
                 ],
                 spacing=8,
             ),
             padding=14,
         )
+
+    def _mode_rows(self) -> list[ft.Control]:
+        """読み方を選ぶ欄。選べる道具(PaddleOCR-VL・NDL)だけに出す。"""
+        own = reading.modes(self.engine)
+        if not own:
+            return []
+        group = ft.RadioGroup(
+            value=self.view.state.mode_of(self.engine),
+            on_change=self._on_mode,
+            content=ft.Column(
+                [
+                    ft.Radio(
+                        value=mode,
+                        label=f"{t('mode.' + mode)} — {t('mode.' + mode + '.detail')}",
+                        label_style=ft.TextStyle(size=12),
+                    )
+                    for mode in own
+                ],
+                spacing=0,
+            ),
+        )
+        return [
+            ft.Divider(height=1),
+            ft.Text(t("settings.mode"), size=12, weight=ft.FontWeight.W_500),
+            group,
+        ]
+
+    def _on_mode(self, event) -> None:
+        mode = str(event.control.value or "")
+        if mode in reading.modes(self.engine):
+            self.view.state.set_mode(self.engine.id, mode)
 
     # --- 表示の更新 -------------------------------------------------------
     def sync(self) -> None:

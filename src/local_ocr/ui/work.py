@@ -5,6 +5,10 @@
 
 **「くらべる」に切り替えると、読む道具ごとの結果を横に並べる。** どれを版面に
 重ねるかは利用者が選ぶ(`Job.primary`)。
+
+**版面をドラッグすると範囲を選べる。** 「読む」はその範囲だけを読み、前の結果の
+その部分(枠の中心が範囲に入る行)を入れ替える。読み方は設定画面で道具ごとに決める
+(`AppState.mode_of`)。読むのは画面も端末も窓口も同じ芯(`core/reading.py`)。
 """
 
 from __future__ import annotations
@@ -20,10 +24,12 @@ from typing import TYPE_CHECKING
 import flet as ft
 from PIL import Image
 
-from ..core import export, fetch
+from ..core import export, fetch, reading
+from ..core.reading import Region
+from ..engines import Result
 from . import status, theme
 from .compare import COLUMN, ResultColumn
-from .i18n import engine_label, engine_short, t
+from .i18n import current, engine_label, engine_short, t
 from .state import Doc, Job, Run
 
 if TYPE_CHECKING:
@@ -58,6 +64,14 @@ class WorkView:
         # 版面をどれだけ縮めて(拡げて)出しているか。枠の線の太さに使う。
         self._scale = 1.0
         self._rows: list[ft.Container] = []
+        # 囲んだ範囲(元の画像の画素)。ページを移ると消す。
+        self.region: Region | None = None
+        self._drag_from: tuple[float, float] | None = None
+        self._sel = ft.Container(
+            visible=False,
+            border=ft.Border.all(2, ft.Colors.TERTIARY),
+            bgcolor=ft.Colors.with_opacity(0.12, ft.Colors.TERTIARY),
+        )
 
         self.strip = status.Strip()
         self.panel = status.Panel()
@@ -137,9 +151,15 @@ class WorkView:
         )
         self.engine_dd.visible = not self.compare
         self.run_button = ft.FilledButton(
-            t("work.run.compare") if self.compare else t("work.run"),
+            self._run_label(),
             icon=ft.Icons.PLAY_ARROW,
             on_click=(lambda _: self.start_compare()) if self.compare else (lambda _: self.start()),
+        )
+        self.clear_region_button = ft.IconButton(
+            ft.Icons.HIGHLIGHT_OFF,
+            tooltip=t("work.region.clear"),
+            visible=self.region is not None,
+            on_click=lambda _: self.clear_region(),
         )
         self.copy_button = ft.OutlinedButton(
             t("work.copy"), icon=ft.Icons.CONTENT_COPY, on_click=lambda _: self.copy()
@@ -159,6 +179,7 @@ class WorkView:
                         self.engine_dd,
                     ],
                     [
+                        self.clear_region_button,
                         self.run_button,
                         self.copy_button,
                         theme.menu_button(
@@ -399,6 +420,7 @@ class WorkView:
         doc.go(index)
         self.selected = -1
         self._picture = None
+        self._set_region(None)
         self._render()
         self._sync_pager()
         self.page.update()
@@ -503,24 +525,98 @@ class WorkView:
                 )
             )
         self._paint_boxes()
+        self._place_selection()
 
         return ft.Container(
-            content=ft.Stack(
-                [
-                    ft.Image(
-                        src=self._picture,
-                        width=sw,
-                        height=sh,
-                        fit=ft.BoxFit.FILL,
-                        border_radius=ft.BorderRadius.all(6),
-                    ),
-                    *self._boxes,
-                ],
-                width=sw,
-                height=sh,
+            # ドラッグで範囲を選ぶ。枠のクリック(行を選ぶ)はそのまま効く。
+            content=ft.GestureDetector(
+                content=ft.Stack(
+                    [
+                        ft.Image(
+                            src=self._picture,
+                            width=sw,
+                            height=sh,
+                            fit=ft.BoxFit.FILL,
+                            border_radius=ft.BorderRadius.all(6),
+                        ),
+                        *self._boxes,
+                        self._sel,
+                    ],
+                    width=sw,
+                    height=sh,
+                ),
+                on_pan_start=self._on_drag_start,
+                on_pan_update=self._on_drag,
+                on_pan_end=self._on_drag_end,
+                drag_interval=30,
+                mouse_cursor=ft.MouseCursor.PRECISE,
             ),
             alignment=ft.Alignment.CENTER,
         )
+
+    # --- 範囲を囲む -------------------------------------------------------
+    def _run_label(self) -> str:
+        if self.compare:
+            return t("work.run.compare")
+        return t("work.run.region") if self.region is not None else t("work.run")
+
+    def _on_drag_start(self, event) -> None:
+        if self.state.busy:
+            return
+        pos = event.local_position
+        self._drag_from = (pos.x, pos.y)
+        self._drag_to((pos.x, pos.y))
+
+    def _on_drag(self, event) -> None:
+        if self._drag_from is None:
+            return
+        pos = event.local_position
+        self._drag_to((pos.x, pos.y))
+
+    def _drag_to(self, to: tuple[float, float]) -> None:
+        (x0, y0), (x1, y1) = self._drag_from, to  # type: ignore[misc]
+        s = self._scale or 1.0
+        region = Region(
+            round(min(x0, x1) / s), round(min(y0, y1) / s),
+            round(abs(x1 - x0) / s), round(abs(y1 - y0) / s),
+        )
+        self.region = region
+        self._place_selection()
+        self.page.update()
+
+    def _on_drag_end(self, _event=None) -> None:
+        if self._drag_from is None:
+            return
+        self._drag_from = None
+        job = self.state.job
+        region = self.region
+        # 小さすぎる範囲は、クリックのつもりの揺れとみなして捨てる。
+        if region is not None and job is not None and job.image is not None:
+            region = region.clip(*job.image.size)
+        if region is None or region.w * self._scale < 8 or region.h * self._scale < 8:
+            self._set_region(None)
+        else:
+            self._set_region(region)
+            self.strip.plain(t("work.region.set"))
+        self.page.update()
+
+    def _place_selection(self) -> None:
+        r, s = self.region, self._scale or 1.0
+        self._sel.visible = r is not None
+        if r is not None:
+            self._sel.left, self._sel.top = r.x * s, r.y * s
+            self._sel.width, self._sel.height = max(1.0, r.w * s), max(1.0, r.h * s)
+
+    def _set_region(self, region: Region | None) -> None:
+        self.region = region
+        self._place_selection()
+        self.clear_region_button.visible = region is not None
+        self.run_button.content = self._run_label()
+
+    def clear_region(self) -> None:
+        self._set_region(None)
+        self.strip.plain(t("work.region.hint"))
+        self.page.update()
 
     def _budget(self) -> tuple[int, int]:
         """版面に使える大きさ。窓の寸法から引き算して決める。
@@ -892,7 +988,9 @@ class WorkView:
                 try:
                     image = await asyncio.to_thread(job.load)
                     started = time.monotonic()
-                    result = await asyncio.to_thread(engine.recognize, image)
+                    result = await asyncio.to_thread(
+                        reading.read, engine, image, mode=self.state.mode_of(engine)
+                    )
                 except Exception as exc:  # noqa: BLE001 - 1 ページこけても残りは読む
                     traceback.print_exc()
                     job.record(Run(engine_id=engine.id, error=status.explain(exc).message))
@@ -1048,7 +1146,16 @@ class WorkView:
             await asyncio.to_thread(engine.prepare, on_progress)
             # 下ごしらえの分は読んだ時間に混ぜない(1 回目だけ何十秒もかかるため)。
             prepared = time.monotonic()
-            result = await asyncio.to_thread(engine.recognize, job.image)
+            region = self.region
+            result = await asyncio.to_thread(
+                reading.read,
+                engine,
+                job.image,
+                region=region,
+                mode=self.state.mode_of(engine),
+            )
+            if region is not None:
+                result = _merged(job, engine.id, result, region)
         except Exception as exc:  # noqa: BLE001 - 1 つ失敗しても残りは読む
             report = status.explain(exc)
             job.record(Run(engine_id=engine.id, error=report.message))
@@ -1115,14 +1222,48 @@ class WorkView:
         run = job.run
         if count:
             timing = f" / {run.timing}" if run else ""
-            self.strip.plain(
-                t("work.done", count=count, chars=len(job.text), timing=timing)
-            )
+            done = t("work.done", count=count, chars=len(job.text), timing=timing)
+            warning = _check_note(job.result)
+            if warning:
+                self.strip.show(status.failed(done, warning))
+            else:
+                self.strip.plain(done)
             self.state.remember(job)
         else:
             self.strip.show(
                 status.empty(t("work.nothing_found"), t("work.nothing_found.detail"))
             )
+
+
+def _merged(job: Job, engine_id: str, result: Result, region: Region) -> Result:
+    """範囲を読んだ結果を、同じ道具の前の結果に差し込む。前が無ければ範囲の結果だけ。"""
+    old = job.runs.get(engine_id)
+    if old is None or old.result is None:
+        return result
+    lines = reading.merge(old.lines, result.lines, region)
+    return Result(
+        text="\n".join(ln.text for ln in lines),
+        lines=lines,
+        plain=result.plain,
+        check=result.check,
+    )
+
+
+def _check_note(result: Result | None) -> str:
+    """位置付きの読みで見つけた崩れを、次にすることの一言にする。無ければ ""。"""
+    check = result.check if result is not None else None
+    if check is None:
+        return ""
+    notes = []
+    if "runaway" in check.problems:
+        notes.append(t("check.runaway"))
+    if "stopped_early" in check.problems:
+        notes.append(t("check.stopped_early", placed=check.placed, plain=check.plain_lines))
+    if "repeat" in check.problems:
+        notes.append(t("check.repeat"))
+    if check.unplaced and "runaway" not in check.problems:
+        notes.append(t("check.unplaced", count=check.unplaced))
+    return ("。" if current() == "ja" else ". ").join(notes)
 
 
 def _preview(img: Image.Image, width: int, height: int) -> bytes:

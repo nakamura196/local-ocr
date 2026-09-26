@@ -11,7 +11,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from ..core import prefs, source, tei
+from ..core import prefs, reading, source, tei
 from ..core.bridge import Bridge
 from ..core.gateway import Gateway
 from ..core.ocr import IMAGE_SUFFIXES
@@ -257,6 +257,27 @@ class AppState:
     def set_engine(self, engine_id: str) -> None:
         self._engine_id = engine_id
         prefs.save(engine=engine_id)
+
+    # --- 読み方(道具ごと) ---------------------------------------------------
+    #
+    # **読むたびに選ばせない。** 設定画面で道具ごとに決め、1 つで読む・くらべる・
+    # 束をまとめて読む、のどれでも同じものを使う。窓口(`core/gateway.py`)は見ない
+    # (呼び手が決める)。
+
+    def mode_of(self, engine: Engine) -> str:
+        saved = prefs.get("modes")
+        wanted = saved.get(engine.id) if isinstance(saved, dict) else None
+        try:
+            return reading.mode_for(engine, wanted)
+        except ValueError:
+            # 版が変わって無くなった読み方。既定に戻す。
+            return reading.mode_for(engine, None)
+
+    def set_mode(self, engine_id: str, mode: str) -> None:
+        saved = prefs.get("modes")
+        modes = dict(saved) if isinstance(saved, dict) else {}
+        modes[engine_id] = mode
+        prefs.save(modes=modes)
 
     def _default_engine_id(self) -> str:
         """既定は取得の要らないもの。何も準備せずに 1 回目が成功するように。"""

@@ -36,6 +36,9 @@ class PaddleVLEngine:
     label = "PaddleOCR-VL（漢籍・多言語）"
     note = "初回だけ 1.8GB ほど取得します。版面ごと読み、縦書きにも向きます。"
     platforms = frozenset({"darwin", "win32"})
+    # 読み方(`core/reading.py`)。先頭が既定。"lines" は「Spotting:」で行の位置も付け、
+    # 位置で並べ替え、位置なしの読みとくらべて抜けを調べる。
+    modes = ("text", "lines")
 
     def __init__(self) -> None:
         self._rt = Runtime(
@@ -84,9 +87,9 @@ class PaddleVLEngine:
         return Result(text=text, raw=None)
 
     def recognize_lines(self, img: Image.Image) -> Result:
-        """行ごとの文字と位置(「Spotting:」)。窓口がページ全体を読むときに使う。
+        """行ごとの文字と位置(「Spotting:」)。並びはモデルが返したまま。
 
-        画面の「読む」はこれまでどおり `recognize`(文字だけ)。
+        並べ替えと点検は `core/reading.py` が行う。直接呼ばずに、そちらを通す。
         """
         if not self._rt.ready:
             raise RuntimeError("先に準備を済ませてください")

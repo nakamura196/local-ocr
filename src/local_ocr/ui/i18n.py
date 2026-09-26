@@ -95,6 +95,50 @@ _STRINGS: dict[str, tuple[str, str]] = {
     "work.reading.many": ("{count} つの道具で読んでいます…", "Reading with {count} engines…"),
     "work.waiting": ("待っています", "Waiting"),
     "work.done": ("読み終わりました（{count} 行 / {chars} 文字{timing}）", "Done ({count} lines / {chars} characters{timing})"),
+    # --- 読み方(設定画面で道具ごとに選ぶ) ---
+    "settings.mode": ("読み方", "How to read"),
+    "mode.text": ("文字だけ", "Text only"),
+    "mode.text.detail": ("速く読みます。行の位置は付きません。", "Fast. Lines get no positions."),
+    "mode.lines": ("行の位置も付ける", "With line positions"),
+    "mode.lines.detail": (
+        "行ごとの枠と読む順を付けます。文字だけでも読んでくらべ、抜けがあれば知らせます（時間は 2 倍ほど）。",
+        "Adds a box and reading order to each line. Also reads text only to compare, and tells you if lines went missing (about twice as long).",
+    ),
+    "mode.layout": ("版面から行を探して読む", "Find the lines, then read"),
+    "mode.layout.detail": ("ページ全体を読むときはこちらです。", "Use this for whole pages."),
+    "mode.line": ("1 行として読む", "Read as one line"),
+    "mode.line.detail": (
+        "行を探す段を飛ばします。1 行だけを囲んで読むときに向きます。",
+        "Skips finding lines. Meant for when you have drawn a box around a single line.",
+    ),
+    # --- 範囲を囲んで読む ---
+    "work.region.hint": (
+        "版面をドラッグすると、その範囲だけを読めます",
+        "Drag on the page to read just that area",
+    ),
+    "work.region.set": (
+        "範囲を選びました。「読む」でこの範囲だけを読み、前の結果のその部分を入れ替えます",
+        "Area selected. Read replaces just that part of the earlier result",
+    ),
+    "work.region.clear": ("範囲を消す", "Clear the area"),
+    "work.run.region": ("範囲を読む", "Read area"),
+    # --- 位置付きの読みの点検 ---
+    "check.stopped_early": (
+        "位置付きで読めたのは {placed} 行でした（文字だけだと {plain} 行）。途中で読むのをやめたようです。範囲を狭めて読み直すか、読み方を「文字だけ」にしてください",
+        "Only {placed} lines came back with positions ({plain} without). The reading stopped partway. Read a smaller area, or switch to Text only",
+    ),
+    "check.repeat": (
+        "同じ字を繰り返す読みがありました。範囲を狭めて読み直してください",
+        "Some lines repeat the same character. Read a smaller area",
+    ),
+    "check.runaway": (
+        "行の位置を付けられませんでした。文字だけの結果を出しています。範囲を狭めて読み直してください",
+        "Could not place the lines, so this is the text-only result. Read a smaller area",
+    ),
+    "check.unplaced": (
+        "{count} 行は位置が付きませんでした（一覧には残しています）",
+        "{count} lines got no position (kept in the list)",
+    ),
     "work.nothing_found": ("文字が見つかりませんでした", "No text found"),
     "work.nothing_found.detail": (
         "別の読む道具を選ぶか、画像を大きく切り直してみてください。",
@@ -338,6 +382,18 @@ _STRINGS: dict[str, tuple[str, str]] = {
         "Which engine to use (--list-engines lists them)",
     ),
     "cli.help.format": ("出し方。text か tei。", "Output format: text or tei."),
+    "cli.help.mode": (
+        "読み方。PaddleOCR-VL は text(文字だけ・既定)か lines(行の位置も付ける)、NDL は layout(既定)か line(1 行として読む)。",
+        "How to read. PaddleOCR-VL: text (default) or lines (with line positions). NDL: layout (default) or line (read as one line).",
+    ),
+    "cli.help.region": (
+        "この範囲だけを読む(元の画像の画素で X,Y,W,H)。枠は元の画像の座標で書く。",
+        "Read only this area (X,Y,W,H in image pixels). Boxes stay in image coordinates.",
+    ),
+    "cli.bad_option": (
+        "--mode か --region の形が違います(この道具の読み方: {modes})",
+        "Bad --mode or --region (modes for this engine: {modes})",
+    ),
     "cli.help.out": (
         "書き出し先。省くと標準出力に出します。",
         "Where to write. Prints to standard output when omitted.",

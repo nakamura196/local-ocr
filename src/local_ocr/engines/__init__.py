@@ -7,12 +7,13 @@
 from __future__ import annotations
 
 from .apple_vision import AppleVisionEngine
-from .base import Engine, Line, Progress, Result, runs_here
+from .base import Check, Engine, Line, Progress, Result, runs_here
 from .ndl import NdlKotenLiteEngine, NdlLiteEngine
 from .paddle_vl import PaddleVLEngine
 from .yigdzin import YigdzinEngine
 
 __all__ = [
+    "Check",
     "Engine",
     "Line",
     "Progress",
