@@ -28,8 +28,12 @@ if TYPE_CHECKING:  # 実行時には取り込まない(runtime.py がこちら�
     from .gateway import Gateway
     from .runtime import Runtime
 
-# 起動スクリプト版と同じ既定。校正の画面からしか呼べないようにしている。
-DEFAULT_ORIGINS = ("https://tei-iiif-editor.vercel.app",)
+# 校正の画面(TEI/IIIF エディタ)からしか呼べないようにしている。
+# エディタは 2026-09 に vercel.app から ldas.jp へ移った。旧 URL は転送に切り替わる
+# までのあいだ使われるので、並べて持つ。
+EDITOR_ORIGIN = "https://tei-editor.ldas.jp"
+OLD_EDITOR_ORIGIN = "https://tei-iiif-editor.vercel.app"
+DEFAULT_ORIGINS = (EDITOR_ORIGIN, OLD_EDITOR_ORIGIN)
 
 # 誰も名乗れない相手。`.invalid` は RFC 2606 で予約されていて、どの頁の出どころにも
 # ならない。「全部断る」を、空文字や `*` ではなくこれで表す。
@@ -50,10 +54,31 @@ def allowed_origins() -> list[str]:
     saved = prefs.get("origins")
     if isinstance(saved, list):
         # 空の一覧は「まだ誰も許可していない」。既定で埋め戻さない。
-        return [str(v).strip() for v in saved if str(v).strip()]
-    # 起動スクリプト版と、この窓口より前の版は 1 つだけ持っていた。
-    legacy = str(prefs.get("origin") or "").strip()
-    return [legacy] if legacy else list(DEFAULT_ORIGINS)
+        origins = [str(v).strip() for v in saved if str(v).strip()]
+    else:
+        # 起動スクリプト版と、この窓口より前の版は 1 つだけ持っていた。
+        legacy = str(prefs.get("origin") or "").strip()
+        if not legacy:
+            return list(DEFAULT_ORIGINS)
+        origins = [legacy]
+    return _follow_editor_move(origins)
+
+
+def _follow_editor_move(origins: list[str]) -> list[str]:
+    """エディタの引っ越しに、保存済みの一覧を 1 度だけ追いつかせる。
+
+    前の版は旧 URL を一覧に書き込んで保存している。そのままだと新しい URL の
+    エディタから繋げない(403)。旧 URL を持っている人にだけ新しい URL を足す。
+    **足すのは 1 度だけ。** そのあと利用者が外したら、外したままにする。
+    """
+    if prefs.get("editor_moved_to_ldas"):
+        return origins
+    if OLD_EDITOR_ORIGIN in origins and EDITOR_ORIGIN not in origins:
+        origins = [EDITOR_ORIGIN, *origins]
+        prefs.save(origins=origins, editor_moved_to_ldas=True)
+    elif OLD_EDITOR_ORIGIN in origins or EDITOR_ORIGIN in origins:
+        prefs.save(editor_moved_to_ldas=True)
+    return origins
 
 
 def set_allowed_origins(values: list[str]) -> None:
