@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import plistlib
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -241,3 +242,24 @@ def test_main_puts_the_source_on_the_path_without_help():
         "配布物では ModuleNotFoundError: No module named 'local_ocr' で起動できません。"
         f"\n載っていたのは: {sorted(paths)}"
     )
+
+
+# --- 6. 更新履歴を書き忘れない ------------------------------------------------
+
+def test_release_requires_a_changelog_entry_before_building():
+    """公開するときは、dmg を作る前に更新履歴の節を確かめる。"""
+    body = _body("release.zsh")
+    check = body.index("docs/changelog.md")
+    create = body.index("create-dmg \"${CREATE_DMG_ARGS[@]}\"")
+    assert check < create, "更新履歴の確認が dmg 作成より後にあります"
+    assert "--generate-notes" not in body, "Release の本文は更新履歴の文章を使います"
+
+
+def test_changelog_has_the_current_version():
+    """pyproject.toml の版の節が、日英どちらの更新履歴にもある。"""
+    root = Path(__file__).resolve().parents[1]
+    m = re.search(r'^version\s*=\s*"([^"]+)"', (root / "pyproject.toml").read_text(), re.MULTILINE)
+    assert m
+    v = m.group(1)
+    assert f"### {v}（" in (root / "docs/changelog.md").read_text(encoding="utf-8")
+    assert f"### {v} (" in (root / "docs/changelog-en.md").read_text(encoding="utf-8")

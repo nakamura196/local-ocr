@@ -33,4 +33,5 @@ defaults:
       nav:
         - { title: トップ, url: ./ }
         - { title: 使い方, url: guide.html }
+        - { title: 更新履歴, url: changelog.html }
         - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }

@@ -8,6 +8,7 @@ lead: Reads the characters in an image on your own computer. Nothing is sent any
 alternate: { title: 日本語, url: ./, lang: ja }
 nav:
   - { title: Guide (Japanese), url: guide.html }
+  - { title: Changelog, url: changelog-en.html }
   - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
 quick_links:
   - { title: Download, text: Mac and Windows, url: "#download", mark: "↓" }
@@ -30,6 +31,8 @@ Choose the recognition engine to match the material.
 | --- | --- |
 | Windows | [Microsoft Store](https://apps.microsoft.com/detail/9N07ZD1ZPKBZ) (free; the Store signs it, so no SmartScreen warning) |
 | macOS | [Releases](https://github.com/nakamura196/local-ocr/releases/latest) (signed and notarised `.dmg`) |
+
+What's new in each version is in the [changelog](changelog-en.html). The Mac version doesn't update itself, so check it now and then.
 
 Nothing else to install. `llama-server`, which runs the PaddleOCR-VL model,
 is bundled with the application; recognition models are fetched on first use.
