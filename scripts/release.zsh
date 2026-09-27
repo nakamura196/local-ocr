@@ -48,6 +48,29 @@ DMG="build/local-ocr-${VERSION}.dmg"
 
 print "リリース ${TAG}"
 
+# 公開するときは、docs/changelog.md（と英語版）にこの版の見出しが要る。
+#
+# サイト（https://lo.ldas.jp/changelog.html）の更新履歴は、Mac 版の利用者が
+# 「新しい版を入れる価値があるか」を知る唯一の場所（Mac 版は自動で替わらない）。
+# 書き忘れを防ぐため、無ければ dmg を作る前に止める。同じ文章を Release の
+# 本文にも使う（--generate-notes の PR 一覧は、読む人には意味が通らない）。
+NOTES=""
+if [[ -n "$PUBLISH" ]]; then
+  section() {  # $1 = ファイル。「### 0.1.6（」または「### 0.1.6 (」から次の「### 」の手前まで
+    awk -v v="$VERSION" '
+      /^### / { if (on) exit; if (index($0, "### " v "（") == 1 || index($0, "### " v " (") == 1) on = 1 }
+      on { print }' "$1"
+  }
+  JA=$(section docs/changelog.md)
+  EN=$(section docs/changelog-en.md)
+  [[ -n "$JA" && -n "$EN" ]] || {
+    print -u2 "docs/changelog.md と docs/changelog-en.md に「### ${VERSION}（…）」「### ${VERSION} (…)」の節を書いてから公開してください"
+    exit 1
+  }
+  NOTES=$(mktemp)
+  print -r -- "${JA}"$'\n\n'"${EN}"$'\n\n'"全体の履歴 / Full changelog: https://lo.ldas.jp/changelog.html" > "$NOTES"
+fi
+
 # 公証済みの dmg がもう在るなら、作り直さない。
 #
 # **作り直すと、同じ中身をもう一度 Apple に送ることになる。** そのために
@@ -177,5 +200,6 @@ print
 print "タグ $TAG を打って GitHub Release を作成"
 git tag -a "$TAG" -m "Local OCR $TAG"
 git push origin "$TAG"
-gh release create "$TAG" "$DMG" --title "$TAG" --generate-notes --verify-tag
+gh release create "$TAG" "$DMG" --title "$TAG" --notes-file "$NOTES" --verify-tag
+rm -f "$NOTES"
 print "  $(gh release view "$TAG" --json url -q .url)"
