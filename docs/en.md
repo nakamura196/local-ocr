@@ -13,7 +13,7 @@ nav:
 quick_links:
   - { title: Download, text: Mac and Windows, url: "#download", mark: "↓" }
   - { title: How to use, text: Videos and step-by-step pages (Japanese), url: guide.html, mark: "▶" }
-footer: "Contact: nakamura@hi.u-tokyo.ac.jp"
+footer: "Contact: nakamura.satoru@mail.u-tokyo.ac.jp"
 ---
 
 Images in, characters out — nothing else.
@@ -63,4 +63,4 @@ The narration and captions are in Japanese.
 - Tensho Miyazaki (Tsurumi University; proposed and evaluated PaddleOCR-VL)
 - Yoshimitsu Aitani (Toyo Bunko; testing and feature proposals)
 
-Contact: nakamura@hi.u-tokyo.ac.jp
+Contact: nakamura.satoru@mail.u-tokyo.ac.jp

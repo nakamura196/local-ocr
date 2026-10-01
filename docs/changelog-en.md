@@ -10,7 +10,7 @@ nav:
   - { title: Home, url: en.html }
   - { title: Guide (Japanese), url: guide.html }
   - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
-footer: "Contact: nakamura@hi.u-tokyo.ac.jp"
+footer: "Contact: nakamura.satoru@mail.u-tokyo.ac.jp"
 ---
 
 The Windows version is updated automatically by the Microsoft Store.
