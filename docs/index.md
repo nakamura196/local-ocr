@@ -58,7 +58,7 @@ quick_links:
 ### 開発
 
 - 中村 覚（東京大学）
-- 宮崎 展昌（PaddleOCR-VL の提案と検証）
+- 宮崎 展昌（鶴見大学。PaddleOCR-VL の提案と検証）
 - 會谷 佳光（東洋文庫。試用と改善の提案）
 
 連絡先: nakamura@hi.u-tokyo.ac.jp

@@ -48,7 +48,7 @@ Please note:
 • The interface is Japanese and English
 • The PaddleOCR-VL engine's recognition model is about 1.8 GB and is downloaded the first time you use it
 
-Developed by Satoru Nakamura (The University of Tokyo), with Tensho Miyazaki and Yoshimitsu Aitani (Toyo Bunko).
+Developed by Satoru Nakamura (The University of Tokyo), with Tensho Miyazaki (Tsurumi University) and Yoshimitsu Aitani (Toyo Bunko).
 
 ## 検索キーワード(最大 7 つ)
 
