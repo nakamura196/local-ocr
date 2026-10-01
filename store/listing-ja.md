@@ -70,7 +70,7 @@ Partner Center の画面で直接直す。プライバシーポリシーの URL 
 
 ## サポートの連絡先
 
-nakamura@hi.u-tokyo.ac.jp
+nakamura.satoru@mail.u-tokyo.ac.jp
 
 ## 対応言語
 

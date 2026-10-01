@@ -61,4 +61,4 @@ quick_links:
 - 宮崎 展昌（鶴見大学。PaddleOCR-VL の提案と検証）
 - 會谷 佳光（東洋文庫。試用と改善の提案）
 
-連絡先: nakamura@hi.u-tokyo.ac.jp
+連絡先: nakamura.satoru@mail.u-tokyo.ac.jp

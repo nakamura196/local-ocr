@@ -13,7 +13,7 @@ quick_links:
   - { title: 基本の使い方, text: 読む・確かめる・保存する。動画 3 分, url: guide-basic.html }
   - { title: いろいろな使い方, text: フォルダ・IIIF・くらべる。動画 5 分, url: guide-more.html }
   - { title: 校正の画面で使う, text: TEI/IIIF エディタで枠ごとに読む。動画 2 分半, url: guide-editor.html }
-footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"
+footer: "お問い合わせ: nakamura.satoru@mail.u-tokyo.ac.jp"
 ---
 
 > どの動画も、声と字幕で説明しています。

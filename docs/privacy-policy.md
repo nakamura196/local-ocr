@@ -85,7 +85,7 @@ it locally to run the model already on disk.
 
 ### Contact
 
-Satoru Nakamura, The University of Tokyo — nakamura@hi.u-tokyo.ac.jp
+Satoru Nakamura, The University of Tokyo — nakamura.satoru@mail.u-tokyo.ac.jp
 
 ---
 
@@ -162,4 +162,4 @@ PaddleOCR-VL のモデルを動かす `llama.cpp` を同梱しています。ラ
 
 ### お問い合わせ
 
-中村 覚(東京大学) nakamura@hi.u-tokyo.ac.jp
+中村 覚(東京大学) nakamura.satoru@mail.u-tokyo.ac.jp
