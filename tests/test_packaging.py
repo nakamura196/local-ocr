@@ -258,7 +258,7 @@ def test_release_requires_a_changelog_entry_before_building():
 def test_changelog_has_the_current_version():
     """pyproject.toml の版の節が、日英どちらの更新履歴にもある。"""
     root = Path(__file__).resolve().parents[1]
-    m = re.search(r'^version\s*=\s*"([^"]+)"', (root / "pyproject.toml").read_text(), re.MULTILINE)
+    m = re.search(r'^version\s*=\s*"([^"]+)"', (root / "pyproject.toml").read_text(encoding="utf-8"), re.MULTILINE)
     assert m
     v = m.group(1)
     assert f"### {v}（" in (root / "docs/changelog.md").read_text(encoding="utf-8")
