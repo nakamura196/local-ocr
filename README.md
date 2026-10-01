@@ -9,8 +9,8 @@ export plain text or TEI/XML.
 Successor to [tei-scanner](https://github.com/nakamura196/tei-scanner)
 (Swift, macOS only, Apple Vision only).
 
-By Satoru Nakamura (The University of Tokyo), with Tensho Miyazaki and
-Yoshimitsu Aitani (Toyo Bunko).
+By Satoru Nakamura (The University of Tokyo), with Tensho Miyazaki (Tsurumi
+University) and Yoshimitsu Aitani (Toyo Bunko).
 
 [English](#english) · [日本語](#日本語)
 
