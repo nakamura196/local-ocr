@@ -20,6 +20,11 @@ Downloaded recognition models are kept, so you don't need to fetch them again.
 
 Dates are in Japan time.
 
+### 0.1.7 (2 October 2026)
+
+- Yigdzin-1 (Tibetan) no longer keeps repeating the same words after the end of a manuscript line. A page used to take several minutes and the result was buried in repetition; now only each line's reading is kept, and a page takes about 20 seconds to a minute.
+- When a ruler or the edge of the paper is mistaken for a line, that line is left out of the result.
+
 ### 0.1.6 (28 September 2026)
 
 - Draw a box on the image to read only that area.
