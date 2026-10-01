@@ -23,5 +23,5 @@ footer: "お問い合わせ: nakamura@hi.u-tokyo.ac.jp"
 
 1. [インストールと、読む道具の取得（Mac）](guide-install.md) — 3 分
 2. [基本の使い方（読む・確かめる・保存する）](guide-basic.md) — 3 分
-3. [いろいろな使い方（フォルダ・IIIF・くらべる）](guide-more.md) — 5 分
+3. [いろいろな使い方（フォルダ・IIIF・くらべる・スクリプト）](guide-more.md) — 5 分
 4. [校正の画面（TEI/IIIF エディタ）で使う](guide-editor.md) — 2 分半

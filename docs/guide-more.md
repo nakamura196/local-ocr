@@ -3,7 +3,7 @@ layout: guide
 lang: ja
 title: ③ いろいろな使い方
 eyebrow: Local OCR の使い方
-lead: フォルダ・IIIF マニフェスト・貼り付けから読む方法と、読む道具のくらべ方。動画は約 5 分です。
+lead: フォルダ・IIIF マニフェスト・貼り付けから読む方法、読む道具のくらべ方、スクリプトからの使い方。動画は約 5 分です。
 nav:
   - { title: トップ, url: ./ }
   - { title: 使い方の一覧, url: guide.html }
@@ -60,3 +60,51 @@ URL をコピーしてから「IIIF マニフェスト」を押すと、コピ�
 行の数・文字の数・かかった時間もくらべられます。「これを使う」を押すと、その結果が画像に重なります（行の位置を返す道具なら、画像の上に枠が出ます）。
 
 ![くらべる](images/guide/compare.jpg)
+
+## スクリプトから使う {#script}
+
+画像が何百枚もあるときは、画面で 1 枚ずつ読むより、スクリプトに任せるほうが楽です。
+Local OCR を開いたまま、「設定」の「ほかの道具から使えるようにする」をオンにすると、同じパソコンの中のスクリプトから読む道具を呼べます。
+Python の仮想環境やモデルの準備は要りません。アプリが取得した道具を、そのまま使います。
+
+次の例は、フォルダの中の画像を 1 枚ずつ読み、同じ名前の `.txt` に書き出します。
+Python に最初から入っている部品だけで動きます。
+
+```python
+# read_folder.py — 使い方: python3 read_folder.py 画像のフォルダ [読む道具]
+import base64, json, sys, urllib.request
+from pathlib import Path
+
+URL = "http://127.0.0.1:8080/v1/ocr"
+folder = Path(sys.argv[1])
+engine = sys.argv[2] if len(sys.argv) > 2 else "paddle-vl"
+
+for image in sorted(folder.iterdir()):
+    if image.suffix.lower() not in (".jpg", ".jpeg", ".png", ".tif", ".tiff"):
+        continue
+    body = json.dumps({
+        "engine": engine,
+        "image": base64.b64encode(image.read_bytes()).decode(),
+    }).encode()
+    req = urllib.request.Request(URL, data=body, headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=600) as res:
+        result = json.load(res)
+    image.with_suffix(".txt").write_text(result["text"], encoding="utf-8")
+    print(image.name, len(result["lines"]), "行")
+```
+
+読む道具の名前は次のとおりです（取得済みのものだけ使えます）。
+
+| 名前 | 読む道具 |
+| --- | --- |
+| `paddle-vl` | PaddleOCR-VL |
+| `ndl-koten-lite` | NDL古典籍OCR Lite |
+| `ndl-lite` | NDLOCR Lite |
+| `yigdzin` | Yigdzin-1 |
+| `apple-vision` | Apple Vision（Mac のみ） |
+
+返ってくる結果には、本文（`text`）のほかに、行ごとの文字と位置（`lines`）が入っています。
+画像の一部だけを読むときは `"region": {"x": 0, "y": 0, "w": 800, "h": 600}` を、PaddleOCR-VL で行の位置も取るときは `"mode": "lines"` を足します。
+いま使える道具と読み方の一覧は、ブラウザで `http://127.0.0.1:8080/v1/engines` を開くと見られます。
+
+アプリを開かずに、コマンドとして使う方法もあります（ソースから入れる必要があります）。手順は [GitHub の説明](https://github.com/nakamura196/local-ocr#開発)にあります。

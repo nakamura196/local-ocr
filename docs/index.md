@@ -51,10 +51,14 @@ quick_links:
 ### リンク
 
 - [使い方](guide.md) — 動画と、写真つきの手順
+- [スクリプトから使う](guide-more.md#script) — たくさんの画像をまとめて読む
 - [ソースコード](https://github.com/nakamura196/local-ocr)（MIT）
 - [プライバシーポリシー](privacy-policy.md)
 
 ### 開発
 
-中村 覚（東京大学）
+- 中村 覚（東京大学）
+- 宮崎 展昌（PaddleOCR-VL の提案と検証）
+- 會谷 佳光（東洋文庫。試用と改善の提案）
+
 連絡先: nakamura@hi.u-tokyo.ac.jp

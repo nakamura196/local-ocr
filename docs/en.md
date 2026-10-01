@@ -59,5 +59,8 @@ The narration and captions are in Japanese.
 
 ### Credits
 
-Satoru Nakamura (The University of Tokyo).
+- Satoru Nakamura (The University of Tokyo)
+- Tensho Miyazaki (proposed and evaluated PaddleOCR-VL)
+- Yoshimitsu Aitani (Toyo Bunko; testing and feature proposals)
+
 Contact: nakamura@hi.u-tokyo.ac.jp
