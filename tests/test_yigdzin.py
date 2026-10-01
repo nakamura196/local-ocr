@@ -127,3 +127,33 @@ def test_result_lines_export_as_tei_zones():
     assert '<lb corresp="#f1_l1"' in xml
     assert "行1" in xml
     assert "行2" in xml
+
+
+def test_cut_repeats_keeps_one_copy_of_a_loop():
+    """Yigdzin-1 が写本の行で陥る繰り返し(2026-10-01 実測の出力)を 1 回分に縮める。"""
+    from local_ocr.yigdzin.pipeline import cut_repeats
+
+    assert cut_repeats("ཆོས་དང་དང་དང་དང་དང་") == "ཆོས་དང་"
+    assert cut_repeats("ཆོས་སྟོན་པ་དང་། དགེ་སློང་དགེ་སློང་དགེ་སློང་") == "ཆོས་སྟོན་པ་དང་། དགེ་སློང་"
+
+
+def test_cut_repeats_leaves_ordinary_text_alone():
+    from local_ocr.yigdzin.pipeline import cut_repeats
+
+    text = "བོ་ཡིད་དགའ་ཞིང་ཡིད་དགའ་ནས། རོ་སྟོང་སྲང་ནས་ལག་པ་རྐྱང་ནས།"
+    assert cut_repeats(text) == text
+
+
+def test_cut_repeats_catches_a_repeated_phrase():
+    from local_ocr.yigdzin.pipeline import cut_repeats
+
+    phrase = "དགོན་པ་ལ་གནས་པ་དང་། འདོད་པ་ཆེ་བ། "
+    assert cut_repeats("ཡོ་བྱད། " + phrase * 4) == ("ཡོ་བྱད། " + phrase).rstrip()
+
+
+def test_non_tibetan_reads_are_not_text():
+    from local_ocr.yigdzin.pipeline import _is_tibetan
+
+    assert not _is_tibetan("empty page")
+    assert not _is_tibetan("ea pa pa ba da ba da")
+    assert _is_tibetan("ཆོས་གོས་གསོ་བ་")
