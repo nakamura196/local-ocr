@@ -224,11 +224,28 @@ def recognize(
     指示文を渡す(`yigdzin/pipeline.py`)。`model` の値は llama-server 側では
     無視される(`-m` で読み込んだものを常に使う)ので、ここでは固定のままでよい。
     """
+    return complete(endpoint, img, timeout, prompt=prompt)[0]
+
+
+def complete(
+    endpoint: str,
+    img: Image.Image,
+    timeout: float = 300.0,
+    *,
+    prompt: str = PROMPT,
+    max_tokens: int = MAX_TOKENS,
+) -> tuple[str, bool]:
+    """`recognize` と同じだが、書ける長さを `max_tokens` で絞れ、
+    モデルが自分で書き終えたか(上限で切られていないか)も返す。
+
+    書き終えずに上限に達したときは、たいてい同じ語を繰り返し続けている
+    (Yigdzin-1 が写本の細長い行で起こす。`yigdzin/pipeline.py`)。
+    """
     body = json.dumps(
         {
             "model": "paddleocr-vl",
             "temperature": 0,
-            "max_tokens": MAX_TOKENS,
+            "max_tokens": max_tokens,
             "messages": [
                 {
                     "role": "user",
@@ -248,4 +265,6 @@ def recognize(
     )
     with urllib.request.urlopen(req, timeout=timeout) as res:
         payload = json.loads(res.read().decode("utf-8"))
-    return (payload.get("choices") or [{}])[0].get("message", {}).get("content", "") or ""
+    choice = (payload.get("choices") or [{}])[0]
+    text = choice.get("message", {}).get("content", "") or ""
+    return text, choice.get("finish_reason") != "length"
