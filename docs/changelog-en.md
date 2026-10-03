@@ -20,6 +20,12 @@ Downloaded recognition models are kept, so you don't need to fetch them again.
 
 Dates are in Japan time.
 
+### 0.1.8 (4 October 2026)
+
+- With Yigdzin-1 (Tibetan), a ruler in the photo could make the whole page end with "No text found". Lines that cannot be read are now skipped, and the other lines are still returned.
+- When reading fails, the app no longer shows "No text found"; it reports the failure instead.
+- Re-reading a line no longer replaces the text with just a short mark such as ༄༅། །.
+
 ### 0.1.7 (2 October 2026)
 
 - Yigdzin-1 (Tibetan) no longer keeps repeating the same words after the end of a manuscript line. A page used to take several minutes and the result was buried in repetition; now only each line's reading is kept, and a page takes about 20 seconds to a minute.
