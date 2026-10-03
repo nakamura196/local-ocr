@@ -11,10 +11,9 @@ from collections import deque
 from collections.abc import Callable
 from pathlib import Path
 
-from . import assets, bridge, bundled, fetch, prefs
+from . import assets, bridge, bundled, child, fetch, prefs
 from .assets import Asset
 from .fetch import Progress
-from .paths import is_windows
 
 DEFAULT_PORT = 8080
 
@@ -113,38 +112,25 @@ class Runtime:
                 # (core/gateway.py) を通して使うので、ここは誰も通さない。
                 "--cors-origins", bridge.DENY_ALL,
             ]
-            # Windows でコンソールの黒い窓が一瞬出るのを抑える。
-            flags = subprocess.CREATE_NO_WINDOW if is_windows() else 0  # type: ignore[attr-defined]
-            self._proc = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                creationflags=flags,
-            )
+            # アプリが kill されても残らない形で立てる(core/child.py)。
+            self._proc = child.spawn(cmd)
             threading.Thread(target=self._pump, daemon=True).start()
 
     def _pump(self) -> None:
         proc = self._proc
         if proc is None or proc.stdout is None:
             return
-        for line in proc.stdout:
-            self.log.append(line.rstrip())
+        with proc.stdout:
+            for line in proc.stdout:
+                self.log.append(line.rstrip())
 
     def stop(self) -> None:
         with self._lock:
             # 借りているだけのサーバは、こちらの都合で止めない。
             self._borrowed = False
             proc, self._proc = self._proc, None
-        if proc is None or proc.poll() is not None:
-            return
-        proc.terminate()
-        try:
-            proc.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            proc.kill()
+        if proc is not None:
+            child.halt(proc)
 
     def health(self, timeout: float = 1.0) -> str:
         """'ready' / 'loading' / 'down'。
