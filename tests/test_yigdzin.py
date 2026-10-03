@@ -157,3 +157,70 @@ def test_non_tibetan_reads_are_not_text():
     assert not _is_tibetan("empty page")
     assert not _is_tibetan("ea pa pa ba da ba da")
     assert _is_tibetan("ཆོས་གོས་གསོ་བ་")
+
+
+def _pipeline_with(lines, answers, monkeypatch):
+    """検出器と llama-server を偽物にした YigdzinPipeline。answers は crop の幅 → 返事。"""
+    import urllib.error
+
+    from local_ocr.yigdzin import pipeline as yp
+
+    def complete(endpoint, crop, **kw):
+        answer = answers[crop.width]
+        if answer == 500:
+            raise urllib.error.HTTPError(endpoint, 500, "Internal Server Error", None, None)
+        return answer, True
+
+    monkeypatch.setattr(yp.ocr_call, "complete", complete)
+    p = object.__new__(yp.YigdzinPipeline)
+    p.endpoint = "http://127.0.0.1:0"
+    p.detector = type("D", (), {"detect": lambda self, img: lines})()
+    return p
+
+
+def _line(y: int, width: int):
+    from PIL import Image
+
+    from local_ocr.yigdzin.line_detection import Line as DetLine
+
+    return DetLine(box=(0, y, width, 20), crop=Image.new("RGB", (width, 20), "white"))
+
+
+def test_one_refused_line_does_not_sink_the_page(monkeypatch):
+    # 定規の目盛りを読ませた 1 行だけ llama-server が 500 で断る(2026-10-03 実測)
+    from PIL import Image
+
+    lines = [_line(0, 300), _line(40, 50), _line(80, 310)]
+    p = _pipeline_with(lines, {300: "བྱང་ཆུབ་", 50: 500, 310: "སེམས་དཔའ་"}, monkeypatch)
+    reads = p.run(Image.new("RGB", (400, 200), "white"))
+    assert [r.text for r in reads] == ["བྱང་ཆུབ་", "སེམས་དཔའ་"]
+
+
+def test_all_lines_refused_is_an_error_not_an_empty_page(monkeypatch):
+    import urllib.error
+
+    from PIL import Image
+
+    p = _pipeline_with([_line(0, 50)], {50: 500}, monkeypatch)
+    with pytest.raises(urllib.error.HTTPError):
+        p.run(Image.new("RGB", (400, 200), "white"))
+
+
+def test_a_much_shorter_reread_does_not_replace_the_line(monkeypatch):
+    # 1 回目は書き切らなかった(上限で切れた)が本文は読めている。余白つきで切り直すと
+    # きれいに読み終えるものの「༄༅། །」だけ、という組み合わせ(2026-10-03 実測)
+    from PIL import Image
+
+    from local_ocr.yigdzin import pipeline as yp
+
+    body = "བྱང་ཆུབ་སེམས་དཔའ་རྟག་ཏུ་བརྩོན་དང་།"
+
+    def complete(endpoint, crop, **kw):
+        return (body, False) if crop.height == 20 else ("༄༅། །", True)
+
+    monkeypatch.setattr(yp.ocr_call, "complete", complete)
+    p = object.__new__(yp.YigdzinPipeline)
+    p.endpoint = "http://127.0.0.1:0"
+    p.detector = type("D", (), {"detect": lambda self, img: [_line(50, 300)]})()
+    reads = p.run(Image.new("RGB", (400, 200), "white"))
+    assert [r.text for r in reads] == [body]

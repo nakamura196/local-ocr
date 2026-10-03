@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import re
+import urllib.error
 from pathlib import Path
 
 import numpy as np
@@ -59,17 +60,34 @@ class YigdzinPipeline:
         ordered = [line for _, line in sorted(zip(ranks, lines, strict=True), key=lambda p: p[0])]
 
         reads = []
+        failed: urllib.error.HTTPError | None = None
         for line in ordered:
-            text, clean = self._read(line.crop)
+            # 1 行の失敗でページ全体を止めない。定規の目盛りを行と見なして読ませると、
+            # Yigdzin-1 が崩れた出力を返し、llama-server が 500 で断ることがある
+            # (「does not match the expected peg-native format」。2026-10-03、
+            # 東洋文庫の写本で L 字に置いた定規の目盛りで実測)。本文の行ではまず起きない。
+            try:
+                text, clean = self._read(line.crop)
+            except urllib.error.HTTPError as exc:
+                failed = exc
+                continue
             if not clean:
-                again, clean_again = self._read(_rect_crop(img, line.box))
-                if clean_again or len(again) > len(text):
+                try:
+                    again, clean_again = self._read(_rect_crop(img, line.box))
+                except urllib.error.HTTPError:
+                    again, clean_again = "", False
+                # 切り直して読んだ方が、きれいに読み終えていても半分に満たないなら採らない。
+                # 本文を読めていた行が「༄༅། །」だけに置き換わることがある(2026-10-03 実測)
+                if len(again) > len(text) or (clean_again and len(again) * 2 >= len(text)):
                     text = again
             if not _is_tibetan(text):
                 # 物差しや紙の端を行と見なしたもの。Yigdzin-1 は「empty page」と答えるか、
                 # ローマ字の綴りを並べる(2026-10-01 実測)。本文ではないので捨てる
                 continue
             reads.append(Read(text=text, box=line.box))
+        if not reads and failed is not None:
+            # 1 行も読めず、断られた行があった。「文字が無い」ではなく失敗として伝える
+            raise failed
         return reads
 
     def _read(self, crop: Image.Image) -> tuple[str, bool]:

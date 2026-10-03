@@ -1229,6 +1229,11 @@ class WorkView:
             else:
                 self.strip.plain(done)
             self.state.remember(job)
+        elif run and run.error:
+            # 失敗の知らせは `_run_one` が出している。「文字が見つかりませんでした」で
+            # 上書きすると、読めなかったのか文字が無いのか区別が付かない(2026-10-03、
+            # Yigdzin-1 の失敗がこの表示に化けて「文字が無い」と報告された)
+            return
         else:
             self.strip.show(
                 status.empty(t("work.nothing_found"), t("work.nothing_found.detail"))
