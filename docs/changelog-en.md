@@ -20,6 +20,10 @@ Downloaded recognition models are kept, so you don't need to fetch them again.
 
 Dates are in Japan time.
 
+### 0.1.9 (4 October 2026)
+
+- When the app was force-quit or crashed, the reading engine it uses (llama-server) could keep running in the background, holding about 800 MB of memory. It now stops however the app ends. Closing the window stops it as before.
+
 ### 0.1.8 (4 October 2026)
 
 - With Yigdzin-1 (Tibetan), a ruler in the photo could make the whole page end with "No text found". Lines that cannot be read are now skipped, and the other lines are still returned.
