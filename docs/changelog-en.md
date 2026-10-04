@@ -20,6 +20,11 @@ Downloaded recognition models are kept, so you don't need to fetch them again.
 
 Dates are in Japan time.
 
+### 0.1.10 (4 October 2026)
+
+- Yigdzin-1 (Tibetan) could fail with "Could not start the OCR engine" and read nothing. This happened on computers where another app was already using the port its reading engine listens on (8081). If the port is taken, it now moves to a free one. PaddleOCR-VL is fixed in the same way.
+- If the engine still cannot start, the reason (in English) is now shown under the error. Please include it when you contact us.
+
 ### 0.1.9 (4 October 2026)
 
 - When the app was force-quit or crashed, the reading engine it uses (llama-server) could keep running in the background, holding about 800 MB of memory. It now stops however the app ends. Closing the window stops it as before.
