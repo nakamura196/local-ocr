@@ -200,6 +200,9 @@ class _FakeRuntime:
     def health(self, timeout: float = 1.0) -> str:
         return "ready" if self.ready else "down"
 
+    def failure(self) -> str:
+        return ""
+
 
 class _FakeGateway:
     """HTTP は立てない。呼ばれた順だけ見る。"""

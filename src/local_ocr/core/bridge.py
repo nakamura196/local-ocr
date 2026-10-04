@@ -186,7 +186,7 @@ class Bridge:
         if self._rt is not None and getattr(self._rt, "fetched", True):
             self._rt.start()
             if not self._rt.wait_ready():
-                raise RuntimeError("OCR を起動できませんでした")
+                raise RuntimeError(f"OCR を起動できませんでした\n{self._rt.failure()}".rstrip())
 
     def turn_off(self) -> None:
         set_enabled(False)

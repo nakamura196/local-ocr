@@ -78,7 +78,7 @@ class PaddleVLEngine:
             on_progress("OCR を起動しています（初回は少し待ちます）", None)
             self._rt.start()
             if not self._rt.wait_ready():
-                raise RuntimeError("OCR を起動できませんでした")
+                raise RuntimeError(f"OCR を起動できませんでした\n{self._rt.failure()}".rstrip())
 
     def recognize(self, img: Image.Image) -> Result:
         if not self._rt.ready:
