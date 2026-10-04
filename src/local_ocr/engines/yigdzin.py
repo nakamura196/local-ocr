@@ -75,7 +75,7 @@ class YigdzinEngine:
             on_progress("OCR を起動しています（初回は少し待ちます）", None)
             self._rt.start()
             if not self._rt.wait_ready():
-                raise RuntimeError("OCR を起動できませんでした")
+                raise RuntimeError(f"OCR を起動できませんでした\n{self._rt.failure()}".rstrip())
         if self._pipeline is None:
             # 行検出の ONNX を開くのに時間がかかる。開いたままにして、
             # 2 枚目からは待たせない(NDL の Pipeline と同じ考え方)。

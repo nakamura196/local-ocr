@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import socket
 import subprocess
 import threading
 import time
@@ -45,6 +46,9 @@ class Runtime:
         # 同じポートで既に動いているものを借りているか。前の版のアプリや、
         # もう 1 つ開いたこのアプリが立てたサーバがこれにあたる。
         self._borrowed = False
+        # 決まったポートを別のアプリがふさいでいたときに、代わりに使う空きポート。
+        # 保存しない。次の起動ではまた決まったポートから試す。
+        self._spare_port: int | None = None
         # 画面の下に出す用。全部ためると長時間動かしたとき際限なく増える。
         self.log: deque[str] = deque(maxlen=400)
         self._lock = threading.Lock()
@@ -52,6 +56,8 @@ class Runtime:
     # --- 設定 -------------------------------------------------------------
     @property
     def port(self) -> int:
+        if self._spare_port is not None:
+            return self._spare_port
         return int(prefs.get(self._port_pref_key, self._default_port))
 
     @property
@@ -87,6 +93,13 @@ class Runtime:
             if self.health() != "down":
                 self._borrowed = True
                 return
+            # **llama-server ではない何かがポートをふさいでいたら、空きポートへ移る。**
+            # そのまま立てると bind に失敗して即座に終わり、「起動できませんでした」
+            # だけが出る(2026-10-03、宮崎さんの Mac で Yigdzin-1 の 8081 がこれだった
+            # と見ている。8081 はほかのアプリもよく使う)。このポートは外に見せない
+            # (窓口は 8080 のまま、その後ろで使うだけ)ので、どこに移ってもよい。
+            if _taken(self.port):
+                self._spare_port = _free_port()
             server = assets.server_path()
             if server is None:
                 # 配布物では必ず入っている。ここに来るのは開発中に
@@ -132,6 +145,16 @@ class Runtime:
         if proc is not None:
             child.halt(proc)
 
+    def failure(self) -> str:
+        """立ち上がらなかったときの、llama-server の最後のことば。画面にそのまま添える。
+
+        「起動できませんでした」だけでは、利用者からの報告を受けても原因が分からない。
+        llama-server は終わる直前にエラーの行(`E ` を含む)を書くので、それを優先して拾う。
+        """
+        lines = [line for line in self.log if line.strip()]
+        errors = [line for line in lines if " E " in line]
+        return "\n".join((errors or lines)[-3:])
+
     def health(self, timeout: float = 1.0) -> str:
         """'ready' / 'loading' / 'down'。
 
@@ -155,3 +178,19 @@ class Runtime:
                 return False
             time.sleep(1.0)
         return False
+
+
+def _taken(port: int) -> bool:
+    """127.0.0.1 の `port` で、何かが既に待っているか。"""
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.5):
+            return True
+    except OSError:
+        return False
+
+
+def _free_port() -> int:
+    """OS に空いているポートを 1 つ選ばせる。"""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return int(s.getsockname()[1])

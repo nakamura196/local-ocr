@@ -71,7 +71,11 @@ def explain(exc: Exception) -> Report:
     text = str(exc)
     if "起動できませんでした" in text:
         # 取り直しても直らないときは、たいてい他のアプリが同じポートを使っている。
-        return failed(t("error.server.title"), t("error.server.detail"))
+        # 2 行目以降は llama-server の最後のことば(Runtime.failure)。報告を
+        # 受けたとき原因が分かるよう、次の一手のあとにそのまま添える。
+        _, _, said = text.partition("\n")
+        detail = t("error.server.detail")
+        return failed(t("error.server.title"), f"{detail}\n\n{said}" if said else detail)
     if isinstance(exc, OSError) and "画像" not in text:
         return failed(t("error.file.title", error=text), t("error.file.detail"))
     if "先に取得" in text:
