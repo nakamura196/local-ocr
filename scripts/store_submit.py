@@ -543,9 +543,8 @@ def main() -> int:
         print("前回の申請を複製しています…")
         submission = create_submission(token, store_id)
 
-    # 説明文は 2026-09-24 に、ダッシュボードで手直しして公開中の版と揃えた
-    # （store/listing-ja.md。段落の途中で折り返さない）。ただし公開中は日本語だけで、
-    # 簡単な説明は空、キーワードは 3 件。md のまま送るとこれらが変わる。
+    # 掲載情報の正本は store/listing-*.md（段落の途中で折り返さない）。
+    # 2026-09-24 にこの md のまま日英とも送り、ストアの表示と一致させた。
     # 本体だけ差し替えたいときは --package-only。
     if not args.package_only:
         submission = apply_listings(submission, listings_by_lang)
