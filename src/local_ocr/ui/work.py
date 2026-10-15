@@ -107,7 +107,7 @@ class WorkView:
         )
 
         self.columns: list[ResultColumn] = []
-        # 食い違いに色を付けるか。くらべる画面で切り替え、次の起動にも覚えておく。
+        # 異同に色を付けるか。くらべる画面で切り替え、次の起動にも覚えておく。
         self.highlight = bool(prefs.get("compare_diff", True))
         self._agree_key: object = None
         self._agree: dict[str, tuple[set[int], float | None]] = {}
@@ -740,7 +740,7 @@ class WorkView:
         self.strip.plain(t("work.engine.changed", engine=engine_label(self.state.engine)))
         self.page.update()
 
-    # --- 食い違いの色 -----------------------------------------------------
+    # --- 異同の色 -------------------------------------------------------
     #
     # 版面に出している結果(primary)を基準にする。版面の列は「他の道具のどれかと
     # 合わない文字」(校正で見る所)、ほかの列は「版面の結果と合わない文字」。

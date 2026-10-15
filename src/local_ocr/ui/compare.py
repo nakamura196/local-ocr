@@ -84,7 +84,7 @@ class ResultColumn:
                 "compare.stats", count=len(run.lines), chars=len(run.text), timing=run.timing
             )
             if rate is not None:
-                # 切り捨てる。100% と出るのは本当に食い違いが無いときだけ。
+                # 切り捨てる。100% と出るのは本当に異同が無いときだけ。
                 self.meta.value += " / " + t("compare.match", rate=int(rate * 100))
             elif primary and bad:
                 self.meta.value += " / " + t("compare.disputed", n=len(bad))
@@ -94,8 +94,13 @@ class ResultColumn:
         else:
             self.meta.value = ""
 
+        # 「使用中」= コピーと保存に使う結果。画像に枠が出るのは行の位置がある結果だけ
+        # (PaddleOCR-VL の既定の読み方は位置を返さない)。無いときは、そう添える。
+        showing = t("compare.showing")
+        if run and run.result is not None and not any(ln.box for ln in run.lines):
+            showing += f"（{t('compare.nopos')}）"
         self.badge.content = (
-            theme.chip(ft.Icons.VISIBILITY_OUTLINED, t("compare.showing"), ft.Colors.PRIMARY)
+            theme.chip(ft.Icons.CHECK_CIRCLE_OUTLINE, showing, ft.Colors.PRIMARY)
             if primary
             else (
                 ft.TextButton(
@@ -168,7 +173,7 @@ class ResultColumn:
 
 
 def _text(text: str, bad: set[int], start: int) -> ft.Text:
-    """1 行の文字。食い違う文字(`bad` は列ぜんたいでの位置、この行は `start` から)に印を付ける。
+    """1 行の文字。異同のある文字(`bad` は列ぜんたいでの位置、この行は `start` から)に印を付ける。
 
     **色だけに頼らない。** 背景の色に加えて下線も引く(色の違いが分かりにくい人や、
     白黒で刷るときのため)。色は theme の名前から取るので、明暗どちらでも読める。

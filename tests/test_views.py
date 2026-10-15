@@ -256,10 +256,36 @@ def test_use_this_puts_the_chosen_engines_boxes_on_the_page(fakes):
 
     assert job.primary == last.id
     assert _lefts(view) == pytest.approx(_expected_lefts(view, last))
-    # 「版面に表示中」は選んだ列だけ。ほかの列には「これを使う」が出る。
+    # 「使用中」は選んだ列だけ。ほかの列には「これを使う」が出る。
     for col in view.columns:
         shown = col.engine.id == last.id
         assert isinstance(col.badge.content, ft.TextButton) is not shown
+
+
+def test_in_use_badge_says_when_the_result_has_no_positions(fakes, monkeypatch):
+    """位置を返さない結果を使っているときは「使用中（位置なし）」。画像に枠が出ないため。"""
+    from local_ocr.engines import Line
+
+    ctx, engines = fakes
+    monkeypatch.setattr(
+        engines[0], "recognize", lambda img: Result(text="a", lines=[Line("a")])
+    )
+    job = _page(ctx)
+    ctx.state.compare = True
+    ctx.state.compare_ids = {e.id for e in engines[:2]}
+    view = WorkView(ctx)
+    view.build()
+    asyncio.run(view._run_all(job, engines[:2]))
+
+    def badge(engine_id: str) -> str:
+        col = next(c for c in view.columns if c.engine.id == engine_id)
+        return col.badge.content.content.controls[1].value
+
+    view.use_result(engines[0].id)
+    assert badge(engines[0].id) == "使用中（位置なし）"
+    assert view._boxes == []
+    view.use_result(engines[1].id)
+    assert badge(engines[1].id) == "使用中"
 
 
 def test_many_engines_to_compare_can_be_scrolled_sideways(fakes):
@@ -392,7 +418,7 @@ def test_compare_marks_the_characters_where_engines_disagree(fakes):
         first = col._rows[0].content.controls[1]
         return col, first
 
-    # 版面の列(0)は、2 番が食い違う「勸」に印が付く。行の切り方だけの違い(1)は無関係。
+    # 版面の列(0)は、2 番で異同のある「勸」に印が付く。行の切り方だけの違い(1)は無関係。
     col0, first0 = cols(0)
     assert _marked(first0) == "勸"
     assert t("compare.disputed", n=1) in col0.meta.value
