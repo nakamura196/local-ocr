@@ -204,6 +204,9 @@ _STRINGS: dict[str, tuple[str, str]] = {
     ),
     "compare.empty": ("まだ読んでいません", "Nothing read yet"),
     "compare.stats": ("{count} 行 / {chars} 文字 / {timing}", "{count} lines / {chars} chars / {timing}"),
+    "compare.match": ("一致 {rate}%", "{rate}% match"),
+    "compare.disputed": ("食い違い {n} 字", "{n} differ"),
+    "compare.diff": ("食い違いに色を付ける", "Highlight differences"),
     "compare.summary": ("{engine} {count} 行 / {timing}", "{engine} {count} lines / {timing}"),
     # --- 設定 ---
     "settings.engines": ("読む道具", "OCR engines"),

@@ -48,7 +48,7 @@ The narration and captions are in Japanese.
 
 - **Input**: image files, the clipboard, a folder of page images, or a [IIIF](https://iiif.io/) manifest URL
 - **Output**: plain text (`.txt`) or TEI/XML (`.xml`)
-- **Compare**: run two engines over the same page and read the results side by side
+- **Compare**: run two engines over the same page and read the results side by side, with the characters where they disagree highlighted
 - Japanese and English interface, light and dark
 
 ### Links

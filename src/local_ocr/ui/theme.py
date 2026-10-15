@@ -43,6 +43,17 @@ SCROLLBAR = ft.ScrollbarTheme(
 )
 
 
+# 読む道具どうしで食い違う文字の印。琥珀の背景 + 下線。
+# 琥珀は明るい背景にも暗い背景にも透けて見え、文字の色(ON_SURFACE)も
+# どちらでも読める。下線は色が分からない人や白黒印刷のための二重の手がかり。
+DIFF_STYLE = ft.TextStyle(
+    bgcolor=ft.Colors.with_opacity(0.45, ft.Colors.AMBER),
+    decoration=ft.TextDecoration.UNDERLINE,
+    decoration_color=ft.Colors.ORANGE,
+    decoration_thickness=2,
+)
+
+
 def setup(page: ft.Page) -> None:
     page.theme = ft.Theme(color_scheme_seed=SEED, scrollbar_theme=SCROLLBAR)
     page.dark_theme = ft.Theme(color_scheme_seed=SEED, scrollbar_theme=SCROLLBAR)

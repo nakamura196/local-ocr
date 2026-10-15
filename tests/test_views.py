@@ -366,3 +366,48 @@ def test_a_dragged_area_is_read_and_replaces_only_its_lines(fakes):
 
     view.clear_region()
     assert view.region is None and view._sel.visible is False
+
+
+def _marked(text_control: ft.Text) -> str:
+    """色が付いている文字だけを取り出す。"""
+    return "".join(s.text for s in (text_control.spans or []) if s.style is not None)
+
+
+def test_compare_marks_the_characters_where_engines_disagree(fakes):
+    from local_ocr.engines import Line
+    ctx, engines = fakes
+    job = _page(ctx)
+    ctx.state.compare = True
+    ctx.state.compare_ids = {engines[0].id, engines[1].id, engines[2].id}
+    texts = {0: "勸學篇\n天地玄黃", 1: "勸學篇天\n地玄黃", 2: "勤學篇\n天地玄黃"}
+    for n, text in texts.items():
+        lines = [Line(s) for s in text.split("\n")]
+        job.record(Run(engines[n].id, result=Result(text=text, lines=lines)))
+    job.primary = engines[0].id
+    view = WorkView(ctx)
+    view.build()
+
+    def cols(n):
+        col = next(c for c in view.columns if c.engine.id == engines[n].id)
+        first = col._rows[0].content.controls[1]
+        return col, first
+
+    # 版面の列(0)は、2 番が食い違う「勸」に印が付く。行の切り方だけの違い(1)は無関係。
+    col0, first0 = cols(0)
+    assert _marked(first0) == "勸"
+    assert t("compare.disputed", n=1) in col0.meta.value
+    # 行の切り方だけが違う 1 は、全部一致。印は付かず、一致率は 100%。
+    col1, first1 = cols(1)
+    assert first1.spans is None
+    assert t("compare.match", rate=100) in col1.meta.value
+    # 2 は「勤」に印と、一致率。
+    col2, first2 = cols(2)
+    assert _marked(first2) == "勤"
+    assert t("compare.match", rate=85) in col2.meta.value
+
+    # スイッチを切ると、印も一致率も消える。
+    view.highlight = False
+    view.refresh_columns()
+    col2, first2 = cols(2)
+    assert first2.spans is None
+    assert t("compare.match", rate=85) not in col2.meta.value

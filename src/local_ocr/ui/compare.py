@@ -78,10 +78,16 @@ class ResultColumn:
         run = job.runs.get(self.engine.id) if job else None
         primary = bool(job and job.primary == self.engine.id)
 
+        bad, rate = self.view.agreement(self.engine.id)
         if run and run.result is not None:
             self.meta.value = t(
                 "compare.stats", count=len(run.lines), chars=len(run.text), timing=run.timing
             )
+            if rate is not None:
+                # 切り捨てる。100% と出るのは本当に食い違いが無いときだけ。
+                self.meta.value += " / " + t("compare.match", rate=int(rate * 100))
+            elif primary and bad:
+                self.meta.value += " / " + t("compare.disputed", n=len(bad))
             self.status.hide()
         elif run and run.error:
             self.meta.value = ""
@@ -102,7 +108,11 @@ class ResultColumn:
         )
 
         lines = run.lines if run else []
-        self._rows = [self._row(i, ln.text, primary) for i, ln in enumerate(lines)]
+        self._rows = []
+        start = 0
+        for i, ln in enumerate(lines):
+            self._rows.append(self._row(i, ln.text, primary, bad, start))
+            start += len(ln.text) + 1  # 行は改行でつないだ文字列として比べている
         self.list.controls = self._rows or [
             ft.Container(
                 content=theme.muted(
@@ -127,7 +137,9 @@ class ResultColumn:
             return None
         return ft.Colors.with_opacity(0.14, ft.Colors.PRIMARY)
 
-    def _row(self, index: int, text: str, primary: bool) -> ft.Container:
+    def _row(
+        self, index: int, text: str, primary: bool, bad: set[int], start: int
+    ) -> ft.Container:
         return ft.Container(
             content=ft.Row(
                 [
@@ -137,7 +149,7 @@ class ResultColumn:
                         ),
                         width=22,
                     ),
-                    ft.Text(text, size=13, expand=True, selectable=True),
+                    _text(text, bad, start),
                 ],
                 vertical_alignment=ft.CrossAxisAlignment.START,
             ),
@@ -153,3 +165,23 @@ class ResultColumn:
         if job and job.primary != self.engine.id and self.engine.id in job.runs:
             self.view.use_result(self.engine.id)
         self.view.select(index)
+
+
+def _text(text: str, bad: set[int], start: int) -> ft.Text:
+    """1 行の文字。食い違う文字(`bad` は列ぜんたいでの位置、この行は `start` から)に印を付ける。
+
+    **色だけに頼らない。** 背景の色に加えて下線も引く(色の違いが分かりにくい人や、
+    白黒で刷るときのため)。色は theme の名前から取るので、明暗どちらでも読める。
+    """
+    if not bad:
+        return ft.Text(text, size=13, expand=True, selectable=True)
+    spans: list[ft.TextSpan] = []
+    i = 0
+    while i < len(text):
+        flag = (start + i) in bad
+        j = i
+        while j < len(text) and ((start + j) in bad) == flag:
+            j += 1
+        spans.append(ft.TextSpan(text[i:j], style=theme.DIFF_STYLE if flag else None))
+        i = j
+    return ft.Text(spans=spans, size=13, expand=True, selectable=True)
