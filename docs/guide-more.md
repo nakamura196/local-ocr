@@ -47,6 +47,7 @@ URL をコピーしてから「IIIF マニフェスト」を押すと、コピ�
 | Apple Vision（Mac のみ） | 日本語・英語・中国語 | 現代の活字・手書き | 不要 |
 | NDL古典籍OCR Lite | 日本語（漢文を含む） | 古典籍・くずし字 | 83MB |
 | NDLOCR Lite | 日本語 | 近代資料の活字・手書き | 157MB |
+| PP-OCRv6 small | 中国語・英語・日本語。ラテン文字の言語 | 活字。小さくて速い | 31MB |
 | PaddleOCR-VL | 中国語・日本語・英語ほか多数 | 漢籍・多言語、縦書き | 1.8GB |
 | Yigdzin-1 | チベット語 | チベット語の資料 | 1.7GB |
 
@@ -100,6 +101,7 @@ for image in sorted(folder.iterdir()):
 | `paddle-vl` | PaddleOCR-VL |
 | `ndl-koten-lite` | NDL古典籍OCR Lite |
 | `ndl-lite` | NDLOCR Lite |
+| `ppocrv6-small` | PP-OCRv6 small |
 | `yigdzin` | Yigdzin-1 |
 | `apple-vision` | Apple Vision（Mac のみ） |
 

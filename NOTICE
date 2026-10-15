@@ -3,7 +3,7 @@ Local OCR — attribution for bundled and downloaded components
 
 このファイルは 3 つに分かれています。
 
-  A. 読む道具（モデル）— NDL 2 種、PaddleOCR-VL、Yigdzin-1、PhotiLines_v2
+  A. 読む道具（モデル）— NDL 2 種、PaddleOCR-VL、PP-OCR、Yigdzin-1、PhotiLines_v2
   B. 同梱する実行ファイル — llama.cpp、LLVM OpenMP
   C. 配布物（.app / .msix）に入る Python の依存
 
@@ -84,6 +84,28 @@ PaddleOCR-VL  (PaddlePaddle)
 
 取得するだけなので、Local OCR が配るものの中にモデルは入りません。
 それでも上の表示を残します。
+
+--------------------------------------------------------------------
+PP-OCR  (PaddlePaddle)
+--------------------------------------------------------------------
+
+「読む道具」のうち PP-OCR の仲間（いまは ppocrv6-small）の
+モデル (.onnx) と設定・文字の一覧は、初回に次から取得します。
+**同梱はしていません。**
+
+  PP-OCRv6 small（公式の ONNX。そのまま取得）
+    https://huggingface.co/PaddlePaddle/PP-OCRv6_small_det_onnx
+    https://huggingface.co/PaddlePaddle/PP-OCRv6_small_rec_onnx
+
+  Copyright (c) PaddlePaddle Authors. All Rights Reserved.
+  Licensed under the Apache License, Version 2.0
+  https://www.apache.org/licenses/LICENSE-2.0
+
+  - PP-OCRv6 small は、PaddlePaddle 自身が ONNX で出しているものを、そのまま
+    取得して使っています。改変していません。モデルカードの license は apache-2.0 です。
+  - src/local_ocr/ppocr/ は、公式の PaddleOCR 3.x（Apache-2.0）の前処理・後処理の
+    手順を、numpy と onnxruntime で書き直したものです。どこを変えたかは
+    src/local_ocr/ppocr/__init__.py に書いてあります。
 
 --------------------------------------------------------------------
 Yigdzin-1  (Buddhist Digital Resource Center)

@@ -6,10 +6,15 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from functools import partial
+
 from .apple_vision import AppleVisionEngine
 from .base import Check, Engine, Line, Progress, Result, runs_here
 from .ndl import NdlKotenLiteEngine, NdlLiteEngine
 from .paddle_vl import PaddleVLEngine
+from .ppocr import MODELS as PPOCR_MODELS
+from .ppocr import PpocrEngine
 from .yigdzin import YigdzinEngine
 
 __all__ = [
@@ -24,10 +29,13 @@ __all__ = [
 ]
 
 # 並び順がそのまま画面の並び。取得の要らないものを上に置く。
-_ALL: list[type] = [
+# エンジンのクラス、または引数なしで 1 つ作る関数。PP-OCR の仲間は `ppocr.MODELS` の
+# データから作るので、モデルを足しても、ここは直さない。
+_ALL: list[Callable[[], Engine]] = [
     AppleVisionEngine,
     NdlKotenLiteEngine,
     NdlLiteEngine,
+    *[partial(PpocrEngine, model) for model in PPOCR_MODELS],
     PaddleVLEngine,
     YigdzinEngine,
 ]
@@ -40,4 +48,4 @@ def available_engines() -> list[Engine]:
 
 def all_engines() -> list[Engine]:
     """OS を問わず全部。設定画面は「この OS では使えません」も並べて見せる。"""
-    return [cls() for cls in _ALL]
+    return [make() for make in _ALL]

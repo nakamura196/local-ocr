@@ -28,6 +28,7 @@ eyebrow: Local OCR 技術資料
 | `windows-ocr` | Windows 標準 OCR | Windows | 不要 | 同上。`Windows.Media.Ocr` |
 | `ndl-lite` | NDLOCR Lite | 両方 | 150MB | 近代資料・活字（済） |
 | `ndl-koten-lite` | NDL古典籍OCR Lite | 両方 | 79MB | 古典籍・くずし字（済） |
+| `ppocrv6-small` | PP-OCRv6（活字・多言語） | 両方 | 31MB | 活字。ラテン文字の言語も。小さくて速い（済） |
 | `paddle-vl` | PaddleOCR-VL | 両方 | 約 1.8GB | 漢籍・多言語・版面解析 |
 | `tibetan` | BDRC Yigdzin 1 | 両方 | 未定 | チベット語（**保留**） |
 
@@ -40,6 +41,7 @@ eyebrow: Local OCR 技術資料
 | 読む道具 | 効くか |
 |---|---|
 | NDL 2 種 | **効く。** レイアウト検出 → 文字認識の 2 段。検出を飛ばして認識だけ呼ぶ |
+| PP-OCR の仲間 | **効く。** 検出 → 読み取りの 2 段。検出を飛ばして読み取りだけ呼ぶ |
 | Tesseract | **効く。** `--psm 7`（1 行として読む） |
 | PaddleOCR-VL | 効かない。渡した画像をそのまま読む（ページ全体なら「Spotting:」で行を見つけさせられる） |
 | Apple Vision / Windows 標準 | 選べない。OS の中で完結している |
@@ -53,6 +55,7 @@ eyebrow: Local OCR 技術資料
 （「Spotting:」なら行ごとの位置が返る。下の「窓口の口」）。
 
 **共通の口は `engines/base.py` の `Engine`。** 足すときは `engines/__init__.py` の一覧に 1 行足すだけ。
+（PP-OCR の仲間は、`engines/ppocr.py` の `MODELS` にデータを 1 件足すだけ。手順は `docs/adding-an-engine.md`）
 取得・キャッシュ・進捗・失敗時の文面は共通側が持ち、エンジンには書かない。
 
 ### 各エンジンの実装メモ
@@ -81,6 +84,27 @@ eyebrow: Local OCR 技術資料
   枠のある校正の流れでは、枠ごとに切って渡すのが正しい
 - **チベット語**: BDRC「Yigdzin 1」（Apache-2.0）は **PaddleOCR-VL-1.6 の派生**なので同じ道に乗る見込み。
   ただし配布は safetensors のみで **GGUF が無い**。変換の実験が要るため v1 では見送る
+- **PP-OCR の仲間**（済。いまは `ppocrv6-small` だけ）: 上流は
+  [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)（**Apache-2.0**、表示が要る → `NOTICE`）。
+  構成は 行の検出（DB）→ 切り出し → 読み取り（CTC）。**モデルは ONNX で、1 つ 1 つを
+  `engines/ppocr.py` の `PpocrModel` というデータで書く。** クラスは 1 つ。
+  - **公式が `PaddlePaddle/<名前>_onnx` で ONNX を出している**（v6、v5 の各言語など。次に足す候補は v5 の言語別の読み取り）。
+    足すときは変換も再配布も要らず、公式の repo を動かない番号（コミット）つきで指すだけ。
+    公式に無いものだけ、paddle2onnx で変換して自前の repo に置く（`scripts/ppocr/convert.py`）
+  - **しきい値・入力の高さ・文字の一覧は、公式の `inference.yml` から読む**
+    （`ppocr/config.py`。PyYAML は入れず、必要な形だけ読む小さな読み手）。
+    yml が無いモデルは PP-OCRv5 の公式の値（`Params` の既定）になる
+  - 読みの中身は `local_ocr/ppocr/`（numpy と onnxruntime だけ。OpenCV は使わない）。
+    元は IIIF Kasane（ブラウザ版）の TypeScript 実装で、公式の PaddleOCR 3.7.0 と同じ行に分かれる
+  - 取得先は `ppocr/<repo 名>/<番号の頭 7 文字>/` に置く（公式の repo はどれも `inference.onnx` なので）。
+    検出が同じモデルどうし（v5 の言語別など）は、検出のファイルを 1 つ共有する
+  - **同じ言語を読むモデルは 2 つ並べない**（利用者が迷うため）。新しい版が上回るなら置き換える。
+    v5 mobile も作って比べたが、v6 small が同じ 47 行で読み違いが少なく、ラテン文字の言語も読めるので v6 だけにした
+  - 速さの目安（M 系 Mac・1437×2185 の英語の活字 1 ページ・47 行）: 検出 0.2 秒 + 読み取り 1.0 秒。
+    **検出は長辺 2048px に縮めてから行う**（公式は原寸。縮めても同じ行に分かれた）
+  - 実測（同じ 1 ページ）: v5 と v6 small は同じ 47 行。v5 が読み違えた字
+    （`verifed`・`18l3`・`eficacy`・`ftted`）を v6 は正しく読んだ。一方 v6 は
+    引用符の前後に空白を入れ損ねる所があった
 
 ## 入口
 
