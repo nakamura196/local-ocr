@@ -517,8 +517,10 @@ macOS の `.dmg` を GitHub Releases で配るだけなら要りません。
 - [x] **`store/screenshots/{ja,en}/`（2026-09-22）。** CI の Windows runner で
       撮った（`scripts/screenshot-windows.ps1`、1486×973、要件の 1366×768 以上）。
       settings.json を仕込んで言語を固定したので、runner の既定言語に依存しない。
-      **まだ「起動直後の何も読んでいない画面」だけ。** README の macOS 版
-      （画像を読ませて認識済み）と同じ形にするのは次の課題
+      **2026-10-16 に 5 枚に増やした**（読み取り済み・くらべる・IIIF・TEI 書き出し・
+      起動直後）。見本を開いて読み終えるまではアプリ自身が進める
+      （`src/local_ocr/ui/scene.py`）。掲載中の画像を入れ替えるときは
+      `store_submit.py --replace-screenshots`
 - [ ] `scripts/store_submit.py` — 申請 API。まだ持ってきていない。次回の更新
       （アプリ内容の差し替え）で要るかどうかは、そのときに判断する
       - **`--check` を申請の直前に挟まない**（1 回目が通って 2 回目が 403 になる）

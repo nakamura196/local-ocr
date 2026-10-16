@@ -66,12 +66,8 @@ character recognition
 
 ## スクリーンショット
 
-`store/screenshots/en/01-landing.png`(1486×973。要件の1366×768以上)。
-2026-09-22、CIのWindows runnerで`scripts/screenshot-windows.ps1`(雛形は
-archival-packager)が撮った。settings.jsonを仕込んで言語をenに固定している
-(runnerの既定言語には依存しない)。
+`store/screenshots/en/` の 5 枚(01-read / 02-compare / 03-iiif / 04-tei /
+05-landing、どれも 1486×973)。撮り方と中身は listing-ja.md の
+「スクリーンショット」と同じ(言語だけ en に固定)。
 **掲載情報には言語ごとに1枚以上の画像が要る**(archival-packagerが実測。
-画像なしで送ると `NoScreenshotsOfAnyType` で確定段階から弾かれる) — ja側も
-同じ手順で撮ってある。
-**まだ「起動直後の何も読んでいない画面」だけ。** README のmacOS版(画像を
-読ませて認識済み)と同じ形にするのは次の課題。
+画像なしで送ると `NoScreenshotsOfAnyType` で確定段階から弾かれる)。

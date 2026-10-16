@@ -93,11 +93,25 @@ nakamura.satoru@mail.u-tokyo.ac.jp
 
 ## スクリーンショット
 
-`store/screenshots/ja/01-landing.png`(1486×973。要件の1366×768以上)。
-2026-09-22、CIのWindows runnerで`scripts/screenshot-windows.ps1`が撮った
-(settings.jsonを仕込んで言語をjaに固定)。**まだ「起動直後の何も読んでいない
-画面」だけ。** README のmacOS版(画像を読ませて認識済み)と同じ形にするのは
-次の課題。差し替えるときは撮り直すこと。
+`store/screenshots/ja/` の 5 枚（どれも 1486×973。要件の 1366×768 以上）。
+名前の順がそのまま掲載の順になる。
+
+1. `01-read.png` 読み終えた版面。行の枠と、読んだ行の一覧
+2. `02-compare.png` くらべる画面。2 つの道具の食い違いに色が付いている
+3. `03-iiif.png` IIIF マニフェストから開いた束（95 ページの 2 ページ目）
+4. `04-tei.png` 保存の品書き（テキスト / TEI/XML）
+5. `05-landing.png` 起動直後
+
+2026-10-16、CI の Windows runner で `scripts/screenshot-windows.ps1` が撮った。
+見本は酉蓮社所蔵『阿毘達磨大毘婆沙論』（東洋文庫の IIIF で公開中）。
+見本を開いて読み終えるところまでは、アプリ自身が進める
+（`src/local_ocr/ui/scene.py`。環境変数 `LOCAL_OCR_SCENE` のときだけ動く）。
+読んだ結果は CI の上で実際に読ませたもの。
+CI では NDL古典籍OCR Lite と NDLOCR Lite だけを使う。PaddleOCR-VL は GPU の無い
+CI では 1 ページに 5 分以上かかり、時間切れになった。
+
+掲載中の画像を入れ替えるときは `scripts/store_submit.py --replace-screenshots`。
+付けないと、既に画像のある掲載情報には触らない。
 
 ---
 
