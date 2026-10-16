@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING
 import flet as ft
 from PIL import Image
 
-from ..core import export, fetch, reading
+from ..core import agree, export, fetch, prefs, reading
 from ..core.reading import Region
 from ..engines import Result
 from . import status, theme
@@ -107,6 +107,10 @@ class WorkView:
         )
 
         self.columns: list[ResultColumn] = []
+        # 異同に色を付けるか。くらべる画面で切り替え、次の起動にも覚えておく。
+        self.highlight = bool(prefs.get("compare_diff", True))
+        self._agree_key: object = None
+        self._agree: dict[str, tuple[set[int], float | None]] = {}
 
     @property
     def doc(self) -> Doc | None:
@@ -291,6 +295,9 @@ class WorkView:
             ready = self._ready(engine)
             box = ft.Checkbox(
                 label=engine_short(engine),
+                # 字を小さく詰めて、道具 2 つ分の幅(602)に 5 つを 1 段で収める。
+                label_style=ft.TextStyle(size=12),
+                visual_density=ft.VisualDensity.COMPACT,
                 value=engine.id in self.compare_ids and ready,
                 disabled=not ready,
                 tooltip=None if ready else t("compare.not_fetched.detail"),
@@ -316,14 +323,37 @@ class WorkView:
             width=self._right_width(),
             content=ft.Column(
                 [
-                    _pane_header(
-                        [
-                            ft.Text(t("work.mode.compare"), size=13, weight=ft.FontWeight.W_600),
-                            # **expand で残りの幅を渡す。** 横並びの中に置いた Row は
-                            # 幅の上限を知らず、wrap しても折り返さずに右で切れる
-                            # (道具 6 つ以上で起きた)。
-                            ft.Row(picks, spacing=4, wrap=True, expand=True),
-                        ]
+                    # **題名とスイッチを 1 段目、道具の選択を 2 段目に分ける。** 同じ段に
+                    # 並べると、スイッチの札が幅を取り、道具 2 つ分の幅(602)では
+                    # チェック欄が 3 段に折り返した。
+                    ft.Container(
+                        content=ft.Column(
+                            [
+                                ft.Row(
+                                    [
+                                        ft.Text(
+                                            t("work.mode.compare"),
+                                            size=13,
+                                            weight=ft.FontWeight.W_600,
+                                            expand=True,
+                                        ),
+                                        ft.Switch(
+                                            label=t("compare.diff"),
+                                            value=self.highlight,
+                                            on_change=self._on_highlight,
+                                        ),
+                                    ],
+                                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                                ),
+                                # 縦並びの中なら幅の上限が渡るので、wrap で折り返す。
+                                ft.Row(picks, spacing=0, wrap=True),
+                            ],
+                            spacing=2,
+                        ),
+                        padding=ft.Padding.symmetric(horizontal=12, vertical=8),
+                        border=ft.Border.only(
+                            bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT)
+                        ),
                     ),
                     # **横のスクロールバーは常に出す。** 列が窓に収まらないとき、
                     # 右の列は隠れる。バーが出ていないと、隠れていることに気づけない。
@@ -731,6 +761,53 @@ class WorkView:
         self.strip.plain(t("work.engine.changed", engine=engine_label(self.state.engine)))
         self.page.update()
 
+    # --- 異同の色 -------------------------------------------------------
+    #
+    # 版面に出している結果(primary)を基準にする。版面の列は「他の道具のどれかと
+    # 合わない文字」(校正で見る所)、ほかの列は「版面の結果と合わない文字」。
+    # 読めなかった列・まだ読んでいない列は、数に入れない。
+
+    def agreement(self, engine_id: str) -> tuple[set[int], float | None]:
+        """その列で色を付ける文字の位置と、版面の結果との一致率(版面の列と、比べる相手が無いときは None)。"""
+        job = self.state.job
+        texts = {}
+        if self.highlight and job is not None:
+            for eid in self.compare_ids:
+                run = job.runs.get(eid)
+                if run is not None and run.result is not None:
+                    # 画面に並べる行を改行でつないだものを比べる(位置が行に戻せる)。
+                    texts[eid] = "\n".join(ln.text for ln in run.lines)
+        primary = job.primary if job else ""
+        key = (primary, tuple(sorted(texts.items())))
+        if key != self._agree_key:
+            self._agree_key = key
+            self._agree = self._compute_agreement(primary, texts)
+        return self._agree.get(engine_id, (set(), None))
+
+    @staticmethod
+    def _compute_agreement(
+        primary: str, texts: dict[str, str]
+    ) -> dict[str, tuple[set[int], float | None]]:
+        if primary not in texts or len(texts) < 2:
+            return {}
+        out: dict[str, tuple[set[int], float | None]] = {}
+        others = {eid: text for eid, text in texts.items() if eid != primary}
+        for eid, text in others.items():
+            out[eid] = agree.compare(text, texts[primary])
+        out[primary] = (agree.disputed(texts[primary], list(others.values())), None)
+        return out
+
+    def refresh_columns(self) -> None:
+        """色の基準が変わったので、全部の列を描き直す(読み終えた・版面を替えた・切り替えた)。"""
+        for col in self.columns:
+            col.sync()
+
+    def _on_highlight(self, event) -> None:
+        self.highlight = bool(event.control.value)
+        prefs.save(compare_diff=self.highlight)
+        self.refresh_columns()
+        self.page.update()
+
     def use_result(self, engine_id: str) -> None:
         """くらべた中から、版面に重ねる 1 つを選ぶ。"""
         job = self.state.job
@@ -738,7 +815,7 @@ class WorkView:
             return
         job.primary = engine_id
         self.selected = -1
-        self._render()
+        self._render()  # 列も描き直す(色の基準が替わる)
         self.state.remember(job)
         self.page.update()
 
@@ -1179,8 +1256,9 @@ class WorkView:
             # 1 つで読んだときは、いま読んだ道具の結果を版面に出す。
             prefer=not many,
         )
-        if col:
-            col.sync()  # 結果が入れば、その列の状態表示は sync が引っ込める
+        # 結果が入れば、その列の状態表示は sync が引っ込める。
+        # 読み終えた列が増えると、ほかの列の色も変わるので全部描き直す。
+        self.refresh_columns()
         if not job.primary or job.primary == engine.id:
             # 最初に読み終えた道具を版面に出す。待たせない。
             self._render()

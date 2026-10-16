@@ -256,10 +256,36 @@ def test_use_this_puts_the_chosen_engines_boxes_on_the_page(fakes):
 
     assert job.primary == last.id
     assert _lefts(view) == pytest.approx(_expected_lefts(view, last))
-    # 「版面に表示中」は選んだ列だけ。ほかの列には「これを使う」が出る。
+    # 「使用中」は選んだ列だけ。ほかの列には「これを使う」が出る。
     for col in view.columns:
         shown = col.engine.id == last.id
         assert isinstance(col.badge.content, ft.TextButton) is not shown
+
+
+def test_in_use_badge_says_when_the_result_has_no_positions(fakes, monkeypatch):
+    """位置を返さない結果を使っているときは「使用中（位置なし）」。画像に枠が出ないため。"""
+    from local_ocr.engines import Line
+
+    ctx, engines = fakes
+    monkeypatch.setattr(
+        engines[0], "recognize", lambda img: Result(text="a", lines=[Line("a")])
+    )
+    job = _page(ctx)
+    ctx.state.compare = True
+    ctx.state.compare_ids = {e.id for e in engines[:2]}
+    view = WorkView(ctx)
+    view.build()
+    asyncio.run(view._run_all(job, engines[:2]))
+
+    def badge(engine_id: str) -> str:
+        col = next(c for c in view.columns if c.engine.id == engine_id)
+        return col.badge.content.content.controls[1].value
+
+    view.use_result(engines[0].id)
+    assert badge(engines[0].id) == "使用中（位置なし）"
+    assert view._boxes == []
+    view.use_result(engines[1].id)
+    assert badge(engines[1].id) == "使用中"
 
 
 def test_many_engines_to_compare_can_be_scrolled_sideways(fakes):
@@ -290,9 +316,12 @@ def test_many_engines_to_pick_wrap_instead_of_running_off_the_right(fakes):
 
     pane = view.body.content.controls[2]
     header = pane.content.controls[0].content
+    # 道具の選択はスイッチと同じ段に置かず、2 段目に幅いっぱいで並べる。
+    # 同じ段だとスイッチの札に幅を取られ、道具 2 つ分の幅で 3 段に折り返した。
+    assert isinstance(header, ft.Column)
+    assert isinstance(header.controls[0].controls[1], ft.Switch)
     picks = header.controls[1]
-    # 横並びの中では、expand で幅をもらわないと wrap しても折り返さない。
-    assert picks.wrap and picks.expand
+    assert picks.wrap
     # 1 つずつ名前の幅に縮めておかないと、1 行に 1 つずつになる。
     assert len(picks.controls) == len(engines)
     for pick in picks.controls:
@@ -366,3 +395,48 @@ def test_a_dragged_area_is_read_and_replaces_only_its_lines(fakes):
 
     view.clear_region()
     assert view.region is None and view._sel.visible is False
+
+
+def _marked(text_control: ft.Text) -> str:
+    """色が付いている文字だけを取り出す。"""
+    return "".join(s.text for s in (text_control.spans or []) if s.style is not None)
+
+
+def test_compare_marks_the_characters_where_engines_disagree(fakes):
+    from local_ocr.engines import Line
+    ctx, engines = fakes
+    job = _page(ctx)
+    ctx.state.compare = True
+    ctx.state.compare_ids = {engines[0].id, engines[1].id, engines[2].id}
+    texts = {0: "勸學篇\n天地玄黃", 1: "勸學篇天\n地玄黃", 2: "勤學篇\n天地玄黃"}
+    for n, text in texts.items():
+        lines = [Line(s) for s in text.split("\n")]
+        job.record(Run(engines[n].id, result=Result(text=text, lines=lines)))
+    job.primary = engines[0].id
+    view = WorkView(ctx)
+    view.build()
+
+    def cols(n):
+        col = next(c for c in view.columns if c.engine.id == engines[n].id)
+        first = col._rows[0].content.controls[1]
+        return col, first
+
+    # 版面の列(0)は、2 番で異同のある「勸」に印が付く。行の切り方だけの違い(1)は無関係。
+    col0, first0 = cols(0)
+    assert _marked(first0) == "勸"
+    assert t("compare.disputed", n=1) in col0.agree.value
+    # 行の切り方だけが違う 1 は、全部一致。印は付かず、一致率は 100%。
+    col1, first1 = cols(1)
+    assert first1.spans is None
+    assert t("compare.match", rate=100) in col1.agree.value
+    # 2 は「勤」に印と、一致率。
+    col2, first2 = cols(2)
+    assert _marked(first2) == "勤"
+    assert t("compare.match", rate=85) in col2.agree.value
+
+    # スイッチを切ると、印も一致率も消える。
+    view.highlight = False
+    view.refresh_columns()
+    col2, first2 = cols(2)
+    assert first2.spans is None
+    assert t("compare.match", rate=85) not in col2.agree.value

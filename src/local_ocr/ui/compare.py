@@ -26,6 +26,10 @@ class ResultColumn:
         self.engine = engine
         self.state = view.state
         self.meta = theme.muted("")
+        # 一致率・異同の数は統計とは別の行に出す。同じ行に足すと、列の幅(300)では
+        # 「異同 7 字」の「字」だけが次の行に落ちる。
+        self.agree = theme.muted("")
+        self.agree.visible = False
         self.status = status.Inline(bar_width=120)
         self.status.hide()
         self.badge = ft.Container()
@@ -56,6 +60,7 @@ class ResultColumn:
                                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                                 ),
                                 self.meta,
+                                self.agree,
                                 self.status.control,
                             ],
                             spacing=4,
@@ -78,18 +83,32 @@ class ResultColumn:
         run = job.runs.get(self.engine.id) if job else None
         primary = bool(job and job.primary == self.engine.id)
 
+        bad, rate = self.view.agreement(self.engine.id)
+        self.agree.value = ""
         if run and run.result is not None:
             self.meta.value = t(
                 "compare.stats", count=len(run.lines), chars=len(run.text), timing=run.timing
             )
+            if rate is not None:
+                # 切り捨てる。100% と出るのは本当に異同が無いときだけ。
+                self.agree.value = t("compare.match", rate=int(rate * 100))
+            elif primary and bad:
+                self.agree.value = t("compare.disputed", n=len(bad))
             self.status.hide()
         elif run and run.error:
             self.meta.value = ""
         else:
             self.meta.value = ""
 
+        self.agree.visible = bool(self.agree.value)
+
+        # 「使用中」= コピーと保存に使う結果。画像に枠が出るのは行の位置がある結果だけ
+        # (PaddleOCR-VL の既定の読み方は位置を返さない)。無いときは、そう添える。
+        showing = t("compare.showing")
+        if run and run.result is not None and not any(ln.box for ln in run.lines):
+            showing += f"（{t('compare.nopos')}）"
         self.badge.content = (
-            theme.chip(ft.Icons.VISIBILITY_OUTLINED, t("compare.showing"), ft.Colors.PRIMARY)
+            theme.chip(ft.Icons.CHECK_CIRCLE_OUTLINE, showing, ft.Colors.PRIMARY)
             if primary
             else (
                 ft.TextButton(
@@ -102,7 +121,11 @@ class ResultColumn:
         )
 
         lines = run.lines if run else []
-        self._rows = [self._row(i, ln.text, primary) for i, ln in enumerate(lines)]
+        self._rows = []
+        start = 0
+        for i, ln in enumerate(lines):
+            self._rows.append(self._row(i, ln.text, primary, bad, start))
+            start += len(ln.text) + 1  # 行は改行でつないだ文字列として比べている
         self.list.controls = self._rows or [
             ft.Container(
                 content=theme.muted(
@@ -127,7 +150,9 @@ class ResultColumn:
             return None
         return ft.Colors.with_opacity(0.14, ft.Colors.PRIMARY)
 
-    def _row(self, index: int, text: str, primary: bool) -> ft.Container:
+    def _row(
+        self, index: int, text: str, primary: bool, bad: set[int], start: int
+    ) -> ft.Container:
         return ft.Container(
             content=ft.Row(
                 [
@@ -137,7 +162,7 @@ class ResultColumn:
                         ),
                         width=22,
                     ),
-                    ft.Text(text, size=13, expand=True, selectable=True),
+                    _text(text, bad, start),
                 ],
                 vertical_alignment=ft.CrossAxisAlignment.START,
             ),
@@ -153,3 +178,23 @@ class ResultColumn:
         if job and job.primary != self.engine.id and self.engine.id in job.runs:
             self.view.use_result(self.engine.id)
         self.view.select(index)
+
+
+def _text(text: str, bad: set[int], start: int) -> ft.Text:
+    """1 行の文字。異同のある文字(`bad` は列ぜんたいでの位置、この行は `start` から)に印を付ける。
+
+    **色だけに頼らない。** 背景の色に加えて下線も引く(色の違いが分かりにくい人や、
+    白黒で刷るときのため)。色は theme の名前から取るので、明暗どちらでも読める。
+    """
+    if not bad:
+        return ft.Text(text, size=13, expand=True, selectable=True)
+    spans: list[ft.TextSpan] = []
+    i = 0
+    while i < len(text):
+        flag = (start + i) in bad
+        j = i
+        while j < len(text) and ((start + j) in bad) == flag:
+            j += 1
+        spans.append(ft.TextSpan(text[i:j], style=theme.DIFF_STYLE if flag else None))
+        i = j
+    return ft.Text(spans=spans, size=13, expand=True, selectable=True)

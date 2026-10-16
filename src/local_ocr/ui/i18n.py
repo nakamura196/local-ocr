@@ -195,7 +195,9 @@ _STRINGS: dict[str, tuple[str, str]] = {
     ),
     # --- くらべる ---
     "compare.pick": ("くらべる道具を 1 つ以上選んでください", "Choose at least one engine to compare"),
-    "compare.showing": ("版面に表示中", "Shown on the page"),
+    "compare.showing": ("使用中", "In use"),
+    # 使用中の結果に行の位置が無いとき(画像に枠が出ない)。札だと誤解されるので添える
+    "compare.nopos": ("位置なし", "no positions"),
     "compare.use": ("これを使う", "Use this"),
     "compare.not_fetched": ("まだ取得していません", "Not downloaded yet"),
     "compare.not_fetched.detail": (
@@ -204,6 +206,9 @@ _STRINGS: dict[str, tuple[str, str]] = {
     ),
     "compare.empty": ("まだ読んでいません", "Nothing read yet"),
     "compare.stats": ("{count} 行 / {chars} 文字 / {timing}", "{count} lines / {chars} chars / {timing}"),
+    "compare.match": ("一致 {rate}%", "{rate}% match"),
+    "compare.disputed": ("異同 {n} 字", "{n} differ"),
+    "compare.diff": ("異同に色を付ける", "Highlight differences"),
     "compare.summary": ("{engine} {count} 行 / {timing}", "{engine} {count} lines / {timing}"),
     # --- 設定 ---
     "settings.engines": ("読む道具", "OCR engines"),
