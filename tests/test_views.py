@@ -282,10 +282,11 @@ def test_in_use_badge_says_when_the_result_has_no_positions(fakes, monkeypatch):
         return col.badge.content.content.controls[1].value
 
     view.use_result(engines[0].id)
-    assert badge(engines[0].id) == "使用中（位置なし）"
+    # 期待値は t() で作る。CI は英語の環境で走るため、日本語の文字列を直に書かない
+    assert badge(engines[0].id) == t("compare.showing.nopos")
     assert view._boxes == []
     view.use_result(engines[1].id)
-    assert badge(engines[1].id) == "使用中"
+    assert badge(engines[1].id) == t("compare.showing")
 
 
 def test_many_engines_to_compare_can_be_scrolled_sideways(fakes):
