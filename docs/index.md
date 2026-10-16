@@ -26,7 +26,7 @@ quick_links:
 | | |
 | --- | --- |
 | Windows | [Microsoft ストア](https://apps.microsoft.com/detail/9N07ZD1ZPKBZ)（無料。ストアが署名するので警告は出ません） |
-| macOS | [Releases](https://github.com/nakamura196/local-ocr/releases/latest)（署名・公証済みの `.dmg`） |
+| macOS | [Releases](https://github.com/nakamura196/local-ocr/releases/latest)（署名・公証済みの `.dmg`。macOS 12 以降） |
 
 最新版の変更点は [更新履歴](changelog.html) にあります。Mac 版は自動では新しい版に替わらないので、ときどきご確認ください。
 
