@@ -197,7 +197,7 @@ _STRINGS: dict[str, tuple[str, str]] = {
     "compare.pick": ("くらべる道具を 1 つ以上選んでください", "Choose at least one engine to compare"),
     "compare.showing": ("使用中", "In use"),
     # 使用中の結果に行の位置が無いとき(画像に枠が出ない)。札だと誤解されるので添える
-    "compare.nopos": ("位置なし", "no positions"),
+    "compare.showing.nopos": ("使用中（位置なし）", "In use (no positions)"),
     "compare.use": ("これを使う", "Use this"),
     "compare.not_fetched": ("まだ取得していません", "Not downloaded yet"),
     "compare.not_fetched.detail": (

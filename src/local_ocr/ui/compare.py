@@ -106,7 +106,7 @@ class ResultColumn:
         # (PaddleOCR-VL の既定の読み方は位置を返さない)。無いときは、そう添える。
         showing = t("compare.showing")
         if run and run.result is not None and not any(ln.box for ln in run.lines):
-            showing += f"（{t('compare.nopos')}）"
+            showing = t("compare.showing.nopos")
         self.badge.content = (
             theme.chip(ft.Icons.CHECK_CIRCLE_OUTLINE, showing, ft.Colors.PRIMARY)
             if primary
