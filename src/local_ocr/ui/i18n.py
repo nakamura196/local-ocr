@@ -447,7 +447,8 @@ _STRINGS: dict[str, tuple[str, str]] = {
     # --- 時間 ---
     "timing.plain": ("{seconds} 秒", "{seconds}s"),
     "timing.with_prepare": ("{seconds} 秒（準備 {prepare} 秒）", "{seconds}s (setup {prepare}s)"),
-    # --- 読む道具の名前(訳が無ければ engines/ 側の日本語をそのまま出す) ---
+    # --- 読む道具の名前(訳が無ければ engines/ 側の日本語をそのまま出す。
+    #     道具が label_en / note_en を持っていれば、英語の画面ではそれを出す) ---
     "engine.apple-vision.label": ("Apple Vision（macOS 標準）", "Apple Vision (macOS built-in)"),
     "engine.apple-vision.note": (
         "取得するものはありません。現代の活字・手書きに向きます。",
@@ -562,11 +563,11 @@ def t(key: str, **kw: object) -> str:
 
 def engine_label(engine) -> str:
     """読む道具の名前。訳が無ければ、道具が持っている日本語をそのまま出す。"""
-    return _lookup(f"engine.{engine.id}.label", engine.label)
+    return _lookup(f"engine.{engine.id}.label", engine.label, getattr(engine, "label_en", None))
 
 
 def engine_note(engine) -> str:
-    return _lookup(f"engine.{engine.id}.note", engine.note)
+    return _lookup(f"engine.{engine.id}.note", engine.note, getattr(engine, "note_en", None))
 
 
 def engine_short(engine) -> str:
@@ -574,8 +575,13 @@ def engine_short(engine) -> str:
     return re.split(r"[（(]", engine_label(engine))[0].strip()
 
 
-def _lookup(key: str, fallback: str) -> str:
+def _lookup(key: str, fallback: str, fallback_en: str | None = None) -> str:
+    """鍵の訳を引く。鍵が無いときは、道具が自分で持っている文字を出す。
+
+    道具が英語を持っている（`label_en` / `note_en`）なら、英語の画面ではそれを出す。
+    PP-OCR の仲間のように、足すたびに i18n.py を直さずに済ませるため。
+    """
     pair = _STRINGS.get(key)
     if pair is None:
-        return fallback
+        return fallback_en if fallback_en and current() == "en" else fallback
     return pair[1] if current() == "en" else pair[0]
