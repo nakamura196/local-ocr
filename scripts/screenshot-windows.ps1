@@ -12,7 +12,7 @@
 # （見本の版面と、モデルの初回取得）。
 #
 # 撮るもの（1 言語あたり 5 枚）:
-#   01-read     1 つで読み終えた版面（PaddleOCR-VL）
+#   01-read     1 つで読み終えた版面（NDL古典籍OCR Lite）
 #   02-compare  くらべる画面。食い違いに色が付いている
 #   03-iiif     IIIF マニフェストから開いた束（95 ページの 2 ページ目を読んだところ）
 #   04-tei      保存の品書きを開いたところ（TEI/XML）
@@ -170,8 +170,7 @@ function Assert-NoError {
 }
 
 # 場面が読み終わるのを待つ。アプリが LOCAL_OCR_SCENE_DONE に ok か error を書く。
-# PaddleOCR-VL は初回に 1.8GB を取りに行き、CI の CPU で読むので長めに待つ。
-function Wait-Scene([string]$Done, [int]$Minutes = 30) {
+function Wait-Scene([string]$Done, [int]$Minutes = 15) {
     $limit = $Minutes * 6
     for ($i = 1; $i -le $limit; $i++) {
         Start-Sleep -Seconds 10
@@ -254,39 +253,61 @@ function Run-Scene([hashtable]$Scene) {
     return $app
 }
 
-# --- 01 と 04: 1 つで読む → 保存の品書き ----------------------------------
-$app = Run-Scene @{
-    LOCAL_OCR_SCENE = "read"; LOCAL_OCR_SCENE_SOURCE = $sample
-    LOCAL_OCR_SCENE_ENGINES = "paddle-vl"
+# **CI では NDL の 2 つだけで読む。** PaddleOCR-VL は、GPU の無い CI では
+# 1 ページに 5 分以上かかり、アプリ側の待ち時間を超えて落ちた（2026-10-16 実測）。
+#
+# 場面ごとに失敗を受け止め、撮れたものは残す。1 つ目でこけて 0 枚、を避ける。
+$failed = @()
+function Try-Scene([string]$Name, [scriptblock]$Body) {
+    try { & $Body } catch {
+        Write-Host "::warning::$Name を撮れませんでした: $($_.Exception.Message)"
+        $script:failed += $Name
+    }
 }
-$r = Save-Window $app.Handle (Join-Path $OutDir "01-read.png")
-# 「保存」は上の帯の右端（設定の歯車）の 1 つ左。窓の右端から約 120px、
-# 上端から約 61px（タイトルバー込み）。窓の幅を 1500 に固定しているので位置は動かない。
-Click-At $r 120 61
-Start-Sleep -Seconds 2
-[void](Save-Window $app.Handle (Join-Path $OutDir "04-tei.png"))
-Stop-App $app
+
+# --- 01 と 04: 1 つで読む → 保存の品書き ----------------------------------
+Try-Scene "01-read / 04-tei" {
+    $app = Run-Scene @{
+        LOCAL_OCR_SCENE = "read"; LOCAL_OCR_SCENE_SOURCE = $sample
+        LOCAL_OCR_SCENE_ENGINES = "ndl-koten-lite"
+    }
+    $r = Save-Window $app.Handle (Join-Path $OutDir "01-read.png")
+    # 「保存」は上の帯の右端（設定の歯車）の 1 つ左。窓の右端から約 120px、
+    # 上端から約 61px（タイトルバー込み）。窓の幅を 1500 に固定しているので位置は動かない。
+    Click-At $r 120 61
+    Start-Sleep -Seconds 2
+    [void](Save-Window $app.Handle (Join-Path $OutDir "04-tei.png"))
+    Stop-App $app
+}
 
 # --- 02: くらべる（食い違いに色が付く） ------------------------------------
-$app = Run-Scene @{
-    LOCAL_OCR_SCENE = "compare"; LOCAL_OCR_SCENE_SOURCE = $sample
-    LOCAL_OCR_SCENE_ENGINES = "ndl-koten-lite,paddle-vl"
+Try-Scene "02-compare" {
+    $app = Run-Scene @{
+        LOCAL_OCR_SCENE = "compare"; LOCAL_OCR_SCENE_SOURCE = $sample
+        LOCAL_OCR_SCENE_ENGINES = "ndl-koten-lite,ndl-lite"
+    }
+    [void](Save-Window $app.Handle (Join-Path $OutDir "02-compare.png"))
+    Stop-App $app
 }
-[void](Save-Window $app.Handle (Join-Path $OutDir "02-compare.png"))
-Stop-App $app
 
 # --- 03: IIIF マニフェストから開いた束 -------------------------------------
-$app = Run-Scene @{
-    LOCAL_OCR_SCENE = "read"; LOCAL_OCR_SCENE_SOURCE = $Manifest
-    LOCAL_OCR_SCENE_ENGINES = "ndl-koten-lite"; LOCAL_OCR_SCENE_PAGE = "2"
+Try-Scene "03-iiif" {
+    $app = Run-Scene @{
+        LOCAL_OCR_SCENE = "read"; LOCAL_OCR_SCENE_SOURCE = $Manifest
+        LOCAL_OCR_SCENE_ENGINES = "ndl-koten-lite"; LOCAL_OCR_SCENE_PAGE = "2"
+    }
+    [void](Save-Window $app.Handle (Join-Path $OutDir "03-iiif.png"))
+    Stop-App $app
 }
-[void](Save-Window $app.Handle (Join-Path $OutDir "03-iiif.png"))
-Stop-App $app
 
 # --- 05: 起動直後 -----------------------------------------------------------
 # 場面の指定なしで起動する。前の場面で選んだ道具が残らないよう、既定に戻す。
-Set-Pref "engine" "ndl-koten-lite"
-Set-Pref "last" $null
-$app = Start-App @{}
-[void](Save-Window $app.Handle (Join-Path $OutDir "05-landing.png"))
-Stop-App $app
+Try-Scene "05-landing" {
+    Set-Pref "engine" "ndl-koten-lite"
+    Set-Pref "last" $null
+    $app = Start-App @{}
+    [void](Save-Window $app.Handle (Join-Path $OutDir "05-landing.png"))
+    Stop-App $app
+}
+
+if ($failed.Count -gt 0) { throw "撮れなかった場面: $($failed -join ', ')" }

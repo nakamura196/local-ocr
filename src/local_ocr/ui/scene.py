@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 ENV = "LOCAL_OCR_SCENE"
 
-# モデルの取得(PaddleOCR-VL は 1.8GB)と、CI の CPU での読み取りを待つ上限。
+# モデルの取得と、CI の CPU での読み取りを待つ上限。
 TIMEOUT = 30 * 60
 
 

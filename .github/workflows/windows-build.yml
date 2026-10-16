@@ -21,7 +21,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    # 掲載画像の撮影で、PaddleOCR-VL（1.8GB）の取得と CPU での読み取りを待つ。
+    # 掲載画像の撮影（NDL のモデル取得と、場面ごとの起動・読み取り）を待つ。
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
