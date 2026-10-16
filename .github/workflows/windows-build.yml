@@ -21,7 +21,8 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 40
+    # 掲載画像の撮影で、PaddleOCR-VL（1.8GB）の取得と CPU での読み取りを待つ。
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -71,15 +72,18 @@ jobs:
       #
       # 宣言した言語（ja-JP/en-US）ごとに 1 枚以上必須（archival-packager が
       # 実際に "NoScreenshotsOfAnyType" で弾かれた）。
-      - name: Launch the packaged app and take a screenshot (English)
+      #
+      # 1 言語あたり 5 枚（読み取り済みの版面・くらべる・IIIF・TEI 書き出し・起動直後）。
+      # 見本を開いて読み終えるところまでは、アプリ自身が進める（src/local_ocr/ui/scene.py）。
+      - name: Launch the packaged app and take screenshots (English)
         continue-on-error: true
         shell: pwsh
-        run: pwsh -File scripts/screenshot-windows.ps1 -Lang en -Out screenshots\en\01-landing.png
+        run: pwsh -File scripts/screenshot-windows.ps1 -Lang en
 
-      - name: Launch the packaged app and take a screenshot (Japanese)
+      - name: Launch the packaged app and take screenshots (Japanese)
         continue-on-error: true
         shell: pwsh
-        run: pwsh -File scripts/screenshot-windows.ps1 -Lang ja -Out screenshots\ja\01-landing.png
+        run: pwsh -File scripts/screenshot-windows.ps1 -Lang ja
 
       - name: Upload the screenshot
         continue-on-error: true
