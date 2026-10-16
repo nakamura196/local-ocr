@@ -63,6 +63,45 @@ CLEANUP_PACKAGE_FILES=(
   '**/PyObjCTest'
 )
 
+#
+# **macOS 27 / Xcode 27 で組み立てるための 2 つの回避 (2026-10-15)。**
+#
+# (1) lipo: macOS 27 の lipo は `lipo FILE -verify_arch arm64 x86_64` を
+#     「-verify_arch requires exactly one input file」で断る (1 つずつなら通る)。
+#     Flutter 3.44.7 はこの形で両 arch を確かめるので、
+#       Binary .../FlutterMacOS does not contain architectures "arm64 x86_64".
+#     と、両方含んでいるのに失敗する。Flutter SDK の該当箇所 (darwin.dart の
+#     thinFramework) を 1 つずつ確かめる形に直す。不具合が実際に起きるときだけ当て、
+#     当て済みなら何もしない。SDK の作り直しの分、次の 1 回だけ遅くなる。
+#     **lipo を包むスクリプトを PATH の先頭に置く案は効かない。** Xcode の中で
+#     Flutter の組み立ては 2 回動き、2 回目は Xcode が PATH を作り直して
+#     自分の道具のフォルダを先頭に置く (2026-10-15 に実測)。
+#
+# (2) Xcode 27 は「最も古い対応 macOS」が 12.0 未満の対象を拒否する。
+#     Flet の雛形は 11.0 (Pods は 10.15) で、Flet に変える設定が無い。
+#     XCODE_XCCONFIG_FILE で 12.0 をすべての対象に当てる。
+#     **このため配布物は macOS 12 以上向けになる (11 Big Sur では起動しない)。**
+if [[ "${TARGET}" == "macos" ]]; then
+  FLUTTER_VERSION=$(uv run python -c "import flet.version as v; print(v.flutter_version)")
+  FLUTTER_ROOT="${HOME}/flutter/${FLUTTER_VERSION}"
+  PATCH="${PWD}/scripts/macos27/flutter-lipo-verify-arch.patch"
+  ENGINE_BIN=$(find "${FLUTTER_ROOT}/bin/cache/artifacts/engine/darwin-x64" -path "*macos-arm64_x86_64/FlutterMacOS.framework/Versions/A/FlutterMacOS" 2>/dev/null | head -1)
+  if [[ -z "${ENGINE_BIN}" ]]; then
+    print "  Flutter ${FLUTTER_VERSION} がまだありません。flet build が入れたあと、もう一度このスクリプトを走らせてください"
+  elif lipo "${ENGINE_BIN}" -verify_arch arm64 x86_64 2>/dev/null; then
+    : # lipo は正常。直しは要らない
+  elif git -C "${FLUTTER_ROOT}" apply --reverse --check "${PATCH}" 2>/dev/null; then
+    print "  Flutter ${FLUTTER_VERSION}: lipo の直しは当て済み"
+  elif git -C "${FLUTTER_ROOT}" apply "${PATCH}"; then
+    rm -f "${FLUTTER_ROOT}/bin/cache/flutter_tools.snapshot" "${FLUTTER_ROOT}/bin/cache/flutter_tools.stamp"
+    print "  Flutter ${FLUTTER_VERSION}: lipo の直しを当てた (戻すときは git -C ${FLUTTER_ROOT} checkout packages/flutter_tools)"
+  else
+    print -u2 "  Flutter ${FLUTTER_VERSION}: lipo の直しが当たりません (Flutter 側のコードが変わった)。上流で直っていないか確かめてください"
+    exit 1
+  fi
+  export XCODE_XCCONFIG_FILE="${PWD}/scripts/macos27/deployment-target.xcconfig"
+fi
+
 print "[1/3] flet build ${TARGET}"
 # --yes: Flutter SDK 導入の対話確認を飛ばす（無いと CI で EOFError）
 # --no-rich-output: Windows のコンソールが進捗のスピナー文字を encode できない
