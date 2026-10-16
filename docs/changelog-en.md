@@ -20,6 +20,13 @@ Downloaded recognition models are kept, so you don't need to fetch them again.
 
 Dates are in Japan time.
 
+### 0.1.11 (16 October 2026)
+
+- New engine: PP-OCRv6 (print, multilingual). It reads print line by line — Chinese, English, Japanese, and Latin-script languages. Download it in Settings (about 30 MB). Vertical pages are read with columns in right-to-left order.
+- On the compare screen, characters that the engines read differently are now highlighted. Each column also shows its match rate and the number of differing characters. Turn the colours off with "Highlight differences".
+- On the compare screen, the result used for copying and saving is now labelled "In use". A result without line positions (no boxes on the image) is labelled "In use (no positions)".
+- The Mac version now needs macOS 12 (Monterey) or later. It no longer runs on macOS 11 (Big Sur).
+
 ### 0.1.10 (4 October 2026)
 
 - Yigdzin-1 (Tibetan) could fail with "Could not start the OCR engine" and read nothing. This happened on computers where another app was already using the port its reading engine listens on (8081). If the port is taken, it now moves to a free one. PaddleOCR-VL is fixed in the same way.

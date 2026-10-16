@@ -30,7 +30,7 @@ Choose the recognition engine to match the material.
 | | |
 | --- | --- |
 | Windows | [Microsoft Store](https://apps.microsoft.com/detail/9N07ZD1ZPKBZ) (free; the Store signs it, so no SmartScreen warning) |
-| macOS | [Releases](https://github.com/nakamura196/local-ocr/releases/latest) (signed and notarised `.dmg`) |
+| macOS | [Releases](https://github.com/nakamura196/local-ocr/releases/latest) (signed and notarised `.dmg`; macOS 12 or later) |
 
 What's new in each version is in the [changelog](changelog-en.html). The Mac version doesn't update itself, so check it now and then.
 
