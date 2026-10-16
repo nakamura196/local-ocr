@@ -1,0 +1,7 @@
+// Xcode 27 は「最も古い対応 macOS」が 12.0 未満の対象を拒否する。
+//   error: The macOS deployment target 'MACOSX_DEPLOYMENT_TARGET' is set to 11.0,
+//   but the range of supported deployment target versions is 12.0 to 27.0.x.
+// Flet の雛形は Runner が 11.0、CocoaPods の各 Pod が 10.15 で、Flet に変える設定が無い。
+// build.zsh が XCODE_XCCONFIG_FILE にこのファイルを渡す。xcodebuild はこれを
+// すべての対象 (Runner と Pods) の設定より優先して当てる。
+MACOSX_DEPLOYMENT_TARGET = 12.0

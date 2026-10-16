@@ -1,0 +1,34 @@
+diff --git a/packages/flutter_tools/lib/src/build_system/targets/darwin.dart b/packages/flutter_tools/lib/src/build_system/targets/darwin.dart
+index 3f81eb17221..053c1897cb2 100644
+--- a/packages/flutter_tools/lib/src/build_system/targets/darwin.dart
++++ b/packages/flutter_tools/lib/src/build_system/targets/darwin.dart
+@@ -80,14 +80,22 @@ abstract class UnpackDarwin extends Target {
+     ]);
+     final lipoInfo = infoResult.stdout as String;
+ 
+-    final ProcessResult verifyResult = await environment.processManager.run(<String>[
+-      'lipo',
+-      frameworkBinaryPath,
+-      '-verify_arch',
+-      ...archList,
+-    ]);
++    // macOS 27 の lipo は -verify_arch に複数の arch を渡すと
++    // "requires exactly one input file" で失敗するので、1 つずつ確かめる。
++    var verifyFailed = false;
++    for (final String arch in archList) {
++      final ProcessResult verifyResult = await environment.processManager.run(<String>[
++        'lipo',
++        frameworkBinaryPath,
++        '-verify_arch',
++        arch,
++      ]);
++      if (verifyResult.exitCode != 0) {
++        verifyFailed = true;
++      }
++    }
+ 
+-    if (verifyResult.exitCode != 0) {
++    if (verifyFailed) {
+       throw Exception(
+         'Binary $frameworkBinaryPath does not contain architectures "$archs".\n'
+         '\n'
