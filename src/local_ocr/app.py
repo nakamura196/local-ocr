@@ -17,7 +17,7 @@ from PIL import Image
 
 from .core import ocr as ocr_call
 from .core import source
-from .ui import theme
+from .ui import scene, theme
 from .ui.i18n import engine_label, t
 from .ui.iiif_input import IIIFDialog
 from .ui.landing import LandingView
@@ -66,6 +66,10 @@ class App:
         bridge = self.state.bridge
         if bridge is not None and bridge.enabled:
             page.run_task(self._open_bridge)
+
+        # Store の掲載画像を撮るときだけ(ui/scene.py)。ふだんは何もしない。
+        if scene.wanted():
+            page.run_task(scene.play, self)
 
     async def _open_bridge(self) -> None:
         """窓口を開け直す。**待つのは糸(スレッド)の中。** ここで待つと、

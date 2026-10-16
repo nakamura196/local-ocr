@@ -75,15 +75,24 @@ DEFAULT_LISTING_KEYS = {"ja": "ja-jp", "en": "en-us"}
 #: 説明文に必ず入っていてほしい開発者名。0.1.0 でこれが抜けたまま公開した。
 DEVELOPER_NAMES = {"ja": ("中村",), "en": ("Nakamura",)}
 
-#: 言語コード -> その言語の掲載情報に付けるスクリーンショット。
+#: 言語コード -> その言語の掲載情報に付けるスクリーンショットの置き場所。
+#: 中の .png を名前の順に並べたものが、そのまま掲載の順になる（01-read.png …）。
 #: **掲載情報は言語ごとに 1 枚以上の画像を要求される。** 英語の掲載情報を
 #: 画像なしで送ったところ、確定の段階で弾かれた（2026-09-13）:
 #:     InvalidParameterValue Validation error: NoScreenshotsOfAnyType
-#: 既に画像が付いている掲載情報には触らない（下の attach_screenshots）。
-SCREENSHOTS = {
-    "ja": ROOT / "store" / "screenshots" / "ja" / "01-landing.png",
-    "en": ROOT / "store" / "screenshots" / "en" / "01-landing.png",
+#: 既に画像が付いている掲載情報には、--replace-screenshots のときだけ触る
+#: （下の attach_screenshots）。
+SCREENSHOT_DIRS = {
+    "ja": ROOT / "store" / "screenshots" / "ja",
+    "en": ROOT / "store" / "screenshots" / "en",
 }
+
+
+def screenshots(lang: str) -> list[Path]:
+    files = sorted(SCREENSHOT_DIRS[lang].glob("*.png"))
+    if not files:
+        raise StoreError(f"{lang} のスクリーンショットがありません: {SCREENSHOT_DIRS[lang]}")
+    return files
 
 
 class StoreError(RuntimeError):
@@ -275,32 +284,37 @@ def apply_listings(submission: dict, listings_by_lang: dict[str, dict]) -> dict:
     return submission
 
 
-def attach_screenshots(submission: dict) -> list[tuple[str, Path]]:
-    """画像を持たない掲載情報に、その言語のスクリーンショットを 1 枚足す。
+def attach_screenshots(submission: dict, replace: bool = False) -> list[tuple[str, Path]]:
+    """掲載情報に、その言語のスクリーンショットを付ける。
 
-    **既に画像が付いているものには触らない。** 日本語の掲載情報には
-    以前から 1 枚入っていて、こちらで撮り直したものより新しいとは限らない。
-    足りないところだけ埋める。
+    **既定では、既に画像が付いているものには触らない。** 足りないところだけ埋める。
+    `replace` のときは、付いているスクリーンショットに削除の印を付け、
+    store/screenshots/<言語>/ の全部と入れ替える（ロゴなど、ほかの種類の画像には触らない）。
 
     返すのは「zip に入れるべきファイル」の一覧。返り値が空なら送るものは無い。
     """
     pending: list[tuple[str, Path]] = []
     listings = submission.setdefault("listings", {})
-    for lang, source in SCREENSHOTS.items():
+    for lang in SCREENSHOT_DIRS:
         for key in listing_keys(submission, lang):
             base = listings.setdefault(key, {}).setdefault("baseListing", {})
             images = base.setdefault("images", [])
-            if any(i.get("fileStatus") != "PendingDelete" for i in images):
+            shots = [
+                i for i in images
+                if i.get("imageType") == "Screenshot" and i.get("fileStatus") != "PendingDelete"
+            ]
+            if shots and not replace:
                 continue
-            if not source.is_file():
-                raise StoreError(f"{lang} のスクリーンショットがありません: {source}")
-            name = f"{key}/{source.name}"
-            images.append({
-                "fileName": name,
-                "fileStatus": "PendingUpload",
-                "imageType": "Screenshot",
-            })
-            pending.append((name, source))
+            for i in shots:
+                i["fileStatus"] = "PendingDelete"
+            for source in screenshots(lang):
+                name = f"{key}/{source.name}"
+                images.append({
+                    "fileName": name,
+                    "fileStatus": "PendingUpload",
+                    "imageType": "Screenshot",
+                })
+                pending.append((name, source))
     return pending
 
 
@@ -488,6 +502,8 @@ def main() -> int:
                         help="進行中の申請を引き継ぐ。確定の途中で落ちたとき用")
     parser.add_argument("--skip-upload", action="store_true",
                         help="パッケージの送信を省く。既に上げ終わっているとき用")
+    parser.add_argument("--replace-screenshots", action="store_true",
+                        help="掲載中のスクリーンショットを store/screenshots/ の全部と入れ替える")
     parser.add_argument("--status", action="store_true",
                         help="進行中の申請の状態だけ見届ける。読むだけで、何も変えない")
     parser.add_argument("--discard", action="store_true",
@@ -555,7 +571,9 @@ def main() -> int:
         print(f"MSIX が見つかりません: {args.msix}", file=sys.stderr)
         return 1
 
-    images = [] if args.package_only else attach_screenshots(submission)
+    images = [] if args.package_only else attach_screenshots(
+        submission, replace=args.replace_screenshots
+    )
     for name, _path in images:
         print(f"スクリーンショットを足します: {name}")
 
