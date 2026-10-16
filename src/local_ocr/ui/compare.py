@@ -26,6 +26,10 @@ class ResultColumn:
         self.engine = engine
         self.state = view.state
         self.meta = theme.muted("")
+        # 一致率・異同の数は統計とは別の行に出す。同じ行に足すと、列の幅(300)では
+        # 「異同 7 字」の「字」だけが次の行に落ちる。
+        self.agree = theme.muted("")
+        self.agree.visible = False
         self.status = status.Inline(bar_width=120)
         self.status.hide()
         self.badge = ft.Container()
@@ -56,6 +60,7 @@ class ResultColumn:
                                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                                 ),
                                 self.meta,
+                                self.agree,
                                 self.status.control,
                             ],
                             spacing=4,
@@ -79,20 +84,23 @@ class ResultColumn:
         primary = bool(job and job.primary == self.engine.id)
 
         bad, rate = self.view.agreement(self.engine.id)
+        self.agree.value = ""
         if run and run.result is not None:
             self.meta.value = t(
                 "compare.stats", count=len(run.lines), chars=len(run.text), timing=run.timing
             )
             if rate is not None:
                 # 切り捨てる。100% と出るのは本当に異同が無いときだけ。
-                self.meta.value += " / " + t("compare.match", rate=int(rate * 100))
+                self.agree.value = t("compare.match", rate=int(rate * 100))
             elif primary and bad:
-                self.meta.value += " / " + t("compare.disputed", n=len(bad))
+                self.agree.value = t("compare.disputed", n=len(bad))
             self.status.hide()
         elif run and run.error:
             self.meta.value = ""
         else:
             self.meta.value = ""
+
+        self.agree.visible = bool(self.agree.value)
 
         # 「使用中」= コピーと保存に使う結果。画像に枠が出るのは行の位置がある結果だけ
         # (PaddleOCR-VL の既定の読み方は位置を返さない)。無いときは、そう添える。

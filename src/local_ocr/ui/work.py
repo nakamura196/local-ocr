@@ -295,6 +295,9 @@ class WorkView:
             ready = self._ready(engine)
             box = ft.Checkbox(
                 label=engine_short(engine),
+                # 字を小さく詰めて、道具 2 つ分の幅(602)に 5 つを 1 段で収める。
+                label_style=ft.TextStyle(size=12),
+                visual_density=ft.VisualDensity.COMPACT,
                 value=engine.id in self.compare_ids and ready,
                 disabled=not ready,
                 tooltip=None if ready else t("compare.not_fetched.detail"),
@@ -320,19 +323,37 @@ class WorkView:
             width=self._right_width(),
             content=ft.Column(
                 [
-                    _pane_header(
-                        [
-                            ft.Text(t("work.mode.compare"), size=13, weight=ft.FontWeight.W_600),
-                            # **expand で残りの幅を渡す。** 横並びの中に置いた Row は
-                            # 幅の上限を知らず、wrap しても折り返さずに右で切れる
-                            # (道具 6 つ以上で起きた)。
-                            ft.Row(picks, spacing=4, wrap=True, expand=True),
-                            ft.Switch(
-                                label=t("compare.diff"),
-                                value=self.highlight,
-                                on_change=self._on_highlight,
-                            ),
-                        ]
+                    # **題名とスイッチを 1 段目、道具の選択を 2 段目に分ける。** 同じ段に
+                    # 並べると、スイッチの札が幅を取り、道具 2 つ分の幅(602)では
+                    # チェック欄が 3 段に折り返した。
+                    ft.Container(
+                        content=ft.Column(
+                            [
+                                ft.Row(
+                                    [
+                                        ft.Text(
+                                            t("work.mode.compare"),
+                                            size=13,
+                                            weight=ft.FontWeight.W_600,
+                                            expand=True,
+                                        ),
+                                        ft.Switch(
+                                            label=t("compare.diff"),
+                                            value=self.highlight,
+                                            on_change=self._on_highlight,
+                                        ),
+                                    ],
+                                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                                ),
+                                # 縦並びの中なら幅の上限が渡るので、wrap で折り返す。
+                                ft.Row(picks, spacing=0, wrap=True),
+                            ],
+                            spacing=2,
+                        ),
+                        padding=ft.Padding.symmetric(horizontal=12, vertical=8),
+                        border=ft.Border.only(
+                            bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT)
+                        ),
                     ),
                     # **横のスクロールバーは常に出す。** 列が窓に収まらないとき、
                     # 右の列は隠れる。バーが出ていないと、隠れていることに気づけない。
