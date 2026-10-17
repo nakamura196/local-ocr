@@ -21,6 +21,11 @@ Downloaded recognition models are kept, so you don't need to fetch them again.
 
 Dates are in Japan time.
 
+### 0.1.12 (17 October 2026)
+
+- PP-OCRv6 (print, multilingual) now uses a larger, more accurate model (medium instead of small). On 28 pages of classical Chinese woodblock prints, the characters that differ from PaddleOCR-VL fell from 167 to 148. In exchange, a page takes about 6 seconds instead of about 3.
+- If you downloaded PP-OCRv6 in 0.1.11, download it again in Settings (about 140 MB).
+
 ### 0.1.11 (16 October 2026)
 
 - New engine: PP-OCRv6 (print, multilingual). It reads print line by line — Chinese, English, Japanese, and Latin-script languages. Download it in Settings (about 30 MB). Vertical pages are read with columns in right-to-left order.
