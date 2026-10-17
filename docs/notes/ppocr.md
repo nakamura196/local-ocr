@@ -37,3 +37,28 @@
   横書きの頁も縦書きの頁も、1 頁ずつしか見ていない。縦書きの頁の上端の物差し（目盛り）は読んでしまう（そのまま残した）
 - 主張の候補: 公式の ONNX と numpy だけで、OpenCV なしに PP-OCRv6 を手元の CPU で 1 頁 1 秒前後で動かせる（上の実測）
 - 関連: PaddleOCR（PaddlePaddle Authors, Apache-2.0）https://github.com/PaddlePaddle/PaddleOCR
+
+## 2026-10-17 small を medium に置き換えた
+
+- **試したこと**: PP-OCRv6 の medium（公式の ONNX、`PaddlePaddle/PP-OCRv6_medium_{det,rec}_onnx`）を、
+  0.1.11 の small と同じ漢籍の版本 28 頁で読み、PaddleOCR-VL の読みと突き合わせた。
+  medium を足すか置き換えるかを決めるため
+- **測り方**: 各頁の本文を difflib で VL の読みと並べ、3 字以下の置き換えを数えた（VL を正解とは見なさない。違いの数）
+- **結果**:
+  - VL と違う字: small 167 → medium 148（約 1 割減）
+  - small の明らかな誤りのうち 59 字が medium で直った（首→晉、華→卒、薩埵→庄氣 など）
+  - medium だけが VL と違う 40 字は、大半が字体の差（別/别、寶/寳、荊/荆、麼/麽）。
+    はっきりした誤りは「末後句」の末→未、「白法」の白→自 など
+  - 「拖泥帶水」の 1 か所は、medium が水、VL が永と読んだ。medium が正しいと見ているが、版面では未確認
+  - 1 頁の時間: small 3.1 秒 / medium 6.3 秒（手元の Mac、ONNX Runtime の CPU）。大きさ: 31MB / 139MB
+  - 公式の表（W-Avg / 古典籍 Anc.）: small 81.3 / 71.1、medium 83.2 / 72.4。今回の差の向きと合う
+- **決めたこと**: small を medium に置き換えた（id も `ppocrv6-medium` に変えた）。
+  同じ言語を読むモデルを 2 つ並べない方針どおり。small の利点は速さだけで、
+  その差（3 秒と 6 秒）は VL（1 頁 20 秒〜1 分）と比べれば小さい。大きさも VL の 1.8GB よりずっと小さい
+- **却下した案**: small と medium を並べる。どちらを選べばよいか利用者が迷う。
+  id を `ppocrv6-small` のまま中身だけ替える。名前と中身が食い違う
+- **途中で分かったこと**: 取得したファイルは repo 名と rev ごとの場所に置くので、置き換えると
+  medium は「未取得」に見え、取得し直しになる。small のファイル（31MB）は消えずに残る。
+  保存してあった道具の選択が `ppocrv6-small` でも、起動時に既定の道具に戻るので壊れない
+- **限界**: 人手の翻刻とはくらべていない。漢籍の版本以外（活字・欧文）では medium と small をくらべていない。
+  Windows では速さを測っていない

@@ -28,7 +28,7 @@ eyebrow: Local OCR 技術資料
 | `windows-ocr` | Windows 標準 OCR | Windows | 不要 | 同上。`Windows.Media.Ocr` |
 | `ndl-lite` | NDLOCR Lite | 両方 | 150MB | 近代資料・活字（済） |
 | `ndl-koten-lite` | NDL古典籍OCR Lite | 両方 | 79MB | 古典籍・くずし字（済） |
-| `ppocrv6-small` | PP-OCRv6（活字・多言語） | 両方 | 31MB | 活字。ラテン文字の言語も。小さくて速い（済） |
+| `ppocrv6-medium` | PP-OCRv6（活字・多言語） | 両方 | 139MB | 活字。ラテン文字の言語も。1 頁数秒（済。0.1.11 は small） |
 | `paddle-vl` | PaddleOCR-VL | 両方 | 約 1.8GB | 漢籍・多言語・版面解析 |
 | `tibetan` | BDRC Yigdzin 1 | 両方 | 未定 | チベット語（**保留**） |
 
@@ -84,7 +84,7 @@ eyebrow: Local OCR 技術資料
   枠のある校正の流れでは、枠ごとに切って渡すのが正しい
 - **チベット語**: BDRC「Yigdzin 1」（Apache-2.0）は **PaddleOCR-VL-1.6 の派生**なので同じ道に乗る見込み。
   ただし配布は safetensors のみで **GGUF が無い**。変換の実験が要るため v1 では見送る
-- **PP-OCR の仲間**（済。いまは `ppocrv6-small` だけ）: 上流は
+- **PP-OCR の仲間**（済。いまは `ppocrv6-medium` だけ）: 上流は
   [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)（**Apache-2.0**、表示が要る → `NOTICE`）。
   構成は 行の検出（DB）→ 切り出し → 読み取り（CTC）。**モデルは ONNX で、1 つ 1 つを
   `engines/ppocr.py` の `PpocrModel` というデータで書く。** クラスは 1 つ。
