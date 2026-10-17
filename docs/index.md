@@ -4,6 +4,7 @@ eyebrow: macOS · Windows
 lead: 画像に写っている文字を、手元のパソコンの中だけで読み取るアプリです。くずし字・漢籍・チベット語にも対応します。
 alternate: { title: English, url: en.html, lang: en }
 nav:
+  - { title: お知らせ, url: news.html }
   - { title: 使い方, url: guide.html }
   - { title: 更新履歴, url: changelog.html }
   - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
@@ -19,6 +20,13 @@ quick_links:
 資料に合わせて、読む道具（認識エンジン）を選べます。
 
 ![Local OCR の画面](images/screenshot-ja.png)
+
+### お知らせ
+
+- 2026年10月16日 [くらべる画面で、読みの異同に色が付くようになりました](news/2026-10-16-compare-diff.html)（動画あり）
+- 2026年10月16日 [読む道具に PP-OCRv6 を加えました](news/2026-10-16-ppocrv6.html)
+
+[お知らせの一覧](news.html)
 
 ### ダウンロード
 {: #download }

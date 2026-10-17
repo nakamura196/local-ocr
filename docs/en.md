@@ -7,6 +7,7 @@ eyebrow: macOS · Windows
 lead: Reads the characters in an image on your own computer. Nothing is sent anywhere. Handles kuzushiji, classical Chinese and Tibetan too.
 alternate: { title: 日本語, url: ./, lang: ja }
 nav:
+  - { title: News, url: news-en.html }
   - { title: Guide (Japanese), url: guide.html }
   - { title: Changelog, url: changelog-en.html }
   - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
@@ -24,6 +25,13 @@ Chinese (classical and modern), English and Tibetan.
 Choose the recognition engine to match the material.
 
 ![Local OCR window](images/screenshot-en.png)
+
+### News
+
+- 16 Oct 2026 [The compare screen now highlights where engines disagree](news/2026-10-16-compare-diff-en.html) (with video)
+- 16 Oct 2026 [PP-OCRv6 added as a recognition engine](news/2026-10-16-ppocrv6-en.html)
+
+[All news](news-en.html)
 
 ### Download
 

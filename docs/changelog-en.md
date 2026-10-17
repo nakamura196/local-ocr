@@ -8,6 +8,7 @@ lead: What changed in each version. Newest first.
 alternate: { title: 日本語, url: changelog.html, lang: ja }
 nav:
   - { title: Home, url: en.html }
+  - { title: News, url: news-en.html }
   - { title: Guide (Japanese), url: guide.html }
   - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
 footer: "Contact: nakamura.satoru@mail.u-tokyo.ac.jp"

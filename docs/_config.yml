@@ -32,6 +32,7 @@ defaults:
       footer: "お問い合わせ / Contact: nakamura.satoru@mail.u-tokyo.ac.jp"
       nav:
         - { title: トップ, url: ./ }
+        - { title: お知らせ, url: news.html }
         - { title: 使い方, url: guide.html }
         - { title: 更新履歴, url: changelog.html }
         - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
