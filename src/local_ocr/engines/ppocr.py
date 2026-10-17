@@ -1,4 +1,4 @@
-"""PaddleOCR PP-OCR の読む道具（いま入っているのは PP-OCRv6 small）。**モデルを足すときはデータを 1 件足すだけ。**
+"""PaddleOCR PP-OCR の読む道具（いま入っているのは PP-OCRv6 medium）。**モデルを足すときはデータを 1 件足すだけ。**
 
 PP-OCR の仲間は、行を探す部分（検出）と、1 行を読む部分（読み取り）と、文字の一覧が
 1 組になっている。検出は共通で、読み取りと一覧だけがモデルごとに違う。
@@ -91,24 +91,26 @@ class PpocrModel:
 
 # 公式が出している ONNX（PaddlePaddle/<名前>_onnx）。**変換も再配布も要らない。**
 # 中身は inference.onnx と inference.yml（しきい値・入力・文字の一覧）。
-V6_SMALL_DET = f"{HF}/PaddlePaddle/PP-OCRv6_small_det_onnx"
-V6_SMALL_DET_REV = "28fe5895c24fd108c19eb3e8479f4ab385fbfc62"
-V6_SMALL_REC = f"{HF}/PaddlePaddle/PP-OCRv6_small_rec_onnx"
-V6_SMALL_REC_REV = "b8f84f0b80c529de40b4fbb3544b84fa7233a513"
+# 0.1.11 は small（31MB）だった。漢籍 28 頁で PaddleOCR-VL と違う字が small 167 → medium 148 に
+# 減ったので medium に置き換えた（1 頁 3 秒 → 6 秒、docs/notes/ppocr.md の 2026-10-17）。
+V6_MEDIUM_DET = f"{HF}/PaddlePaddle/PP-OCRv6_medium_det_onnx"
+V6_MEDIUM_DET_REV = "61323801669c338b7891481ec7bac61ce31b576a"
+V6_MEDIUM_REC = f"{HF}/PaddlePaddle/PP-OCRv6_medium_rec_onnx"
+V6_MEDIUM_REC_REV = "50c7eacafc52fa7bcf4194e8cd08e46f8558504b"
 
 # 並び順がそのまま画面の並び。**足すときはここに 1 件書く。**
 # 同じ言語を読むモデルは 2 つ並べない（新しい版が上回るなら置き換える）。
 MODELS: list[PpocrModel] = [
     PpocrModel(
-        id="ppocrv6-small",
+        id="ppocrv6-medium",
         label="PP-OCRv6（活字・多言語）",
         label_en="PP-OCRv6 (print, multilingual)",
         hint="活字を行ごとに読みます。中国語・英語・日本語のほか、ラテン文字の言語にも向きます。",
         hint_en="Reads print line by line. Chinese, English, Japanese, and Latin-script languages.",
-        detector=PpocrFile(V6_SMALL_DET, V6_SMALL_DET_REV, "inference.onnx", 9_880_512),
-        recognizer=PpocrFile(V6_SMALL_REC, V6_SMALL_REC_REV, "inference.onnx", 21_159_378),
-        det_config=PpocrFile(V6_SMALL_DET, V6_SMALL_DET_REV, "inference.yml", 885),
-        rec_config=PpocrFile(V6_SMALL_REC, V6_SMALL_REC_REV, "inference.yml", 150_579),
+        detector=PpocrFile(V6_MEDIUM_DET, V6_MEDIUM_DET_REV, "inference.onnx", 62_032_837),
+        recognizer=PpocrFile(V6_MEDIUM_REC, V6_MEDIUM_REC_REV, "inference.onnx", 76_554_979),
+        det_config=PpocrFile(V6_MEDIUM_DET, V6_MEDIUM_DET_REV, "inference.yml", 886),
+        rec_config=PpocrFile(V6_MEDIUM_REC, V6_MEDIUM_REC_REV, "inference.yml", 150_580),
     ),
 ]
 

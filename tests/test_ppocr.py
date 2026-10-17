@@ -1,4 +1,4 @@
-"""PP-OCR の仲間（ppocrv5 / ppocrv5-latin / ppocrv6-small）のうち、モデルが無くても見られるところ。
+"""PP-OCR の仲間（ppocrv5 / ppocrv5-latin / ppocrv6-medium）のうち、モデルが無くても見られるところ。
 
 **モデルは CI に無い**（各 13〜31MB）。ここで見るのは、こちらが書いた部分:
 文字の一覧と設定の読み出し、CTC の復号、検出の後処理、取得先の決め方、登録の仕方。
@@ -49,9 +49,9 @@ LOCAL_B = PpocrModel(
 )
 
 
-def test_only_v6_small_is_registered():
-    assert [m.id for m in MODELS] == ["ppocrv6-small"]
-    assert "ppocrv6-small" in [e.id for e in all_engines()]
+def test_only_v6_medium_is_registered():
+    assert [m.id for m in MODELS] == ["ppocrv6-medium"]
+    assert "ppocrv6-medium" in [e.id for e in all_engines()]
 
 
 def test_all_engines_returns_fresh_instances():

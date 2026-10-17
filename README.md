@@ -62,7 +62,7 @@ into whatever tool you proofread in.
 | Windows OCR | Windows | — | — | Same. Not implemented yet |
 | [NDLOCR Lite](https://github.com/ndl-lab/ndlocr-lite) | both | 157 MB | Japanese | Modern Japanese print |
 | [NDL Kotenseki OCR Lite](https://github.com/ndl-lab/ndlkotenocr-lite) | both | 83 MB | Japanese (incl. kanbun) | Pre-modern Japanese, cursive |
-| [PP-OCRv6 small](https://github.com/PaddlePaddle/PaddleOCR) | both | 31 MB | Chinese, English, Japanese; Latin-script languages | Printed text. Small and fast |
+| [PP-OCRv6 medium](https://github.com/PaddlePaddle/PaddleOCR) | both | 139 MB | Chinese, English, Japanese; Latin-script languages | Printed text. Fast |
 | PaddleOCR-VL | both | ~1.8 GB | Chinese, Japanese, English and many more (109 per the upstream description) | Chinese classical texts, multilingual |
 | [Yigdzin-1](https://huggingface.co/nakamura196/yigdzin1-gguf) | both | ~1.7 GB | Tibetan | Tibetan texts |
 
@@ -148,7 +148,7 @@ CC BY 4.0, the PP-OCR models are Apache-2.0, and llama.cpp is MIT.
 | Windows 標準 OCR | Windows | 不要 | — | 同上。未実装 |
 | [NDLOCR Lite](https://github.com/ndl-lab/ndlocr-lite) | 両方 | 157MB | 日本語 | 近代資料・活字 |
 | [NDL古典籍OCR Lite](https://github.com/ndl-lab/ndlkotenocr-lite) | 両方 | 83MB | 日本語（漢文を含む） | 古典籍・くずし字 |
-| [PP-OCRv6 small](https://github.com/PaddlePaddle/PaddleOCR) | 両方 | 31MB | 中国語・英語・日本語。ラテン文字の言語 | 活字。小さくて速い |
+| [PP-OCRv6 medium](https://github.com/PaddlePaddle/PaddleOCR) | 両方 | 139MB | 中国語・英語・日本語。ラテン文字の言語 | 活字。速い |
 | PaddleOCR-VL | 両方 | 約 1.8GB | 中国語・日本語・英語ほか多数（配布元の説明では 109 言語） | 漢籍・多言語 |
 | [Yigdzin-1](https://huggingface.co/nakamura196/yigdzin1-gguf) | 両方 | 約 1.7GB | チベット語 | チベット語の資料 |
 
