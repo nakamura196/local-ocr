@@ -3,6 +3,8 @@
   "copyright": "2026 Satoru Nakamura",
   "primaryCategory": "PRODUCTIVITY",
   "secondaryCategory": "REFERENCE",
+  "_contentRights_comment": "他者のコンテンツを使うか。読み取りモデル (NDL: CC BY 4.0、PaddleOCR-VL: Apache 2.0) を取り込み、利用者が指定した IIIF の画像を表示するので「使う」。2026-11-01 に本人が画面で申告した値と同じ。",
+  "contentRightsDeclaration": "USES_THIRD_PARTY_CONTENT",
   "locales": {
     "ja": {
       "name": "Local OCR",
