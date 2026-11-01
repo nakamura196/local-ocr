@@ -1,0 +1,48 @@
+{
+  "_comment": "Mac App Store の掲載情報。scripts/mas_listing.py が App Store Connect に入れる。文面は store/listing-ja.md・listing-en.md（Microsoft ストア）を Mac 向けに直したもの。片方だけ直さないこと。",
+  "copyright": "2026 Satoru Nakamura",
+  "primaryCategory": "PRODUCTIVITY",
+  "secondaryCategory": "REFERENCE",
+  "locales": {
+    "ja": {
+      "name": "Local OCR",
+      "subtitle": "史料の文字を、手元のMacで読む",
+      "privacyPolicyUrl": "https://lo.ldas.jp/privacy-policy.html",
+      "supportUrl": "https://lo.ldas.jp/",
+      "marketingUrl": "https://lo.ldas.jp/",
+      "keywords": "OCR,くずし字,崩し字,古典籍,文字認識,デジタルアーカイブ,翻刻,史料,漢文,IIIF,TEI",
+      "promotionalText": "画像に写っている文字を、手元のMacの中だけで読み取ります。崩し字・漢文・現代の活字に対応します。",
+      "description": "Local OCRは、画像に写っている文字を認識し、テキストとして取り出すアプリケーションです。認識はすべて手元のMacの中で行われ、画像や認識結果が外部に送信されることはありません。\n\n前近代の史料(崩し字・漢文)を大量に翻刻する必要がある研究者・図書館員のために作りました。\n\nできること:\n・複数の認識エンジンから資料に合わせて選択(現代の活字、崩し字、漢文・多言語)\n・画像ファイル、クリップボード、フォルダ、IIIFマニフェストURLからの入力\n・プレーンテキスト(.txt)またはTEI/XML(.xml)での書き出し\n・同じページを2つのエンジンで読ませて結果を並べて比較\n\n特長:\n・ほかのソフトを入れる必要はありません。認識エンジンを動かす実行ファイルは同梱しています\n・原本を変更しません。読み取るだけです\n・外部送信をしません。認識モデルの取得(初回のみ)と、利用者が指定したIIIFマニフェストの取得を除き、通信は行いません\n\n想定している利用者:\n文書館・図書館・博物館・研究機関で、前近代の史料や古典籍のデジタル化・翻刻作業を担当する方。情報システムの専門家であることは前提としていません。\n\nご注意:\n・画面は日本語と英語です\n・PaddleOCR-VLエンジンの認識モデルは約1.8GBあり、初回使用時に取得します\n\n開発: 中村 覚(東京大学)、宮崎 展昌(鶴見大学)、會谷 佳光(東洋文庫)"
+    },
+    "en-US": {
+      "name": "Local OCR",
+      "subtitle": "On-device OCR for old texts",
+      "privacyPolicyUrl": "https://lo.ldas.jp/privacy-policy.html",
+      "supportUrl": "https://lo.ldas.jp/en.html",
+      "marketingUrl": "https://lo.ldas.jp/en.html",
+      "keywords": "OCR,kuzushiji,handwriting,digital archive,transcription,historical,classical Chinese,IIIF,TEI",
+      "promotionalText": "Reads the characters in an image entirely on your Mac. Handles Japanese cursive (kuzushiji), classical Chinese and modern print.",
+      "description": "Local OCR is an application that recognises the characters in an image and turns them into text. Recognition happens entirely on your Mac; no image or recognised text is sent anywhere.\n\nIt was built for researchers and librarians who need to transcribe large volumes of pre-modern material — cursive Japanese and classical Chinese in particular.\n\nWhat it does:\n• Several recognition engines to choose from, suited to different material (modern print, Japanese cursive (kuzushiji), and Chinese classical / multilingual text)\n• Reads image files, the clipboard, a folder of page images, or a IIIF manifest URL\n• Exports plain text (.txt) or TEI/XML (.xml)\n• Compares two engines run over the same page, side by side\n\nWhy you might use it:\n• Nothing else to install. The tools that run the recognition engines are bundled\n• Originals are never modified. Files are read only\n• Nothing is sent externally, apart from a one-time model download per engine and, if you use it, the IIIF manifest you point it at\n\nWho it is for:\nAnyone responsible for digitising and transcribing pre-modern documents or early printed books at an archive, library, museum or research institution. It does not assume you are an information systems specialist.\n\nPlease note:\n• The interface is Japanese and English\n• The PaddleOCR-VL engine's recognition model is about 1.8 GB and is downloaded the first time you use it\n\nDeveloped by Satoru Nakamura (The University of Tokyo), with Tensho Miyazaki (Tsurumi University) and Yoshimitsu Aitani (Toyo Bunko)."
+    }
+  },
+  "review": {
+    "contactFirstName": "Satoru",
+    "contactLastName": "Nakamura",
+    "contactPhone": "+81-3-5841-1615",
+    "contactEmail": "nakamura.satoru@mail.u-tokyo.ac.jp",
+    "demoAccountRequired": false,
+    "notes": "Local OCR recognises text in images (pre-modern Japanese and Chinese documents) entirely on the user's Mac. It is a free academic tool from The University of Tokyo. No account or sign-in is needed.\n\nHow to try it: launch the app, choose an image file (any photo of printed text works), and press Read. The first time an engine is used, its recognition model is downloaded (the NDL engines take a few seconds).\n\nAbout the bundled helper and network use:\n- The app bundles llama-server from llama.cpp (MIT licence). The app starts it as a child process, it listens only on 127.0.0.1, and it is used only to run the PaddleOCR-VL recognition model locally. This is why the app has the network.server entitlement. It does not accept connections from other machines.\n- Recognition models are downloaded the first time the user selects an engine: the NDL models from GitHub (ndl-lab), and the PaddleOCR-VL model (about 1.8 GB) from Hugging Face. Models are data (weights), not executable code; they are run by code bundled and signed in the app.\n- The only other network access is fetching a IIIF manifest and its images when the user enters a IIIF URL.\n- No personal data is collected or sent. Privacy policy: https://lo.ldas.jp/privacy-policy.html"
+  },
+  "ageRating": {
+    "enums_none": [
+      "alcoholTobaccoOrDrugUseOrReferences", "contests", "gamblingSimulated", "gunsOrOtherWeapons",
+      "medicalOrTreatmentInformation", "profanityOrCrudeHumor", "sexualContentGraphicAndNudity",
+      "sexualContentOrNudity", "horrorOrFearThemes", "matureOrSuggestiveThemes",
+      "violenceCartoonOrFantasy", "violenceRealisticProlongedGraphicOrSadistic", "violenceRealistic"
+    ],
+    "booleans_false": [
+      "advertising", "gambling", "healthOrWellnessTopics", "lootBox", "messagingAndChat",
+      "parentalControls", "ageAssurance", "socialMedia", "unrestrictedWebAccess", "userGeneratedContent"
+    ]
+  }
+}
