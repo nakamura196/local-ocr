@@ -14,12 +14,13 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 import jwt
 
 kid = os.environ["APP_STORE_API_KEY"].strip()
 iss = os.environ["APP_STORE_API_ISSUER"].strip()
-key = open(os.path.expanduser(f"~/.private_keys/AuthKey_{kid}.p8")).read()
+key = Path(f"~/.private_keys/AuthKey_{kid}.p8").expanduser().read_text()
 now = int(time.time())
 token = jwt.encode(
     {"iss": iss, "iat": now, "exp": now + 900, "aud": "appstoreconnect-v1"},
@@ -31,7 +32,7 @@ token = jwt.encode(
 method, path = sys.argv[1], sys.argv[2]
 body = sys.argv[3].encode() if len(sys.argv) > 3 else None
 if body and body.startswith(b"@"):
-    body = open(body[1:].decode(), "rb").read()
+    body = Path(body[1:].decode()).read_bytes()
 
 req = urllib.request.Request(
     "https://api.appstoreconnect.apple.com" + path,
