@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Mac App Store 版のアプリ本体用（sign-mas.zsh）。Developer ID 版は entitlements.plist。
+	  確かめた経緯は docs/notes/mas-sandbox.md。
+
+	  - network.client: モデルを Hugging Face から取る・IIIF の画像を取る
+	  - network.server: 同梱の llama-server が 127.0.0.1 で待ち受ける
+	    （子は inherit で親のサンドボックスを継ぐので、許可は親の側に要る）
+	  - files.user-selected.read-write: 画像・フォルダを選ぶ、書き出す
+	  - application-identifier / team-identifier: provisioning profile と一致しないと
+	    アップロードで弾かれる
+	-->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.network.server</key>
+	<true/>
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<key>com.apple.application-identifier</key>
+	<string>Q6S8JS6GWV.com.nakamura.localocr</string>
+	<key>com.apple.developer.team-identifier</key>
+	<string>Q6S8JS6GWV</string>
+</dict>
+</plist>
