@@ -132,3 +132,15 @@
 - **見つけた不具合（未対処）**: IIIF の場面で、2 回に 1 回ほど「版面を取り寄せられませんでした: No such file … .img.part -> .img」で止まる。
   同じページの画像を 2 か所から同時に取りに行き、一時ファイル（.part）の付け替えがぶつかっていると見られる（`core/iiif.py` のキャッシュ）。
   利用者の環境でも起こりうる
+
+## 2026-11-02: 自動の検査で network.server を指摘され、メモを直して出し直した
+
+- 11/1 提出の 0.1.12 が、自動の検査で止まった（UNRESOLVED_ISSUES）。指摘は「network.server を持つが、それに見合う機能が見当たらない」。
+  人の審査の前の段階。Apple の示した手は「要らなければ外す」か「要るなら返信し、審査メモにも書く」
+- 返信（Resolution Center）は App Store Connect API に窓口が無い。そこで審査メモだけを直し、API で出し直した:
+  `PATCH /v1/appStoreReviewDetails/<id>`（notes）→ `PATCH /v1/reviewSubmissionItems/<id>` `{resolved:true}`
+  （REJECTED → READY_FOR_REVIEW）→ `PATCH /v1/reviewSubmissions/<id>` `{submitted:true}`（→ WAITING_FOR_REVIEW）
+- メモは network.server の説明を先頭に移し、待ち受けが 2 か所あることを書いた。
+  llama-server（127.0.0.1）と、設定「ほかの道具から使えるようにする」の窓口（127.0.0.1:8080、core/gateway.py）。
+  前のメモは後者に触れていなかった
+- 外す案（llama-server を UNIX ソケットで待たせる）は試していない。窓口のほうも TCP なので、外すなら両方を直す必要がある
