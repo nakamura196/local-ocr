@@ -59,6 +59,13 @@ The narration and captions are in Japanese.
 - **Compare**: run two engines over the same page and read the results side by side, with the characters where they disagree highlighted
 - Japanese and English interface, light and dark
 
+### Try it without installing
+
+[IIIF Kasane](https://kasane.ldas.jp/en/viewer/) also opens images from your computer in the browser and reads their text.
+Use it on a computer where you can't install apps, or to try things out first.
+The images are not sent anywhere there either.
+It has fewer engines than Local OCR: NDLOCR-Lite, NDL Kotenseki OCR-Lite, PP-OCR and a few others.
+
 ### Links
 
 - [How to use](guide.md) (in Japanese)
