@@ -57,6 +57,11 @@ Microsoft ストアの審査を両方通した実績があります。** 書き�
         `Square150x150Logo` / `Square310x310Logo` / `Wide310x150Logo` / `StoreLogo`）
       - 32px まで読める（16px では枠が消えて白い頁だけになる）。
         直したら `uv run python scripts/build_icons.py` で全部作り直す
+      - **2026-11-02 に図案を替えた。** スマホ版（local-ocr-ios）と同じ、藍の地に朱の括弧と
+        太い明朝の「読」。KotenOCR と同じ組み方で、姉妹のアプリだと分かるようにした。
+        前の図案（点の並んだ頁）は、文字を読むアプリに見えにくかった。
+        描くのは Chrome（画面なし）と Google Fonts に替わったので、ネットワークが要る。
+        紹介サイトの `docs/assets/icon.png`（128px）も同じスクリプトが書き出す
 - [x] **`LICENSE` を置いた（2026-09-21）。** MIT。tei-scanner と archival-packager に揃えた
 - [x] **`NOTICE` に llama.cpp の同梱を書き足した。** 1. の中で済ませた
 - [x] **データの置き場所の名前をアプリ名に揃えた（2026-09-21）。**
