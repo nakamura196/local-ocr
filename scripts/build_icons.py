@@ -15,6 +15,9 @@ KotenOCR（生成りの地・朱の括弧・「典」）と同じ組み方にし
     assets/icon.png                     Flet がアプリのアイコンに使う（1024px）
     packaging/windows/Assets/*.png      MSIX（Microsoft Store）が使う
     docs/assets/icon.png                紹介サイト（lo.ldas.jp）の左上（128px）
+    docs/favicon.ico                    紹介サイトのブラウザのタブ（16・32・48px）
+    docs/apple-touch-icon.png           iPhone・iPad でサイトをホーム画面に置いたとき（180px、角は丸めない）
+                                        どちらもブラウザがサイトの直下に取りに来るので、ページに書き足さなくてよい
 
 使い方:
     uv run python scripts/build_icons.py
@@ -116,18 +119,19 @@ def rounded(square: Image.Image) -> Image.Image:
     return out
 
 
-def render_master() -> Image.Image:
+def render_master() -> tuple[Image.Image, Image.Image]:
+    """（角を丸めていない正方形, 角を丸めたもの）を返す。"""
     with tempfile.TemporaryDirectory() as tmp:
         png = Path(tmp) / "icon.png"
         render_square(png)
         square = Image.open(png).convert("RGB")
     if square.size != (MASTER, MASTER):
         raise SystemExit(f"Chrome の出力の大きさが違います: {square.size}")
-    return rounded(square)
+    return square, rounded(square)
 
 
 def emit() -> None:
-    master = render_master()
+    square, master = render_master()
 
     app_icon = ROOT / "assets" / "icon.png"
     app_icon.parent.mkdir(parents=True, exist_ok=True)
@@ -137,6 +141,15 @@ def emit() -> None:
     site = ROOT / "docs" / "assets" / "icon.png"
     master.resize((128, 128), Image.LANCZOS).save(site, optimize=True)
     print(f"{site.relative_to(ROOT)}  128x128")
+
+    favicon = ROOT / "docs" / "favicon.ico"
+    master.save(favicon, sizes=[(16, 16), (32, 32), (48, 48)])
+    print(f"{favicon.relative_to(ROOT)}  16/32/48")
+
+    # iOS は自分で角を丸めるので、丸めていない正方形を渡す（透明の角は黒く出る）。
+    touch = ROOT / "docs" / "apple-touch-icon.png"
+    square.resize((180, 180), Image.LANCZOS).save(touch, optimize=True)
+    print(f"{touch.relative_to(ROOT)}  180x180")
 
     # MSIX 用。名前と大きさは AppxManifest.xml.in が参照するものと揃える。
     msix = ROOT / "packaging" / "windows" / "Assets"
