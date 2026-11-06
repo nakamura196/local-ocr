@@ -12,7 +12,7 @@ nav:
   - { title: Changelog, url: changelog-en.html }
   - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
 quick_links:
-  - { title: Download, text: Mac and Windows, url: "#download", mark: "↓" }
+  - { title: Download, text: "Mac, Windows, iPhone and iPad", url: "#download", mark: "↓" }
   - { title: How to use, text: Videos and step-by-step pages (Japanese), url: guide.html, mark: "▶" }
 footer: "Contact: nakamura.satoru@mail.u-tokyo.ac.jp"
 ---
@@ -39,6 +39,10 @@ Choose the recognition engine to match the material.
 | --- | --- |
 | Windows | [Microsoft Store](https://apps.microsoft.com/detail/9N07ZD1ZPKBZ) (free; the Store signs it, so no SmartScreen warning) |
 | macOS | [Releases](https://github.com/nakamura196/local-ocr/releases/latest) (signed and notarised `.dmg`; macOS 12 or later) |
+| iPhone / iPad | [App Store](https://apps.apple.com/app/id6829376468) (free; iOS 17 or later) |
+
+The iPhone / iPad version is for taking a photo and reading it on the spot.
+Its engines are NDL Kotenseki OCR-Lite, NDLOCR-Lite, PP-OCRv6 and Apple Vision — partly different from the desktop version (no PaddleOCR-VL).
 
 What's new in each version is in the [changelog](changelog-en.html). The Mac version doesn't update itself, so check it now and then.
 

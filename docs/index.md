@@ -9,7 +9,7 @@ nav:
   - { title: 更新履歴, url: changelog.html }
   - { title: GitHub, url: "https://github.com/nakamura196/local-ocr" }
 quick_links:
-  - { title: ダウンロード, text: Mac と Windows, url: "#download", mark: "↓" }
+  - { title: ダウンロード, text: Mac・Windows・iPhone・iPad, url: "#download", mark: "↓" }
   - { title: 使い方, text: 動画と、写真つきの手順, url: guide.html, mark: "▶" }
 ---
 
@@ -35,6 +35,10 @@ quick_links:
 | --- | --- |
 | Windows | [Microsoft ストア](https://apps.microsoft.com/detail/9N07ZD1ZPKBZ)（無料。ストアが署名するので警告は出ません） |
 | macOS | [Releases](https://github.com/nakamura196/local-ocr/releases/latest)（署名・公証済みの `.dmg`。macOS 12 以降） |
+| iPhone・iPad | [App Store](https://apps.apple.com/app/id6829376468)（無料。iOS 17 以降） |
+
+iPhone・iPad 版は、カメラで撮ってその場で読み取るためのアプリです。
+読む道具は NDL古典籍OCR-Lite・NDLOCR-Lite・PP-OCRv6・Apple Vision で、パソコン版とは一部異なります（PaddleOCR-VL は使えません）。
 
 最新版の変更点は [更新履歴](changelog.html) にあります。Mac 版は自動では新しい版に替わらないので、ときどきご確認ください。
 
