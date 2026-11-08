@@ -145,3 +145,11 @@
   前のメモは後者に触れていなかった
 - 外す案（llama-server を UNIX ソケットで待たせる）は試していない。窓口のほうも TCP なので、外すなら両方を直す必要がある
 - 審査が通ったら、10/30 からの一連のリリース作業をブログ記事にする予定（本人の希望）。このノートを素材にする
+
+## 2026-11-07: 副題の「Mac」で指摘され、副題を直して出し直した
+
+- 11/8（審査側の日付）の人の審査で、Guideline 5.2.5（Apple の商標）の指摘。日本語の副題「史料の文字を、手元のMacで読む」の「Mac」が不適切な使い方とされた。説明文・宣伝文の「手元のMac」は指摘されていない。
+- 副題を「史料の文字を、手元で読み取る」に変えた（listing.json も同じに）。英語の副題「On-device OCR for old texts」はそのまま。
+- 副題はアプリ単位の情報（appInfo）なので、編集中の appInfo（REJECTED）の ja を `PATCH /v1/appInfoLocalizations/<id>` で直した。公開中の iOS 1.0 の副題も「Mac」入りだが、この版が通ると新しい副題に置き換わる。
+- 出し直しは 11/2 と同じ手順（reviewSubmissionItems resolved → reviewSubmissions submitted）。WAITING_FOR_REVIEW。
+- network.server の件は今回の指摘に入っていない（審査メモで通った可能性が高い）。
