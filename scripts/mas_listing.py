@@ -7,7 +7,7 @@
 入れるもの（文面は store/mac/listing.json）:
   - 版の番号（.app の CFBundleShortVersionString）と、使うビルド
   - 日本語・英語の名前・副題・説明・キーワード・URL・プライバシーポリシー
-  - カテゴリ・著作権表示・年齢区分の質問への答え・審査担当への連絡先とメモ
+  - カテゴリ・著作権表示・他者のコンテンツの権利の申告・年齢区分の質問への答え・審査担当への連絡先とメモ
   - 画面写真（store/mac/screenshots/<ja|en>/*.png。scripts/screenshot-mac.zsh で撮る）。
     既にある画面写真は消して入れ直す
 入れないもの（画面で行う）: App のプライバシー（データの収集）。価格と配信地域は 2026-11-01 に API で設定済み。
@@ -167,6 +167,11 @@ def main() -> None:
     api("PATCH", f"/v1/ageRatingDeclarations/{age['id']}",
         {"data": {"type": "ageRatingDeclarations", "id": age["id"], "attributes": attrs}})
     print("  年齢区分: 設定")
+
+    # 未設定だと「Add for Review」が「Content Rights Information」不足で止まる (2026-11-01)
+    api("PATCH", f"/v1/apps/{APP_ID}", {"data": {"type": "apps", "id": APP_ID, "attributes": {
+        "contentRightsDeclaration": DATA["contentRightsDeclaration"]}}})
+    print("  他者のコンテンツの権利: 設定")
 
     review = api("GET", f"/v1/appStoreVersions/{ver['id']}/appStoreReviewDetail")["data"]
     if review:
